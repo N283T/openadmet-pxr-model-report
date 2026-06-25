@@ -20,6 +20,12 @@ training data plus the released Analog Set 1 labels. Predictions for the
 still-blinded Analog Set 2 compounds are blended back toward the established
 Phase 1 anchor to limit overfitting to the released subset.
 
+A small high-activity correction was also applied to compounds prioritized by
+an assay-level ranking model trained on public PXR activity data and related
+auxiliary assay signals. This correction was kept deliberately modest and was
+used only as a tail-adjustment diagnostic rather than as a replacement for the
+main regression ensemble.
+
 ## Performance Comments
 
 During Phase 1, leaderboard feedback and local validation indicated that the
@@ -32,7 +38,8 @@ The released Analog Set 1 labels were used as a diagnostic and Phase 2 training
 resource, but not as a reason to make large post-hoc shifts. Local validation
 showed that small improvements in cross-validation were not always reliable
 for blinded analog subsets, so the final Phase 2 prediction keeps the update
-modest and preserves the scale of the prior best-performing submission.
+modest, including only a limited high-activity tail adjustment, and preserves
+the scale of the prior best-performing submission.
 
 The model report here is intentionally high-level because final evaluation is
 still pending. A fuller post-challenge report may include additional details on
