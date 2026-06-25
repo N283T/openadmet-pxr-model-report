@@ -1,0 +1,10 @@
+*.csv
+*.parquet
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
+*.joblib
+__pycache__/
+.ipynb_checkpoints/
