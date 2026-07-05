@@ -382,7 +382,7 @@
       title: { text: feat.label, left: 14, top: 8,
         textStyle: { color: p.ink, fontSize: 13, fontWeight: 700, fontFamily: p.font } },
       graphic: [{ type: "text", right: 14, top: 11,
-        style: { text: "r = " + feat.r + "   n = " + feat.n.toLocaleString(),
+        style: { text: "Pearson r = " + feat.r + "   n = " + feat.n.toLocaleString(),
           fill: p.coral, font: "bold 12px " + p.font } }],
       grid: { left: 52, right: 14, top: 42, bottom: 46 },
       tooltip: { show: false },

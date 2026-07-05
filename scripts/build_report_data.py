@@ -102,24 +102,27 @@ DEFAULT_TRAIN_PARQUET = ("data", "default_train.parquet")
 SINGLECONC_TRAIN_PARQUET = ("data", "single_concentration_train.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
 CONC_33 = 3.30e-5  # 33 uM
-# Representative features ranked by their correlation with training pEC50.
-# (full label, short column header, master/pred column).
+# Representative features for the correlation heatmap.
+# (full label, short column header, master/pred column, family).
+# Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
+# by |correlation| within each family.
 FEATURE_CORR = [
-    ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred"),
-    ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred"),
-    ("Observed log2fc (max)", "obs log2fc", "single_max_log2_fc"),
-    ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred"),
-    ("Boltz-2 confidence", "Boltz conf.", "b2_confidence"),
-    ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm"),
-    ("logP", "logP", "logp"),
-    ("TPSA", "TPSA", "tpsa"),
-    ("Mol. weight", "MW", "amw"),
-    ("Fraction Csp3", "fCsp3", "fractioncsp3"),
-    ("Aromatic rings", "arom. rings", "num_aromatic_rings"),
-    ("H-bond donors", "HBD", "hbd"),
-    ("H-bond acceptors", "HBA", "hba"),
-    ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds"),
+    ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred", "log2fc"),
+    ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred", "log2fc"),
+    ("Observed log2fc (max)", "obs log2fc", "single_max_log2_fc", "log2fc"),
+    ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred", "boltz"),
+    ("Boltz-2 confidence", "Boltz conf.", "b2_confidence", "boltz"),
+    ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm", "boltz"),
+    ("logP", "logP", "logp", "desc"),
+    ("TPSA", "TPSA", "tpsa", "desc"),
+    ("Mol. weight", "MW", "amw", "desc"),
+    ("Fraction Csp3", "fCsp3", "fractioncsp3", "desc"),
+    ("Aromatic rings", "arom. rings", "num_aromatic_rings", "desc"),
+    ("H-bond donors", "HBD", "hbd", "desc"),
+    ("H-bond acceptors", "HBA", "hba", "desc"),
+    ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds", "desc"),
 ]
+FEATURE_CORR_FAMILY_ORDER = {"log2fc": 0, "boltz": 1, "desc": 2}
 # Label-coverage matrix: which compound group carries which measured label.
 # Groups are (display name, master flag column); a compound is "aux" if it has a
 # single-concentration row but is neither train nor test.
@@ -460,7 +463,7 @@ def build_feature_corr(src: Path) -> None:
     m = m[m["in_train"].fillna(False)]
     y = pd.to_numeric(m["train_pec50"], errors="coerce")
     feats = []
-    for label, short, col in FEATURE_CORR:
+    for label, short, col, family in FEATURE_CORR:
         d = pd.DataFrame({"x": pd.to_numeric(m[col], errors="coerce"), "y": y}).dropna()
         if len(d) < 20:
             continue
@@ -468,13 +471,17 @@ def build_feature_corr(src: Path) -> None:
             {
                 "label": label,
                 "short": short,
+                "family": family,
                 "pearson": round(float(d["x"].corr(d["y"])), 2),
                 # Spearman == Pearson on ranks (avoids a scipy dependency).
                 "spearman": round(float(d["x"].rank().corr(d["y"].rank())), 2),
                 "n": len(d),
             }
         )
-    feats.sort(key=lambda f: abs(f["pearson"]), reverse=True)
+    # Group by family (log2fc, Boltz, descriptors), sort by |correlation| within.
+    feats.sort(
+        key=lambda f: (FEATURE_CORR_FAMILY_ORDER[f["family"]], -abs(f["pearson"]))
+    )
     _write(
         "feature_corr.json", {"rows": ["Pearson r", "Spearman r"], "features": feats}
     )
