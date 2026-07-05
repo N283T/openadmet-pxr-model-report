@@ -361,10 +361,92 @@
     };
   }
 
+  // Top-K dimension sweep: OOF MAE (left) and Spearman (right), dual axis.
+  function optKSweep(d, p) {
+    var mae = d.sweep.map(function (s) { return [s.k, s.mae]; });
+    var spear = d.sweep.map(function (s) { return [s.k, s.spearman]; });
+    // Padded, rounded bounds so the lines get vertical headroom.
+    function bounds(arr) {
+      var lo = Math.min.apply(null, arr), hi = Math.max.apply(null, arr), r = (hi - lo) || 0.01;
+      return { min: Math.floor((lo - r * 0.4) * 1000) / 1000, max: Math.ceil((hi + r * 0.4) * 1000) / 1000 };
+    }
+    var mb = bounds(mae.map(function (x) { return x[1]; }).concat([d.fullMae]));
+    var sb = bounds(spear.map(function (x) { return x[1]; }).concat([d.fullSpearman]));
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 20, right: 20, top: 36, bottom: 44, containLabel: true },
+      legend: { data: ["OOF MAE", "Spearman ρ"], textStyle: { color: p.ink }, top: 6 },
+      tooltip: {
+        trigger: "axis", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (ps) {
+          var k = ps[0].data[0];
+          var out = "top-" + k;
+          ps.forEach(function (s) { out += "<br/>" + s.seriesName + " <b>" + s.data[1].toFixed(4) + "</b>"; });
+          return out;
+        },
+      },
+      xAxis: Object.assign({ type: "value", name: "top-K features kept", min: 0, max: 1260,
+        nameLocation: "middle", nameGap: 28, nameTextStyle: { color: p.muted, fontSize: 12 } }, axisStyle(p)),
+      yAxis: [
+        Object.assign({ type: "value", name: "OOF MAE", min: mb.min, max: mb.max, position: "left",
+          nameTextStyle: { color: p.blue, fontSize: 11 } }, axisStyle(p)),
+        Object.assign({ type: "value", name: "Spearman ρ", min: sb.min, max: sb.max, position: "right",
+          splitLine: { show: false }, nameTextStyle: { color: p.teal, fontSize: 11 } }, axisStyle(p)),
+      ],
+      series: [
+        { name: "OOF MAE", type: "line", yAxisIndex: 0, data: mae, symbolSize: 7,
+          color: p.blue, lineStyle: { color: p.blue, width: 2 },
+          markLine: { silent: true, symbol: "none", lineStyle: { color: p.blue, type: "dashed", width: 1.5 },
+            data: [{ yAxis: d.fullMae }],
+            label: { formatter: "full " + d.fullMae, color: p.blue, position: "insideStartTop", fontSize: 10 } } },
+        { name: "Spearman ρ", type: "line", yAxisIndex: 1, data: spear, symbolSize: 7,
+          color: p.teal, lineStyle: { color: p.teal, width: 2 },
+          markLine: { silent: true, symbol: "none", lineStyle: { color: p.teal, type: "dashed", width: 1.5 },
+            data: [{ yAxis: d.fullSpearman }],
+            label: { formatter: "full " + d.fullSpearman, color: p.teal, position: "insideEndBottom", fontSize: 10 } } },
+        { name: "OOF MAE", type: "scatter", yAxisIndex: 0, data: [[500, 0.4179]], symbolSize: 14,
+          itemStyle: { color: p.coral, borderColor: p.surface, borderWidth: 2 },
+          label: { show: true, formatter: "K=500 (used)", position: "bottom", color: p.coral, fontWeight: "bold", fontSize: 11 } },
+      ],
+    };
+  }
+
+  // Share of LGBM-gain by feature family in the top-500 selection.
+  function optLgbmGain(d, p) {
+    var fams = d.families;
+    var cats = fams.map(function (f) { return f.family; });
+    var data = fams.map(function (f) {
+      return { value: f.gainShare, itemStyle: { color: /log2fc/.test(f.family) ? p.coral : p.blue, borderRadius: [0, 4, 4, 0] } };
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 58, top: 10, bottom: 40, containLabel: true },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var f = fams[o.dataIndex];
+          return f.family + "<br/>gain share <b>" + Math.round(f.gainShare * 100) + "%</b><br/>" +
+            f.selected + " of 500 features";
+        },
+      },
+      xAxis: Object.assign({ type: "value", min: 0, max: 0.9, name: "share of LGBM gain",
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 },
+        axisLabel: { formatter: function (v) { return Math.round(v * 100) + "%"; } } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "62%",
+        label: { show: true, position: "right", color: p.muted, fontSize: 11,
+          formatter: function (o) { return Math.round(o.value * 100) + "%"; } },
+      }],
+    };
+  }
+
   var SPECS = [
     { el: "chart-coverage", file: "coverage.json", build: optCoverage },
     { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
     { el: "chart-weights", file: "ensemble_members.json", build: optWeights },
+    { el: "chart-ksweep", file: "topk_sweep.json", build: optKSweep },
+    { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
   ];
 
   // Least-squares fit; returns the two endpoints of the trend line over the data x-range.

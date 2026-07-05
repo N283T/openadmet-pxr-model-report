@@ -95,6 +95,42 @@ SHAP_FAMILY_CSV = (
     "tabpfn26_shap_top500",
     "family_summary.csv",
 )
+# Static tabular-core diagnostics (from the per-model strategy notes).
+# Per-fold LGBM-gain top-K sweep on the cheme+2D+Boltz+pred stack (proper CV OOF MAE).
+TOPK_SWEEP = [
+    {"k": 100, "mae": 0.4192, "spearman": 0.8263},
+    {"k": 200, "mae": 0.4190, "spearman": 0.8260},
+    {"k": 300, "mae": 0.4186, "spearman": 0.8267},
+    {"k": 400, "mae": 0.4182, "spearman": 0.8274},
+    {"k": 500, "mae": 0.4179, "spearman": 0.8279},
+    {"k": 600, "mae": 0.4176, "spearman": 0.8264},
+    {"k": 700, "mae": 0.4188, "spearman": 0.8258},
+    {"k": 800, "mae": 0.4201, "spearman": 0.8258},
+    {"k": 1000, "mae": 0.4237, "spearman": 0.8196},
+    {"k": 1200, "mae": 0.4247, "spearman": 0.8203},
+]
+TOPK_FULL_MAE = 0.4212  # full 2103-dim, no selection
+TOPK_FULL_SPEARMAN = 0.8236
+# Per-fold LGBM-gain audit over the full cheme+2D+Boltz+pred stack.
+GAIN_AUDIT_CSV = (
+    "track1_activity",
+    "analysis",
+    "tabpfn_shape_diagnostic",
+    "outputs",
+    "top500_raw_feature_audit",
+    "feature_gain_summary.csv",
+)
+GAIN_FAMILY_LABEL = {
+    "log2fc_pred": "predicted log2fc",
+    "mordred": "Mordred",
+    "chemeleon": "CheMeleon",
+    "boltz_tier1_conf": "Boltz-2 tier-1",
+    "boltz_tier0": "Boltz-2 tier-0",
+    "rdkit_full": "RDKit",
+    "pose_jazzy": "pose-Jazzy",
+}
+GAIN_TOP_N = 12
+
 # Per-compound master table + predicted log2fc + raw provided train files.
 MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
@@ -419,6 +455,55 @@ def build_proxy(src: Path) -> None:
     _write("proxy_as1_as2.json", {"n": len(points), "pearson": corr, "points": points})
 
 
+def build_topk_sweep(src: Path) -> None:
+    """LGBM-gain top-K dimension sweep vs OOF MAE (with the full-feature reference)."""
+    _write(
+        "topk_sweep.json",
+        {
+            "sweep": TOPK_SWEEP,
+            "fullMae": TOPK_FULL_MAE,
+            "fullSpearman": TOPK_FULL_SPEARMAN,
+        },
+    )
+
+
+def _gain_audit(src: Path) -> pd.DataFrame:
+    d = pd.read_csv(src.joinpath(*GAIN_AUDIT_CSV))
+    return d[d["gain_mean"] > 0].copy()
+
+
+def build_lgbm_gain(src: Path) -> None:
+    """Share of LGBM-gain per feature family, over the full feature stack."""
+    d = _gain_audit(src)
+    grouped = d.groupby("family").agg(
+        selected=("feature", "size"), share=("gain_share_pct", "sum")
+    )
+    families = [
+        {
+            "family": GAIN_FAMILY_LABEL.get(fam, fam),
+            "selected": int(row["selected"]),
+            "gainShare": round(float(row["share"]) / 100.0, 4),
+        }
+        for fam, row in grouped.iterrows()
+    ]
+    families.sort(key=lambda f: f["gainShare"], reverse=True)
+    _write("lgbm_gain.json", {"families": families})
+
+
+def build_lgbm_top_features(src: Path) -> None:
+    """Top individual features by per-fold LGBM gain."""
+    d = _gain_audit(src).sort_values("gain_mean", ascending=False).head(GAIN_TOP_N)
+    rows = [
+        {
+            "feature": str(r["feature"]).split("__", 1)[-1],
+            "family": GAIN_FAMILY_LABEL.get(str(r["family"]), str(r["family"])),
+            "gainShare": round(float(r["gain_share_pct"]), 2),
+        }
+        for _, r in d.iterrows()
+    ]
+    _write("lgbm_top_features.json", {"features": rows})
+
+
 def build_coverage(src: Path) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
     m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
@@ -591,6 +676,9 @@ def main() -> None:
     build_shap_families(src)
     build_coverage(src)
     build_sankey(src)
+    build_topk_sweep(src)
+    build_lgbm_gain(src)
+    build_lgbm_top_features(src)
     build_feature_scatter(src)
     build_feature_corr(src)
     logger.info("done -> %s", OUT_DIR)

@@ -357,6 +357,15 @@ code {
 #members h3 { font-size: 1.16rem; margin: 28px 0 8px; color: var(--ink); }
 #members h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
 .metric-table td.bk { text-align: left; font-weight: 500; color: var(--muted); white-space: nowrap; }
+
+/* Understated aside (optional side-notes) */
+.aside { border-left: 3px solid var(--line); padding: 2px 0 2px 16px; margin: 18px 0; }
+.aside p { font-size: .9rem; color: var(--muted); }
+.aside .metric-table { min-width: 380px; box-shadow: none; background: transparent; }
+:root[data-theme="dark"] .aside .metric-table { background: transparent; }
+.aside .metric-table thead th { background: transparent; color: var(--muted); }
+.aside .metric-table tbody th { color: var(--muted); font-weight: 500; }
+.aside .metric-table tbody td { color: var(--muted); font-weight: 600; }
 .viz-label { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--color-blue); margin: 18px 0 6px; }
 .cov-table td.cov0 { color: var(--muted); font-weight: 500; }
 

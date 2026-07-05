@@ -295,8 +295,8 @@
     <p>
       The final system is not one model but an ensemble of nine members. They
       differ in how they turn a molecule into features, but share one thing:
-      every member uses <strong>TabPFN as its readout head</strong>, in place of a
-      trained MLP. So the members vary in their encoder or feature stack, not in
+      every member uses <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a>
+      as its readout head</strong>, in place of a trained MLP. So the members vary in their encoder or feature stack, not in
       the regressor sitting on top. Most encoders are frozen and pretrained on the
       auxiliary log2fc signal, in the multi-fidelity spirit of the strategy above.
     </p>
@@ -359,33 +359,121 @@
     <table class="spec-table">
       <thead><tr><th>Block</th><th>Dims</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><th>Mordred</th><td class="val">1,515</td><td>2D molecular descriptors</td></tr>
-        <tr><th>CheMeleon</th><td class="val">300</td><td>ChemProp-MPNN foundation fingerprint</td></tr>
-        <tr><th>RDKit</th><td class="val">217</td><td>standard RDKit descriptors</td></tr>
+        <tr><th><a href="https://mordred-descriptor.github.io/documentation/master/">Mordred</a></th><td class="val">1,515</td><td>2D molecular descriptors</td></tr>
+        <tr><th><a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a></th><td class="val">300</td><td>ChemProp-MPNN foundation fingerprint</td></tr>
+        <tr><th><a href="https://rdkit.org/docs/index.html">RDKit</a></th><td class="val">217</td><td>standard RDKit descriptors</td></tr>
         <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
         <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
-        <tr><th>pose-Jazzy</th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
+        <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
         <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred columns from Strategy (8.25 and 33 µM)</td></tr>
       </tbody>
     </table>
     <p class="metrics-key">The two predicted log2fc columns are the same pred discussed in the Strategy section; they are also why these two members are the strongest single models.</p>
+
+    <h4>CheMeleon</h4>
+    <p>
+      <strong>CheMeleon</strong> is not strong on its own (a TabPFN on CheMeleon
+      alone scores ~0.512 MAE), but adding it to the stack clearly helped: the same
+      tabular core went from MAE 0.443 without it to 0.421 with it. It contributes
+      a learned molecular-graph prior that the hand-built 2D descriptors do not
+      fully capture.
+    </p>
+    <h4>Boltz-2 features</h4>
+    <p>
+      The <strong>Boltz-2</strong> block comes in two tiers. <strong>Tier-0</strong>
+      is Boltz's own scalar outputs: the affinity value, binding probability, and
+      confidence scores (pTM, ipTM, ligand-ipTM, complex pLDDT).
+      <strong>Tier-1</strong> is our re-aggregation of Boltz's raw per-token
+      confidence tensors (pLDDT, PAE, PDE) into pocket-level statistics, for example
+      <code>pde_pocket_ligand_min</code>, one of the more useful structural
+      features. A fuller breakdown of these Boltz tabular features may follow as an
+      appendix.
+    </p>
+    <h4>top-500 selection</h4>
     <p>
       <strong>tabular-full</strong> feeds all 2,103 features straight into TabPFN.
       <strong>tabular-top500</strong> first runs a per-fold LightGBM-gain
-      <strong>top-500 selection</strong> and passes only those to TabPFN. Top-500
-      compresses the wide, partly noisy stack and is marginally stronger
-      out-of-fold (single-model OOF MAE ≈ 0.397 vs 0.396 for full), so it is
-      tempting to lean on it entirely.
+      <strong>top-500 selection</strong> and passes only those. Compressing the
+      wide, partly noisy stack helps: out-of-fold error dips around K = 500 to 600
+      and rises again toward the full 2,103 dimensions (Figure 5). We fixed
+      K = 500: MAE is essentially flat from 500 to 600, but 500 gave the best
+      Spearman, so we let ranking break the tie.
     </p>
+    <figure class="chart-figure">
+      <div id="chart-ksweep" class="chart" style="height:320px"></div>
+      <figcaption>Figure 5: Out-of-fold MAE (left axis, blue) and Spearman ρ (right axis, teal) as the number of top-gain features TabPFN keeps varies. Both point to a sweet spot around 500 to 600 (MAE lowest, Spearman highest); keeping all 2,103 (dashed lines) is worse, and over-compressing below ~300 loses signal.</figcaption>
+    </figure>
     <p>
-      We deliberately did not. Pushing weight onto the top-500 / log2fc axis
-      repeatedly hurt the leaderboard: an aggressive top-500 swap once regressed
-      the public MAE from 0.407 to 0.413 while looking best out-of-fold. Keeping
-      the full-feature member alongside preserves a broader feature distribution
-      and steadies the ensemble, so Caruana split the weight almost evenly between
-      the two (0.309 for top500, 0.288 for full). They are the same information
-      seen two ways: one compressed, one broad.
+      Using LightGBM for the selection also buys a little interpretability: its
+      gain says which features it leaned on. About <strong>three quarters</strong>
+      of the gain goes to the two predicted-log2fc columns, and the rest is spread
+      thinly across Mordred and CheMeleon (Figure 6). The selector is essentially
+      "keep the two pred columns, then round out the space with descriptors."
     </p>
+    <figure class="chart-figure">
+      <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
+      <figcaption>Figure 6: Share of LightGBM gain by feature family (over the full stack). Two predicted-log2fc columns account for ~74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
+    </figure>
+    <p>
+      Zooming in on the individual features tells the same story more sharply. The
+      two pred columns are #1 and #2 by a wide margin (52% and 22% of gain); after
+      them, no single feature reaches even 0.4%, and the tail is a mix of CheMeleon
+      dimensions and interpretable descriptors like <code>SLogP</code>,
+      <code>qed</code>, and the pose-Jazzy hydration terms.
+    </p>
+    <div class="table-scroll">
+      <table class="metric-table">
+        <thead><tr><th>Feature</th><th>Family</th><th>Gain share</th></tr></thead>
+        <tbody>
+          <tr class="hi"><th>log2fc_8p25_pred</th><td class="bk">predicted log2fc</td><td>51.6%</td></tr>
+          <tr class="hi"><th>log2fc_33_pred</th><td class="bk">predicted log2fc</td><td>22.1%</td></tr>
+          <tr><th>chemeleon_067</th><td class="bk">CheMeleon</td><td>0.30%</td></tr>
+          <tr><th>chemeleon_006</th><td class="bk">CheMeleon</td><td>0.23%</td></tr>
+          <tr><th>chemeleon_175</th><td class="bk">CheMeleon</td><td>0.20%</td></tr>
+          <tr><th>chemeleon_131</th><td class="bk">CheMeleon</td><td>0.19%</td></tr>
+          <tr><th>SLogP</th><td class="bk">Mordred</td><td>0.18%</td></tr>
+          <tr><th>sa</th><td class="bk">pose-Jazzy</td><td>0.16%</td></tr>
+          <tr><th>chemeleon_002</th><td class="bk">CheMeleon</td><td>0.16%</td></tr>
+          <tr><th>qed</th><td class="bk">RDKit</td><td>0.13%</td></tr>
+          <tr><th>dgtot</th><td class="bk">pose-Jazzy</td><td>0.12%</td></tr>
+          <tr><th>chemeleon_240</th><td class="bk">CheMeleon</td><td>0.12%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="metrics-key">Top individual features by per-fold LightGBM gain (share of total gain). This is the gain-based selection, not a SHAP attribution.</p>
+    <h4>Why both?</h4>
+    <p>
+      This is why we keep <strong>both tabular-full and tabular-top500</strong>.
+      tabular-top500 is the sharp, compressed view (the strongest single model
+      out-of-fold) and tabular-full is the broad, robust view of the same 2,103
+      features. Because top500 leans so
+      hard on the pred/log2fc axis, running it alone is risky, so the ensemble
+      holds both and Caruana splits the weight almost evenly (0.309 for top500,
+      0.288 for full). The caution was justified: an aggressive top-500 swap once
+      regressed the public MAE from 0.407 to 0.413 while looking best out-of-fold.
+    </p>
+    <div class="aside">
+      <p>
+        Post-challenge aside: re-optimizing the member weights against the
+        now-unblinded AS2 confirms the axis is real but easy to over-trust. Our
+        top500 weight (0.31) was close to the AS2-optimal (0.33), and simply
+        zeroing it would have edged us out by a hair. The failure mode is letting
+        out-of-fold optimization inflate top500 to 0.84, which blows up on AS2,
+        not top500 itself
+        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>).
+      </p>
+      <div class="table-scroll">
+        <table class="metric-table">
+          <thead><tr><th>Weighting</th><th>top500 weight</th><th>AS2 MAE</th></tr></thead>
+          <tbody>
+            <tr><th>Our actual submission</th><td>0.31</td><td>0.405</td></tr>
+            <tr><th>Zero the top500 weight</th><td>0.00</td><td>0.402</td></tr>
+            <tr><th>Optimized on AS2 (oracle)</th><td>0.33</td><td>0.399</td></tr>
+            <tr><th>Optimized on out-of-fold</th><td>0.84</td><td>0.422</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <h3>5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
     <p>
@@ -395,6 +483,9 @@
       TabPFN. The encoder is never fine-tuned on pEC50. The lesson, first proven on
       ChemProp, is that a frozen log2fc-pretrained embedding read by TabPFN beats
       both training the encoder on pEC50 from scratch and fine-tuning its head.
+      (Encoders: <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a>,
+      <a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a>,
+      <a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer-c3</a>.)
     </p>
     <div class="table-scroll">
       <table class="metric-table">
@@ -453,8 +544,9 @@
     <h3>5.3 Boltz-2 structural (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
       The only two members with no log2fc: they come purely from predicted
-      structure. Boltz-2 co-folds PXR (UniProt O75469, 434 residues) with each
-      ligand, and instead of using the final pose or the affinity head we take
+      structure. <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> co-folds
+      PXR (UniProt O75469, 434 residues) with each ligand, and instead of using the
+      final pose or the affinity head we take
       Boltz's internal <strong>trunk representation</strong> (the per-token
       single tensor <code>s</code> and the token-pair tensor <code>z</code>) and
       pool it into a fixed <strong>1,024-dimension</strong> vector per compound for
