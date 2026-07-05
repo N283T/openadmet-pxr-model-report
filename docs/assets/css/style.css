@@ -247,6 +247,35 @@ code {
 /* ============================================================
    Charts
    ============================================================ */
+/* Results: concise summary with per-phase stat cards */
+.phase-block {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 18px 20px; margin: 16px 0;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-blue) 12%, transparent);
+}
+:root[data-theme="dark"] .phase-block { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.phase-block h3 { font-size: 1.12rem; margin: 0 0 4px; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-family: var(--font-display); font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+  color: #fff; background: var(--color-coral); padding: 3px 9px; border-radius: 999px;
+}
+.phase-eval { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
+.stat-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.stat {
+  background: color-mix(in srgb, var(--color-blue) 6%, var(--surface));
+  border: 1px solid var(--line); border-radius: 12px; padding: 11px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+}
+:root[data-theme="dark"] .stat { background: color-mix(in srgb, var(--color-blue) 14%, #3b4263); }
+.stat-l { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.stat-v { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--color-blue); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat-r { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat-r b { color: var(--color-coral); font-weight: 700; }
+.metrics-key { color: var(--muted); font-size: .84rem; margin: 6px 0 8px; }
+@media (max-width: 620px) {
+  .stat-strip { grid-template-columns: repeat(3, 1fr); }
+}
+
 .chart-figure { margin: 22px 0 4px; }
 .chart {
   width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 16px;

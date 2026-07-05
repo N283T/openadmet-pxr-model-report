@@ -37,7 +37,22 @@ OUT_DIR = REPO_ROOT.joinpath("docs", "assets", "data")
 DEFAULT_SRC = Path("/home/nagaet/pxr-iduction-challenge")
 
 # The final leaderboard snapshot (competition closed 2026-07-01).
-LEADERBOARD_CSV = ("docs", "leaderboards", "activity", "leaderboard_2026-07-03_1426JST.csv")
+LEADERBOARD_CSV = (
+    "docs",
+    "leaderboards",
+    "activity",
+    "leaderboard_2026-07-03_1426JST.csv",
+)
+# Per-phase leaderboards for computing this submission's per-metric ranks.
+# Phase 1 result (scored on AS1 + AS2) is the 2026-05-28 snapshot; Phase 2 (AS2
+# only) is the final snapshot above.
+PHASE1_LEADERBOARD = (
+    "docs",
+    "leaderboards",
+    "activity",
+    "leaderboard_2026-05-28_2052JST.csv",
+)
+ME = "N283T"
 # One honest *model-only* submission (no leaked Analog-Set-1 labels) used for the
 # unified predicted-vs-actual scatter across the full 513-compound blinded test.
 MODEL_ONLY_SUBMISSION = (
@@ -45,8 +60,16 @@ MODEL_ONLY_SUBMISSION = (
     "submissions",
     "phase2_as1_aug_suite_id55shape_t10top500_t40_soft_g35_model_only.csv",
 )
-AS1_TRUE_CSV = ("data", "hf_pxr_challenge_train_test", "pxr-challenge_TEST_PHASE_1_UNBLINDED.csv")
-AS2_TRUE_CSV = ("data", "hf_pxr_challenge_train_test", "pxr-challenge_TEST_PHASE_2_UNBLINDED.csv")
+AS1_TRUE_CSV = (
+    "data",
+    "hf_pxr_challenge_train_test",
+    "pxr-challenge_TEST_PHASE_1_UNBLINDED.csv",
+)
+AS2_TRUE_CSV = (
+    "data",
+    "hf_pxr_challenge_train_test",
+    "pxr-challenge_TEST_PHASE_2_UNBLINDED.csv",
+)
 AS2_BIN_CSV = (
     "track1_activity",
     "analysis",
@@ -65,31 +88,26 @@ PROXY_CSV = (
     "final_label_replay",
     "candidate_replay_all_phase2_and_db_submissions.csv",
 )
-SHAP_FAMILY_CSV = ("track1_activity", "analysis", "tabpfn26_shap_top500", "family_summary.csv")
+SHAP_FAMILY_CSV = (
+    "track1_activity",
+    "analysis",
+    "tabpfn26_shap_top500",
+    "family_summary.csv",
+)
 
-# Official Track-1 Activity final metrics (from the two graded submissions).
-PHASE_METRICS = {
-    "phases": [
-        {
-            "phase": "Phase 1",
-            "rank": 4,
-            "mae": 0.4059,
-            "rae": 0.5359,
-            "r2": 0.6496,
-            "spearman": 0.8343,
-            "kendall": 0.6459,
-        },
-        {
-            "phase": "Phase 2",
-            "rank": 4,
-            "mae": 0.4113,
-            "rae": 0.5703,
-            "r2": 0.6008,
-            "spearman": 0.8161,
-            "kendall": 0.6225,
-        },
-    ]
-}
+# Graded metrics: (json key, leaderboard column, higher_is_better).
+PHASE_METRIC_COLS = [
+    ("mae", "MAE", False),
+    ("rae", "RAE", False),
+    ("r2", "R2", True),
+    ("spearman", "Spearman ρ", True),
+    ("kendall", "Kendall's τ", True),
+]
+# Each graded phase and the leaderboard snapshot that carries its final scores.
+PHASE_LEADERBOARDS = [
+    ("Phase 1", "AS1 + AS2 (513)", PHASE1_LEADERBOARD),
+    ("Phase 2", "AS2 (260)", LEADERBOARD_CSV),
+]
 
 # Human-readable labels for the production ensemble members.
 MEMBER_LABELS = {
@@ -140,8 +158,30 @@ def build_leaderboard(src: Path) -> None:
     _write("leaderboard.json", {"n": len(rows), "rows": rows})
 
 
-def build_phase_metrics() -> None:
-    _write("phase_metrics.json", PHASE_METRICS)
+def build_phase_metrics(src: Path) -> None:
+    """Read each phase leaderboard and record this submission's value and rank per metric."""
+    phases = []
+    for name, evaluated_on, rel in PHASE_LEADERBOARDS:
+        df = pd.read_csv(src.joinpath(*rel))
+        me_rows = df[df["username"] == ME]
+        if me_rows.empty:
+            raise ValueError(f"{ME} not found in {rel[-1]}")
+        me = me_rows.iloc[0]
+        entry = {
+            "phase": name,
+            "evaluatedOn": evaluated_on,
+            "nCompetitors": int(len(df)),
+        }
+        ranks = {}
+        for key, col, higher in PHASE_METRIC_COLS:
+            vals = pd.to_numeric(df[col], errors="coerce").dropna()
+            mine = float(me[col])
+            better = (vals > mine) if higher else (vals < mine)
+            entry[key] = round(mine, 4)
+            ranks[key] = int(better.sum()) + 1
+        entry["ranks"] = ranks
+        phases.append(entry)
+    _write("phase_metrics.json", {"phases": phases})
 
 
 def _load_true_labels(src: Path) -> pd.DataFrame:
@@ -168,7 +208,10 @@ def build_scatter(src: Path) -> None:
     name_col = _find_col(sub, "Molecule Name")
     pred_col = _find_col(sub, "pEC50")
     preds = pd.DataFrame(
-        {"name": sub[name_col].astype(str), "pred": pd.to_numeric(sub[pred_col], errors="coerce")}
+        {
+            "name": sub[name_col].astype(str),
+            "pred": pd.to_numeric(sub[pred_col], errors="coerce"),
+        }
     )
     truth = _load_true_labels(src)
     merged = truth.merge(preds, on="name", how="inner").dropna(subset=["true", "pred"])
@@ -295,7 +338,7 @@ def main() -> None:
 
     logger.info("source repo: %s", src)
     build_leaderboard(src)
-    build_phase_metrics()
+    build_phase_metrics(src)
     build_scatter(src)
     build_calibration_bins(src)
     build_ensemble_members(src)
