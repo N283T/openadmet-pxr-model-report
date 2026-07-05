@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenADMET PXR Challenge — Track 1 Activity Model Report</title>
+  <meta name="description" content="Post-challenge technical report for a 4th-place Track 1 Activity submission to the OpenADMET PXR Blind Challenge, with interactive charts." />
+  <script>
+    /* Set the theme before first paint to avoid a flash of the wrong colors. */
+    (function () {
+      var stored = localStorage.getItem("theme");
+      var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme =
+        stored === "light" || stored === "dark" ? stored : prefersDark ? "dark" : "light";
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true"></div>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#data">Data</a>
+      <a href="#features">Features</a>
+      <a href="#models">Models</a>
+      <a href="#ensemble">Ensemble</a>
+      <a href="#calibration">Calibration</a>
+      <a href="#results">Results</a>
+      <a href="#error">Error analysis</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+  </div>
+</header>
+
+<main id="top" class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">OpenADMET PXR Blind Challenge · 2026-04-01 → 07-01</p>
+    <h1>Predicting PXR activation (pEC50) for 513 blinded compounds</h1>
+    <p class="lede">
+      A post-challenge technical report for the Track&nbsp;1 Activity submission.
+      The system is a Caruana-bagged ensemble of frozen-encoder&nbsp;→&nbsp;TabPFN
+      models over chemical descriptors, foundation-model embeddings, and Boltz-2
+      structural features, with covariate-shift calibration and sparse
+      tail correction.
+    </p>
+    <div class="result-cards">
+      <div class="result-card">
+        <span class="rc-label">Phase 1</span>
+        <span class="rc-rank">Rank 4</span>
+        <span class="rc-metric">MAE 0.4059</span>
+      </div>
+      <div class="result-card">
+        <span class="rc-label">Phase 2</span>
+        <span class="rc-rank">Rank 4</span>
+        <span class="rc-metric">MAE 0.4113</span>
+      </div>
+      <div class="result-card muted">
+        <span class="rc-label">Field</span>
+        <span class="rc-rank">of 95</span>
+        <span class="rc-metric">Tier 1</span>
+      </div>
+    </div>
+    <p class="hero-links">
+      <a class="btn" href="https://github.com/N283T/openadmet-pxr-model-report/blob/main/MODEL_REPORT.md">Read the Markdown report ↗</a>
+      <a class="btn ghost" href="#results">Jump to results ↓</a>
+    </p>
+  </section>
+
+  <section id="data">
+    <h2>1. Task and data</h2>
+    <p>
+      The target is PXR activation pEC50 (higher&nbsp;=&nbsp;more potent inducer),
+      scored primarily by mean absolute error (MAE). Training used
+      <strong>4,140</strong> labeled compounds; the blinded test set of
+      <strong>513</strong> arrived in two waves:
+    </p>
+    <ul>
+      <li><strong>Analog Set 1 (AS1)</strong> — 253 compounds, labels released at
+        the start of Phase&nbsp;2 for answer-checks and validation design.</li>
+      <li><strong>Analog Set 2 (AS2)</strong> — 260 compounds, blinded throughout.</li>
+    </ul>
+    <p class="note">
+      The test compounds are synthetic <em>analogs expanded from training hits</em>,
+      so random cross-validation is optimistic. Every validation and calibration
+      decision in this project is built around that fact.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-phase" class="chart" style="height:380px"></div>
+      <figcaption>Figure 1 — The five graded metrics for Phase&nbsp;1 and Phase&nbsp;2.</figcaption>
+    </figure>
+  </section>
+
+  <section id="features">
+    <h2>2. Feature families</h2>
+    <p>
+      The production feature matrix (~2,103 dimensions) concatenates
+      complementary families:
+    </p>
+    <div class="feature-grid">
+      <div class="feature-cell"><h3>Classical 2D</h3><p>RDKit (41 + 217), Mordred, Jazzy hydration features, and a wide fingerprint registry (Morgan/ECFP, FCFP, MACCS, atom-pair, ErG…).</p></div>
+      <div class="feature-cell hi"><h3>Auxiliary log2fc</h3><p>Single-concentration reporter fold-change, plus a ChemProp encoder pretrained to predict log2fc — the two most influential features.</p></div>
+      <div class="feature-cell"><h3>Foundation embeddings</h3><p>CheMeleon, MoLFormer, ChemBERTa, ChemFM, and graph-transformer encoders, used as frozen representations.</p></div>
+      <div class="feature-cell"><h3>Boltz-2 structural</h3><p>Pose / confidence / affinity scalars, re-pooled pocket confidence, and 1,024-dim trunk embeddings vs. human PXR.</p></div>
+    </div>
+    <figure class="chart-figure">
+      <div id="chart-shap" class="chart" style="height:400px"></div>
+      <figcaption>Figure 2 — SHAP importance share by feature family across the selected top-500 features. The two predicted-log2fc scalars carry ~9% of the signal from just 2 features.</figcaption>
+    </figure>
+  </section>
+
+  <section id="models">
+    <h2>3. Modeling recipe</h2>
+    <p>
+      The central pattern is
+      <strong>low-fidelity pretrain → freeze → frozen embedding → TabPFN</strong>:
+      pretrain a chemical encoder on the abundant auxiliary log2fc signal, freeze
+      it, extract one fixed vector per compound, then fit
+      <strong>TabPFN</strong> on top. Because TabPFN degrades on very wide inputs,
+      a leak-free <strong>per-fold LightGBM-gain top-500 selection</strong>
+      compresses features first — this produced the first sub-0.40 single-model
+      out-of-fold MAE. Direct pEC50 neural fine-tuning consistently lost to the
+      frozen-embedding recipe.
+    </p>
+  </section>
+
+  <section id="validation">
+    <h2>4. Validation strategy</h2>
+    <p>
+      The canonical split is a <strong>UMAP cluster split</strong>: Morgan
+      fingerprints → UMAP → 50 KMeans clusters → whole clusters distributed
+      across 5 folds so no chemical cluster spans train and validation. Several
+      diagnostic splits (analog-aware, mixed analog/diversity, test-NN,
+      adversarial) were built to mimic the analog test generation, but the key
+      lesson held throughout: <strong>UMAP-tuned models beat analog-tuned models
+      on the leaderboard despite worse out-of-fold error</strong>, so UMAP
+      remained canonical and analog splits stayed diagnostic.
+    </p>
+  </section>
+
+  <section id="ensemble">
+    <h2>5. Ensembling — Caruana selection</h2>
+    <p>
+      Members pass a hand-audited allow-list (out-of-fold RAE&nbsp;&lt;&nbsp;0.68;
+      reject if residual correlation to any member&nbsp;&gt;&nbsp;0.85). Weights
+      come from <strong>bagged Caruana forward selection</strong> — because
+      weights are discrete selection counts across 20 bags, no single member can
+      dominate, which structurally dampens the out-of-fold-vs-leaderboard gap.
+      Continuous optimizers were computed but distrusted: they found impressive
+      local gains that moved leaderboard predictions the wrong way.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-members" class="chart" style="height:440px"></div>
+      <figcaption>Figure 3 — Ensemble members: Caruana weight (bars) vs. standalone AS1 MAE (line). The ensemble (dashed) beats every single member.</figcaption>
+    </figure>
+  </section>
+
+  <section id="calibration">
+    <h2>6. Calibration and tail correction</h2>
+    <p>
+      Post-hoc calibration fits an order-preserving map on out-of-fold
+      predictions with honest nested CV, chosen to minimize MAE subject to
+      |ΔSpearman|&nbsp;&lt;&nbsp;0.005. A <strong>covariate-shift (importance-weighted)</strong>
+      calibration — a clipped train-vs-test density ratio — was the top-ranked
+      public submission during Phase&nbsp;1. The dominant error mode is
+      <strong>range compression</strong> (Figure 4), countered only by a sparse,
+      guardrail-checked upward lift on neighbors of the 46 potent seeds and by
+      ChEMBL-derived pairwise-ranking gates.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-calibration" class="chart" style="height:400px"></div>
+      <figcaption>Figure 4 — Range compression on the blinded AS2 set: the strongest bin is predicted too low, the weakest bin too high. Perfect calibration would sit on the dashed diagonal.</figcaption>
+    </figure>
+  </section>
+
+  <section id="phases">
+    <h2>7. Phase 1 → Phase 2</h2>
+    <p>
+      Phase&nbsp;1 had live leaderboard feedback; Phase&nbsp;2 released the 253
+      AS1 labels but gave <strong>no live leaderboard</strong>, so decisions
+      relied on pre-AS1 replay plus AS2 shift guardrails. A production model
+      retrained the top-500 TabPFN recipe with AS1 labels added
+      (4,140&nbsp;→&nbsp;4,393 rows). A direct AS1-augmented model fits AS1 almost
+      perfectly (MAE&nbsp;≈&nbsp;0.09) but pushes AS2 too far from the anchor, so
+      the final submission blended it back conservatively:
+      <code>AS2 = anchor + 0.45 × (AS1-aug − anchor)</code> plus two sparse
+      high-side gates.
+    </p>
+  </section>
+
+  <section id="results">
+    <h2>8. Results</h2>
+    <p>
+      Both phases finished <strong>4th of 95</strong> graded competitors, inside
+      the top significance tier. The final Phase&nbsp;2 MAE (0.4113) trailed the
+      winner (0.4061) by ~0.005 pEC50 units.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-leaderboard" class="chart" style="height:460px"></div>
+      <figcaption>Figure 5 — Final leaderboard: MAE vs Spearman ρ for all 95 competitors. This submission (N283T) is highlighted. Up and to the left (low MAE, high Spearman) is better.</figcaption>
+    </figure>
+    <figure class="chart-figure">
+      <div id="chart-scatter" class="chart" style="height:480px"></div>
+      <figcaption>Figure 6 — Honest model-only predictions vs measured pEC50 for all 513 test compounds (no leaked AS1 labels), colored by set. Hover for compound IDs.</figcaption>
+    </figure>
+  </section>
+
+  <section id="error">
+    <h2>9. Error analysis and null results</h2>
+    <p>
+      <strong>Local error barely predicts blinded error.</strong> Across honest
+      candidates, local AS1 MAE and blinded AS2 MAE correlate only weakly
+      (Figure 7). This is the project's recurring theme: small local gains
+      routinely failed to transfer, and some reversed — adding correlated
+      members, Boltz Tier-0 scalars passing every gate yet regressing the
+      leaderboard, a ROCS self-match leak, fold-structure overfitting on
+      mega-concatenations. The consistent conclusion is that
+      <strong>conservative, correlation-gated, guardrail-checked changes</strong>
+      outperformed aggressive local optimization on this analog-expanded
+      benchmark.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-proxy" class="chart" style="height:440px"></div>
+      <figcaption>Figure 7 — Is local AS1 a good proxy for blinded AS2? Each point is a candidate submission. The weak correlation is the OOF/leaderboard disconnect made visible.</figcaption>
+    </figure>
+  </section>
+
+  <section id="links">
+    <h2>10. Reproducibility and links</h2>
+    <ul>
+      <li>Phase 1 research log (day-by-day, some Japanese): <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
+      <li>Phase 2 research log: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/208">issue #208</a></li>
+      <li>Challenge page: <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">openadmet/pxr-challenge</a></li>
+      <li>Data: <a href="https://huggingface.co/datasets/openadmet/pxr-challenge-train-test">openadmet/pxr-challenge-train-test</a></li>
+    </ul>
+    <p class="note">
+      This is a report-only artifact. The chart data under
+      <code>docs/assets/data/</code> is regenerated by
+      <code>scripts/build_report_data.py</code>; raw feature matrices,
+      checkpoints, and full prediction pools are intentionally excluded.
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>OpenADMET PXR Challenge · Track 1 Activity · Rank 4 / 95 · Report by N283T</p>
+  </div>
+</footer>
+
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/charts.js"></script>
+</body>
+</html>
