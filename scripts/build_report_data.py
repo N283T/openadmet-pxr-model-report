@@ -153,17 +153,98 @@ PHASE_LEADERBOARDS = [
 ]
 
 # Human-readable labels for the production ensemble members.
-MEMBER_LABELS = {
-    "cheme_t10_top500": "CheMeleon+2D+Boltz top-500 (TabPFN)",
-    "cheme_t10_full": "CheMeleon+2D+Boltz full 2103d (TabPFN)",
-    "chemprop_embed": "ChemProp D-MPNN log2fc embed",
-    "kermt": "KERMT graph-transformer embed",
-    "pooled_boltz": "Boltz-2 trunk (core pocket)",
-    "molformer_c3": "MoLFormer-c3 embed",
-    "pooled_boltz_allpairs": "Boltz-2 trunk (all pairs)",
-    "gatedgcn": "GatedGCN log2fc embed",
-    "attentivefp": "AttentiveFP log2fc embed",
-}
+# Production ensemble members (canonical list from the Track-1 strategy report):
+# label, Caruana weight, single-model out-of-fold MAE, role, and family (for color).
+ENSEMBLE_MEMBERS = [
+    {
+        "key": "cheme_t10_full",
+        "alias": "tabular-full",
+        "label": "CheMeleon + 2D + Boltz + pred (full, 2103d)",
+        "oofMae": 0.396,
+        "role": "broad tabular core",
+        "family": "tabular",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "cheme_t10_top500",
+        "alias": "tabular-top500",
+        "label": "same feature stack, LightGBM-gain top-500",
+        "oofMae": 0.397,
+        "role": "selected tabular core",
+        "family": "tabular",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "chemprop_embed",
+        "alias": "ChemProp",
+        "label": "ChemProp D-MPNN, log2fc-pretrained embed",
+        "oofMae": 0.437,
+        "role": "frozen GNN embed",
+        "family": "embed",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "kermt",
+        "alias": "KERMT",
+        "label": "KERMT graph-transformer, log2fc-pretrained embed",
+        "oofMae": 0.449,
+        "role": "frozen graph-transformer",
+        "family": "embed",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "pooled_boltz",
+        "alias": "Boltz-pocket",
+        "label": "Boltz-2 trunk, pooled over the core pocket",
+        "oofMae": 0.486,
+        "role": "structural reserve",
+        "family": "structural",
+        "usesLog2fc": False,
+    },
+    {
+        "key": "molformer_c3",
+        "alias": "MoLFormer",
+        "label": "MoLFormer-c3, log2fc-pretrained embed",
+        "oofMae": 0.475,
+        "role": "frozen transformer",
+        "family": "embed",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "pooled_boltz_allpairs",
+        "alias": "Boltz-allpairs",
+        "label": "Boltz-2 trunk, pooled over all protein-ligand pairs",
+        "oofMae": 0.486,
+        "role": "structural reserve",
+        "family": "structural",
+        "usesLog2fc": False,
+    },
+    {
+        "key": "gatedgcn",
+        "alias": "GatedGCN",
+        "label": "GatedGCN, log2fc-pretrained embed",
+        "oofMae": 0.474,
+        "role": "frozen GNN embed",
+        "family": "embed",
+        "usesLog2fc": True,
+    },
+    {
+        "key": "attentivefp",
+        "alias": "AttentiveFP",
+        "label": "AttentiveFP, log2fc-pretrained embed",
+        "oofMae": 0.484,
+        "role": "frozen GNN embed",
+        "family": "embed",
+        "usesLog2fc": True,
+    },
+]
+# Production Caruana weights come from the reweight audit (weight_source="old_prod").
+MEMBER_WEIGHTS_CSV = (
+    "track1_activity",
+    "analysis",
+    "final_label_replay",
+    "member_reweight_pre_post_weights.csv",
+)
 
 
 def _find_col(df: pd.DataFrame, *candidates: str) -> str:
@@ -305,31 +386,17 @@ def build_calibration_bins(src: Path) -> None:
 
 
 def build_ensemble_members(src: Path) -> None:
-    df = pd.read_csv(src.joinpath(*MEMBER_REPLAY_CSV))
-    pre = df[(df["stage"] == "pre_as1") & (df["production_member"])].copy()
+    """Production ensemble members; Caruana weights from the reweight audit (old_prod)."""
+    w = pd.read_csv(src.joinpath(*MEMBER_WEIGHTS_CSV))
+    prod = w[(w["stage"] == "pre_as1") & (w["weight_source"] == "old_prod")]
+    weight_by_key = prod.set_index("member")["weight"]
     members = []
-    for _, r in pre.iterrows():
-        key = str(r["member"])
-        weight = r["old_weight"]
-        if pd.isna(weight):
-            continue
-        members.append(
-            {
-                "key": key,
-                "label": MEMBER_LABELS.get(key, key),
-                "weight": round(float(weight), 4),
-                "standaloneMae": round(float(r["as1_mae"]), 4),
-            }
-        )
-    members.sort(key=lambda m: m["weight"], reverse=True)
-    _write(
-        "ensemble_members.json",
-        {
-            # Honest model-only ensemble AS1 MAE for reference (beats every single member).
-            "ensembleMae": 0.4077,
-            "members": members,
-        },
-    )
+    for m in ENSEMBLE_MEMBERS:
+        entry = {k: v for k, v in m.items() if k != "key"}
+        entry["weight"] = round(float(weight_by_key[m["key"]]), 3)
+        members.append(entry)
+    members.sort(key=lambda x: x["weight"], reverse=True)
+    _write("ensemble_members.json", {"members": members})
 
 
 def build_proxy(src: Path) -> None:

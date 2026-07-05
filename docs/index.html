@@ -25,6 +25,7 @@
       <a href="#data">Challenge</a>
       <a href="#results">Results</a>
       <a href="#strategy">Strategy</a>
+      <a href="#ensemble">Ensemble</a>
       <a href="#links">Links</a>
     </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
@@ -288,8 +289,61 @@
     </p>
   </section>
 
+  <section id="ensemble">
+    <h2>4. The ensemble</h2>
+    <p>
+      The final system is not one model but an ensemble of nine members. They
+      differ in how they turn a molecule into features, but share one thing:
+      every member uses <strong>TabPFN as its readout head</strong>, in place of a
+      trained MLP. So the members vary in their encoder or feature stack, not in
+      the regressor sitting on top. Most encoders are frozen and pretrained on the
+      auxiliary log2fc signal, in the multi-fidelity spirit of the strategy above.
+    </p>
+    <p>The nine members, with the short aliases used from here on:</p>
+    <div class="table-scroll">
+      <table class="roster-table">
+        <thead>
+          <tr><th>Alias</th><th>Encoder / features</th><th>Family</th><th>log2fc</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>tabular-full</th><td>CheMeleon + 2D + Boltz + pred (full, 2103d)</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>tabular-top500</th><td>same feature stack, LightGBM-gain top-500</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>ChemProp</th><td>ChemProp D-MPNN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>KERMT</th><td>KERMT graph-transformer, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>Boltz-pocket</th><td>Boltz-2 trunk, pooled over the core pocket</td><td><span class="fam-structural">Boltz structural</span></td><td class="c"><span class="no">✗</span></td></tr>
+          <tr><th>MoLFormer</th><td>MoLFormer-c3, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>Boltz-allpairs</th><td>Boltz-2 trunk, pooled over all protein-ligand pairs</td><td><span class="fam-structural">Boltz structural</span></td><td class="c"><span class="no">✗</span></td></tr>
+          <tr><th>GatedGCN</th><td>GatedGCN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>AttentiveFP</th><td>AttentiveFP, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="metrics-key">Every member reads its representation with TabPFN. Only the two Boltz-2 trunk members carry no log2fc signal: they come purely from the predicted structure.</p>
+    <p>
+      Members were compared with out-of-fold (OOF) predictions on a
+      <strong>UMAP cluster split</strong> (chemical clusters kept whole across
+      folds, so validation compounds are not near-neighbors of their training
+      rows). We tried several splits, but the choice turned out not to matter much:
+      none was decisively better on the leaderboard, so a UMAP split was fixed as a
+      safe canonical and not over-tuned. The split is a tool for honest comparison
+      here, not a result in itself.
+    </p>
+    <p>
+      The members are combined with <strong>Caruana forward selection</strong>
+      (<a href="https://dl.acm.org/doi/10.1145/1015330.1015432">Caruana et&nbsp;al., ICML 2004</a>),
+      a greedy scheme that repeatedly adds the member that most reduces OOF error.
+      Because the weights come from bagged selection counts, no single member can
+      dominate, which keeps the ensemble from over-committing to one strong but
+      correlated family.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-weights" class="chart" style="height:340px"></div>
+      <figcaption>Figure 4: Caruana weights of the nine production members, colored by family (blue = tabular core, teal = frozen embedding, coral = Boltz-2 structural). The two CheMeleon + 2D + Boltz + pred tabular members carry ~60% of the weight; the rest add decorrelated diversity. Hover for each member's role and single-model out-of-fold MAE.</figcaption>
+    </figure>
+  </section>
+
   <section id="links">
-    <h2>4. Reproducibility and links</h2>
+    <h2>5. Reproducibility and links</h2>
     <ul>
       <li>Phase 1 research log (day-by-day, some Japanese): <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
       <li>Phase 2 research log: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/208">issue #208</a></li>

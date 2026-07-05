@@ -190,6 +190,33 @@ code {
 }
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 
+/* Member roster table (aliases) */
+.roster-table {
+  width: 100%; min-width: 560px; border-collapse: collapse;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-blue) 10%, transparent);
+}
+:root[data-theme="dark"] .roster-table { background: #3b4263; }
+.roster-table th, .roster-table td { padding: 9px 16px; text-align: left; font-size: .93rem; }
+.roster-table thead th {
+  font-family: var(--font-display); font-size: .72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--muted);
+  background: color-mix(in srgb, var(--color-blue) 12%, var(--surface)); border-bottom: 2px solid var(--line);
+}
+:root[data-theme="dark"] .roster-table thead th { background: color-mix(in srgb, var(--color-blue) 26%, #3b4263); }
+.roster-table tbody th {
+  font-family: var(--font-mono); font-weight: 700; color: var(--color-blue); white-space: nowrap;
+  border-right: 1px solid var(--line);
+}
+.roster-table tbody td { color: var(--muted); }
+.roster-table tbody tr + tr th, .roster-table tbody tr + tr td { border-top: 1px solid var(--line); }
+.roster-table td.c { text-align: center; }
+.roster-table .fam-tabular { color: var(--color-blue); font-weight: 600; }
+.roster-table .fam-embed { color: #3f9e8b; font-weight: 600; }
+.roster-table .fam-structural { color: var(--color-coral); font-weight: 600; }
+.roster-table .yes { color: #3f9e8b; font-weight: 700; }
+.roster-table .no { color: var(--color-coral); font-weight: 800; }
+
 /* Numeric comparison table (ablation baselines, metrics) */
 .table-scroll { overflow-x: auto; margin: 10px 0 6px; -webkit-overflow-scrolling: touch; }
 .metric-table {

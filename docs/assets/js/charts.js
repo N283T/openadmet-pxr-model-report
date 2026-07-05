@@ -106,30 +106,34 @@
     });
   }
 
-  function optMembers(d, p) {
+  // Ensemble member Caruana weights (horizontal bars, colored by family).
+  function optWeights(d, p) {
+    var famColor = { tabular: p.blue, embed: p.teal, structural: p.coral };
     var m = d.members;
-    var names = m.map(function (x) { return x.label; });
-    return Object.assign(baseGrid(p), {
-      grid: { left: 56, right: 56, top: 40, bottom: 140, containLabel: true },
-      tooltip: { trigger: "axis", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink } },
-      legend: { data: ["Caruana weight", "Standalone AS1 MAE"], textStyle: { color: p.ink }, top: 8 },
-      xAxis: Object.assign({ type: "category", data: names,
-        axisLabel: { color: p.muted, interval: 0, rotate: 32, fontSize: 10, width: 120, overflow: "truncate" } }, axisStyle(p)),
-      yAxis: [
-        Object.assign({ type: "value", name: "weight", position: "left", max: 0.35 }, axisStyle(p)),
-        Object.assign({ type: "value", name: "AS1 MAE", position: "right", min: 0.4, max: 0.52, splitLine: { show: false } }, axisStyle(p)),
-      ],
-      series: [
-        { name: "Caruana weight", type: "bar", yAxisIndex: 0, itemStyle: { color: p.blue, borderRadius: [4, 4, 0, 0] },
-          data: m.map(function (x) { return x.weight; }) },
-        { name: "Standalone AS1 MAE", type: "line", yAxisIndex: 1, color: p.coral, symbolSize: 7,
-          lineStyle: { color: p.coral },
-          data: m.map(function (x) { return x.standaloneMae; }),
-          markLine: { silent: true, symbol: "none", lineStyle: { color: p.teal, type: "dashed", width: 2 },
-            data: [{ yAxis: d.ensembleMae, name: "ensemble" }],
-            label: { formatter: "ensemble " + d.ensembleMae, color: p.teal, position: "insideEndTop" } } },
-      ],
+    var cats = m.map(function (x) { return x.alias; });
+    var data = m.map(function (x) {
+      return { value: x.weight, itemStyle: { color: famColor[x.family] || p.blue, borderRadius: [0, 4, 4, 0] } };
     });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 44, top: 10, bottom: 30, containLabel: true },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var x = m[o.dataIndex];
+          return x.label + "<br/>Caruana weight <b>" + x.weight.toFixed(3) + "</b><br/>" +
+            x.role + "<br/>single-model OOF MAE " + x.oofMae.toFixed(3);
+        },
+      },
+      xAxis: Object.assign({ type: "value", name: "Caruana weight", min: 0,
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "62%",
+        label: { show: true, position: "right", color: p.muted, fontSize: 11,
+          formatter: function (o) { return o.value.toFixed(3); } },
+      }],
+    };
   }
 
   function optCalibration(d, p) {
@@ -360,6 +364,7 @@
   var SPECS = [
     { el: "chart-coverage", file: "coverage.json", build: optCoverage },
     { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
+    { el: "chart-weights", file: "ensemble_members.json", build: optWeights },
   ];
 
   // Least-squares fit; returns the two endpoints of the trend line over the data x-range.
