@@ -190,6 +190,57 @@ code {
 }
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 
+/* Numeric comparison table (ablation baselines, metrics) */
+.table-scroll { overflow-x: auto; margin: 10px 0 6px; -webkit-overflow-scrolling: touch; }
+.metric-table {
+  width: 100%; min-width: 540px; border-collapse: collapse;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-blue) 10%, transparent);
+}
+:root[data-theme="dark"] .metric-table { background: #3b4263; }
+.metric-table th, .metric-table td { padding: 10px 18px; font-variant-numeric: tabular-nums; }
+.metric-table thead th {
+  font-family: var(--font-display); font-size: .74rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--muted); text-align: right;
+  background: color-mix(in srgb, var(--color-blue) 12%, var(--surface));
+  border-bottom: 2px solid var(--line);
+}
+:root[data-theme="dark"] .metric-table thead th { background: color-mix(in srgb, var(--color-blue) 26%, #3b4263); }
+.metric-table thead th:first-child { text-align: left; }
+.metric-table tbody th {
+  text-align: left; font-family: var(--font-display); font-weight: 600; color: var(--ink);
+  white-space: nowrap; border-right: 1px solid var(--line);
+}
+.metric-table tbody td { text-align: right; font-weight: 700; color: var(--color-blue); }
+.metric-table tbody tr + tr th, .metric-table tbody tr + tr td { border-top: 1px solid var(--line); }
+
+/* Highlighted rows: the pred baselines are the hero of the table.
+   Emphasis comes from a coral feature name + accent bar and a light lift,
+   not a heavy fill (which muddies on the dark theme). */
+.metric-table tbody tr.hi th,
+.metric-table tbody tr.hi td { background: color-mix(in srgb, var(--color-peach) 38%, var(--surface)); }
+:root[data-theme="dark"] .metric-table tbody tr.hi th,
+:root[data-theme="dark"] .metric-table tbody tr.hi td { background: color-mix(in srgb, var(--color-coral) 13%, #3b4263); }
+.metric-table tbody tr.hi th {
+  color: var(--color-coral); font-weight: 700; border-left: 3px solid var(--color-coral);
+}
+.metric-table tbody tr.hi td { color: var(--ink); font-weight: 700; }
+
+/* Reference row: de-emphasized. */
+.metric-table tbody tr.ref th,
+.metric-table tbody tr.ref td {
+  color: var(--muted); font-weight: 500; background: transparent;
+  border-top: 2px solid var(--line);
+}
+.metric-table tbody tr.ref th { font-style: italic; }
+
+.pipeline {
+  font-family: var(--font-display); font-size: 1.02rem; line-height: 1.9; color: var(--ink);
+  background: color-mix(in srgb, var(--color-teal) 12%, var(--surface));
+  border-left: 3px solid var(--color-teal);
+  padding: 12px 16px; border-radius: 10px; margin: 10px 0 18px;
+}
+
 .spec-table {
   width: 100%; border-collapse: collapse; margin: 8px 0 4px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
@@ -229,13 +280,12 @@ code {
 /* ============================================================
    Soft cards (feature grid, result cards share the treatment)
    ============================================================ */
-.soft-card, .result-card, .feature-cell, .chart {
+.soft-card, .result-card, .feature-cell {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   box-shadow: 0 6px 18px color-mix(in srgb, var(--color-blue) 14%, transparent);
 }
 :root[data-theme="dark"] .result-card,
-:root[data-theme="dark"] .feature-cell,
-:root[data-theme="dark"] .chart { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+:root[data-theme="dark"] .feature-cell { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
 
 .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin: 18px 0; }
 .feature-cell { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
@@ -276,10 +326,17 @@ code {
   .stat-strip { grid-template-columns: repeat(3, 1fr); }
 }
 
+#strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
+.viz-label { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--color-blue); margin: 18px 0 6px; }
+.cov-table td.cov0 { color: var(--muted); font-weight: 500; }
+
+.scatter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 640px) { .scatter-grid { grid-template-columns: 1fr; } }
+
 .chart-figure { margin: 22px 0 4px; }
-.chart {
-  width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
-}
+/* Charts sit directly on the page, no card chrome. */
+.chart { width: 100%; }
+.chart + .chart { margin-top: 6px; }
 figcaption { color: var(--muted); font-size: .88rem; margin-top: 10px; padding: 0 4px; }
 
 /* ============================================================

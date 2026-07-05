@@ -18,6 +18,7 @@
       muted: css("--muted"),
       line: css("--line"),
       surface: css("--surface"),
+      bg: css("--bg"),
       blue: css("--color-blue"),
       coral: css("--color-coral"),
       teal: css("--color-teal"),
@@ -36,8 +37,8 @@
 
   function axisStyle(p) {
     return {
-      axisLine: { lineStyle: { color: p.line } },
-      axisTick: { lineStyle: { color: p.line } },
+      axisLine: { show: true, onZero: false, lineStyle: { color: p.muted, width: 1.6 } },
+      axisTick: { show: true, lineStyle: { color: p.muted, width: 1.6 } },
       axisLabel: { color: p.muted },
       splitLine: { lineStyle: { color: p.line, opacity: 0.5 } },
       nameTextStyle: { color: p.muted },
@@ -222,15 +223,199 @@
     });
   }
 
+  // Label-coverage heatmap: which compound group carries which measured label.
+  function optCoverage(d, p) {
+    var groups = d.groups, labels = d.labels;
+    var data = [];
+    d.matrix.forEach(function (row, gi) {
+      row.forEach(function (count, li) {
+        var frac = groups[gi].n ? count / groups[gi].n : 0;
+        data.push([li, gi, frac, count]);
+      });
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 6, right: 12, top: 32, bottom: 6, containLabel: true },
+      tooltip: {
+        backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var g = groups[o.data[1]];
+          return g.name + "<br/>" + labels[o.data[0]] + ": <b>" + o.data[3].toLocaleString() +
+            "</b> of " + g.n.toLocaleString() + " (" + Math.round(o.data[2] * 100) + "%)";
+        },
+      },
+      xAxis: {
+        type: "category", data: labels, position: "top",
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: { color: p.ink, fontWeight: 700, interval: 0, fontFamily: p.font },
+      },
+      yAxis: {
+        type: "category", inverse: true, data: groups.map(function (g) { return g.name; }),
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: {
+          color: p.ink, interval: 0, fontFamily: p.font,
+          formatter: function (name, i) { return name + " (" + groups[i].n.toLocaleString() + ")"; },
+        },
+      },
+      visualMap: { show: false, min: 0, max: 1, dimension: 2, inRange: { color: [p.bg, p.teal] } },
+      series: [{
+        type: "heatmap", data: data,
+        itemStyle: { borderColor: p.line, borderWidth: 1.5, borderRadius: 6 },
+        label: {
+          show: true, fontFamily: p.font, fontWeight: 700, color: p.ink,
+          formatter: function (o) { return o.data[3] > 0 ? o.data[3].toLocaleString() : "—"; },
+        },
+        emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
+      }],
+    };
+  }
+
+  // Assay-flow Sankey (alternative view of the same coverage).
+  function optSankey(d, p) {
+    var colorFor = {
+      "Single-conc screen": p.teal,
+      "Direct to dose-response": p.coral,
+      "Aux only (log2fc)": p.teal,
+      "Dose-response train": p.blue,
+      "Counter assay": p.blue,
+    };
+    var nodes = d.nodes.map(function (n) {
+      return { name: n.name, itemStyle: { color: colorFor[n.name] || p.blue, borderColor: p.line } };
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          if (o.dataType === "edge") {
+            return o.data.source + " → " + o.data.target + "<br/><b>" +
+              o.data.value.toLocaleString() + "</b> compounds";
+          }
+          return o.name + (o.value ? "<br/><b>" + o.value.toLocaleString() + "</b> compounds" : "");
+        },
+      },
+      series: [{
+        type: "sankey", left: 8, right: 158, top: 16, bottom: 16,
+        nodeWidth: 20, nodeGap: 20, draggable: false,
+        data: nodes, links: d.links,
+        label: {
+          color: p.ink, fontFamily: p.font, fontSize: 12, fontWeight: 600,
+          formatter: function (o) { return o.name + "  " + (o.value != null ? o.value.toLocaleString() : ""); },
+        },
+        lineStyle: { color: "source", opacity: 0.55, curveness: 0.5 },
+        emphasis: { focus: "adjacency", lineStyle: { opacity: 0.75 } },
+      }],
+    };
+  }
+
+  // Feature-vs-pEC50 correlation heatmap: Pearson and Spearman rows x feature columns.
+  function optFeatureCorr(d, p) {
+    var feats = d.features, rows = d.rows;
+    var data = [];
+    feats.forEach(function (f, xi) {
+      data.push([xi, 0, f.pearson]);
+      data.push([xi, 1, f.spearman]);
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 6, right: 6, top: 10, bottom: 92, containLabel: true },
+      tooltip: {
+        backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var f = feats[o.data[0]];
+          return f.label + "<br/>" + rows[o.data[1]] + " = <b>" + o.data[2].toFixed(2) +
+            "</b><br/>n = " + f.n.toLocaleString();
+        },
+      },
+      xAxis: {
+        type: "category", data: feats.map(function (f) { return f.short; }),
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: { color: p.ink, interval: 0, rotate: 45, fontSize: 11, fontFamily: p.font },
+      },
+      yAxis: {
+        type: "category", data: rows, inverse: true,
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: { color: p.ink, fontFamily: p.font, fontWeight: 600 },
+      },
+      visualMap: {
+        show: true, min: -0.85, max: 0.85, dimension: 2, calculable: true,
+        orient: "horizontal", left: "center", bottom: 0,
+        inRange: { color: ["#e2725b", "#f4efe4", "#4fb79a"] },
+        textStyle: { color: p.muted },
+      },
+      series: [{
+        type: "heatmap", data: data,
+        itemStyle: { borderColor: p.bg, borderWidth: 2, borderRadius: 4 },
+        label: {
+          show: true, fontFamily: p.font, fontWeight: 700, color: "#2b333a",
+          formatter: function (o) { return o.data[2].toFixed(2); },
+        },
+        emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
+      }],
+    };
+  }
+
   var SPECS = [
-    { el: "chart-phase", file: "phase_metrics.json", build: optPhase },
-    { el: "chart-shap", file: "shap_families.json", build: optShap },
-    { el: "chart-members", file: "ensemble_members.json", build: optMembers },
-    { el: "chart-calibration", file: "calibration_bins.json", build: optCalibration },
-    { el: "chart-leaderboard", file: "leaderboard.json", build: optLeaderboard },
-    { el: "chart-scatter", file: "scatter_pred_actual.json", build: optScatter },
-    { el: "chart-proxy", file: "proxy_as1_as2.json", build: optProxy },
+    { el: "chart-coverage", file: "coverage.json", build: optCoverage },
+    { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
   ];
+
+  // Least-squares fit; returns the two endpoints of the trend line over the data x-range.
+  function linfit(pts) {
+    var n = pts.length, sx = 0, sy = 0, sxy = 0, sxx = 0, xmin = Infinity, xmax = -Infinity;
+    for (var i = 0; i < n; i++) {
+      var x = pts[i][0], y = pts[i][1];
+      sx += x; sy += y; sxy += x * y; sxx += x * x;
+      if (x < xmin) xmin = x;
+      if (x > xmax) xmax = x;
+    }
+    var det = n * sxx - sx * sx;
+    var slope = det ? (n * sxy - sx * sy) / det : 0;
+    var b = (sy - slope * sx) / n;
+    return [[xmin, slope * xmin + b], [xmax, slope * xmax + b]];
+  }
+
+  // Feature-vs-pEC50 small-multiples (Strategy section).
+  function optFeatPanel(feat, p) {
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      title: { text: feat.label, left: 14, top: 8,
+        textStyle: { color: p.ink, fontSize: 13, fontWeight: 700, fontFamily: p.font } },
+      graphic: [{ type: "text", right: 14, top: 11,
+        style: { text: "r = " + feat.r + "   n = " + feat.n.toLocaleString(),
+          fill: p.coral, font: "bold 12px " + p.font } }],
+      grid: { left: 52, right: 14, top: 42, bottom: 46 },
+      tooltip: { show: false },
+      xAxis: Object.assign({ type: "value", scale: true, name: feat.label,
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 12 } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "value", scale: true, name: "pEC50",
+        nameLocation: "middle", nameRotate: 90, nameGap: 34,
+        nameTextStyle: { color: p.muted, fontSize: 12 } }, axisStyle(p)),
+      series: [
+        { type: "scatter", data: feat.points, symbolSize: 4,
+          itemStyle: { color: p.blue, opacity: 0.32 }, z: 2 },
+        { type: "line", data: linfit(feat.points), showSymbol: false, silent: true,
+          lineStyle: { color: p.coral, width: 2 }, z: 3 },
+      ],
+    };
+  }
+
+  function renderFeatureScatter(p) {
+    var apply = function (d) {
+      cache["feature_vs_pec50.json"] = d;
+      d.features.forEach(function (feat, i) {
+        var node = document.getElementById("chart-feat-" + i);
+        if (!node) return;
+        var id = "feat" + i;
+        if (charts[id]) charts[id].dispose();
+        var inst = echarts.init(node, null, { renderer: "canvas" });
+        inst.setOption(optFeatPanel(feat, p));
+        charts[id] = inst;
+      });
+    };
+    if (cache["feature_vs_pec50.json"]) apply(cache["feature_vs_pec50.json"]);
+    else getJSON("feature_vs_pec50.json").then(apply).catch(function (e) { console.error(e); });
+  }
 
   function renderAll() {
     var p = palette();
@@ -250,6 +435,7 @@
         console.error(e);
       });
     });
+    renderFeatureScatter(p);
   }
 
   function setupTheme() {

@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "pandas",
+#     "pyarrow",
 # ]
 # ///
 """Build the JSON chart data for the PXR model-report GitHub Pages site.
@@ -94,6 +95,45 @@ SHAP_FAMILY_CSV = (
     "tabpfn26_shap_top500",
     "family_summary.csv",
 )
+# Per-compound master table + predicted log2fc + raw provided train files.
+MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
+PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
+DEFAULT_TRAIN_PARQUET = ("data", "default_train.parquet")
+SINGLECONC_TRAIN_PARQUET = ("data", "single_concentration_train.parquet")
+CONC_8P25 = 8.251e-6  # 8.25 uM
+CONC_33 = 3.30e-5  # 33 uM
+# Representative features ranked by their correlation with training pEC50.
+# (full label, short column header, master/pred column).
+FEATURE_CORR = [
+    ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred"),
+    ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred"),
+    ("Observed log2fc (max)", "obs log2fc", "single_max_log2_fc"),
+    ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred"),
+    ("Boltz-2 confidence", "Boltz conf.", "b2_confidence"),
+    ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm"),
+    ("logP", "logP", "logp"),
+    ("TPSA", "TPSA", "tpsa"),
+    ("Mol. weight", "MW", "amw"),
+    ("Fraction Csp3", "fCsp3", "fractioncsp3"),
+    ("Aromatic rings", "arom. rings", "num_aromatic_rings"),
+    ("H-bond donors", "HBD", "hbd"),
+    ("H-bond acceptors", "HBA", "hba"),
+    ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds"),
+]
+# Label-coverage matrix: which compound group carries which measured label.
+# Groups are (display name, master flag column); a compound is "aux" if it has a
+# single-concentration row but is neither train nor test.
+COVERAGE_GROUPS = [
+    ("Train (dose-response)", "train"),
+    ("Blinded test", "test"),
+    ("Single-conc-only aux", "aux"),
+]
+COVERAGE_LABELS = [
+    ("pEC50", "train_pec50"),
+    ("Emax", "train_emax"),
+    ("Counter", "counter_pec50"),
+    ("log2fc", "single_max_log2_fc"),
+]
 
 # Graded metrics: (json key, leaderboard column, higher_is_better).
 PHASE_METRIC_COLS = [
@@ -309,6 +349,137 @@ def build_proxy(src: Path) -> None:
     _write("proxy_as1_as2.json", {"n": len(points), "pearson": corr, "points": points})
 
 
+def build_coverage(src: Path) -> None:
+    """Which compound group carries which measured label (counts + group sizes)."""
+    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    tr = m["in_train"].fillna(False)
+    te = m["in_test"].fillna(False)
+    si = m["in_single"].fillna(False)
+    masks = {"train": tr, "test": te, "aux": si & ~tr & ~te}
+    groups = []
+    matrix = []
+    for gname, gkey in COVERAGE_GROUPS:
+        mask = masks[gkey]
+        groups.append({"name": gname, "n": int(mask.sum())})
+        matrix.append(
+            [int((mask & m[col].notna()).sum()) for _, col in COVERAGE_LABELS]
+        )
+    _write(
+        "coverage.json",
+        {
+            "groups": groups,
+            "labels": [label for label, _ in COVERAGE_LABELS],
+            "matrix": matrix,
+        },
+    )
+
+
+def build_sankey(src: Path) -> None:
+    """Assay-flow Sankey (conservation-consistent, from master flags). Test is omitted."""
+    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    tr = m["in_train"].fillna(False)
+    te = m["in_test"].fillna(False)
+    si = m["in_single"].fillna(False)
+    n_train = int(tr.sum())
+    train_with_single = int((tr & m["single_max_log2_fc"].notna()).sum())
+    aux_only = int((si & ~tr & ~te).sum())
+    direct_to_drc = n_train - train_with_single
+    counter = int((tr & m["counter_pec50"].notna()).sum())
+    nodes = [
+        {"name": "Single-conc screen"},
+        {"name": "Direct to dose-response"},
+        {"name": "Aux only (log2fc)"},
+        {"name": "Dose-response train"},
+        {"name": "Counter assay"},
+    ]
+    links = [
+        {
+            "source": "Single-conc screen",
+            "target": "Aux only (log2fc)",
+            "value": aux_only,
+        },
+        {
+            "source": "Single-conc screen",
+            "target": "Dose-response train",
+            "value": train_with_single,
+        },
+        {
+            "source": "Direct to dose-response",
+            "target": "Dose-response train",
+            "value": direct_to_drc,
+        },
+        {"source": "Dose-response train", "target": "Counter assay", "value": counter},
+    ]
+    _write("sankey.json", {"nodes": nodes, "links": links})
+
+
+def _scatter_block(x: pd.Series, y: pd.Series, key: str, label: str) -> dict:
+    d = pd.DataFrame(
+        {"x": pd.to_numeric(x, errors="coerce"), "y": pd.to_numeric(y, errors="coerce")}
+    ).dropna()
+    r = round(float(d["x"].corr(d["y"])), 2)
+    points = [[round(float(a), 2), round(float(b), 2)] for a, b in zip(d["x"], d["y"])]
+    return {"key": key, "label": label, "r": r, "n": len(points), "points": points}
+
+
+def build_feature_scatter(src: Path) -> None:
+    """Four log2fc panels vs training pEC50: observed and predicted, at 8.25 and 33 uM."""
+    features = []
+    # Observed log2fc per concentration, joined to pEC50 by Molecule Name.
+    sc = pd.read_parquet(src.joinpath(*SINGLECONC_TRAIN_PARQUET))
+    tr = pd.read_parquet(src.joinpath(*DEFAULT_TRAIN_PARQUET))[
+        ["Molecule Name", "pEC50"]
+    ]
+    for key, label, conc in (
+        ("obs_8p25", "Observed log2fc · 8.25 µM", CONC_8P25),
+        ("obs_33", "Observed log2fc · 33 µM", CONC_33),
+    ):
+        at = sc[(sc["concentration_M"] - conc).abs() <= conc * 0.02]
+        at = at.groupby("Molecule Name", as_index=False)["log2_fc_estimate"].mean()
+        j = at.merge(tr, on="Molecule Name", how="inner")
+        features.append(_scatter_block(j["log2_fc_estimate"], j["pEC50"], key, label))
+    # Predicted log2fc per concentration, joined to pEC50 by compound_id.
+    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
+    mp = m[m["in_train"].fillna(False)].merge(
+        pred, left_on="compound_id", right_index=True, how="inner"
+    )
+    for key, label, col in (
+        ("pred_8p25", "Predicted log2fc · 8.25 µM", "log2fc_8p25_pred"),
+        ("pred_33", "Predicted log2fc · 33 µM", "log2fc_33_pred"),
+    ):
+        features.append(_scatter_block(mp[col], mp["train_pec50"], key, label))
+    _write("feature_vs_pec50.json", {"features": features})
+
+
+def build_feature_corr(src: Path) -> None:
+    """Rank representative features by their single Pearson correlation with training pEC50."""
+    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
+    m = m.merge(pred, left_on="compound_id", right_index=True, how="left")
+    m = m[m["in_train"].fillna(False)]
+    y = pd.to_numeric(m["train_pec50"], errors="coerce")
+    feats = []
+    for label, short, col in FEATURE_CORR:
+        d = pd.DataFrame({"x": pd.to_numeric(m[col], errors="coerce"), "y": y}).dropna()
+        if len(d) < 20:
+            continue
+        feats.append(
+            {
+                "label": label,
+                "short": short,
+                "pearson": round(float(d["x"].corr(d["y"])), 2),
+                # Spearman == Pearson on ranks (avoids a scipy dependency).
+                "spearman": round(float(d["x"].rank().corr(d["y"].rank())), 2),
+                "n": len(d),
+            }
+        )
+    feats.sort(key=lambda f: abs(f["pearson"]), reverse=True)
+    _write(
+        "feature_corr.json", {"rows": ["Pearson r", "Spearman r"], "features": feats}
+    )
+
+
 def build_shap_families(src: Path) -> None:
     df = pd.read_csv(src.joinpath(*SHAP_FAMILY_CSV))
     fams = [
@@ -344,6 +515,10 @@ def main() -> None:
     build_ensemble_members(src)
     build_proxy(src)
     build_shap_families(src)
+    build_coverage(src)
+    build_sankey(src)
+    build_feature_scatter(src)
+    build_feature_corr(src)
     logger.info("done -> %s", OUT_DIR)
 
 

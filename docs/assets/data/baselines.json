@@ -1,0 +1,47 @@
+{
+  "note": "Fit on training pEC50, evaluated on the unblinded test (AS1 + AS2).",
+  "baselines": [
+    {
+      "name": "pred 8.25 µM only (linear)",
+      "nFeatures": 1,
+      "maeAll": 0.6087,
+      "maeAs2": 0.6056,
+      "spearmanAll": 0.7822
+    },
+    {
+      "name": "pred 33 µM only (linear)",
+      "nFeatures": 1,
+      "maeAll": 0.5711,
+      "maeAs2": 0.5862,
+      "spearmanAll": 0.7461
+    },
+    {
+      "name": "pred (both), linear",
+      "nFeatures": 2,
+      "maeAll": 0.572,
+      "maeAs2": 0.5956,
+      "spearmanAll": 0.7248
+    },
+    {
+      "name": "Boltz-2 affinity-only (linear)",
+      "nFeatures": 1,
+      "maeAll": 0.7471,
+      "maeAs2": 0.7595,
+      "spearmanAll": 0.6024
+    },
+    {
+      "name": "RDKit descriptors, untuned LightGBM",
+      "nFeatures": 217,
+      "maeAll": 0.5701,
+      "maeAs2": 0.5705,
+      "spearmanAll": 0.6766
+    }
+  ],
+  "reference": {
+    "name": "Phase 1 (my final submission)",
+    "nFeatures": "~2,100",
+    "maeAll": 0.4059,
+    "maeAs2": 0.4113,
+    "spearmanAll": 0.8343
+  }
+}

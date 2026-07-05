@@ -24,11 +24,8 @@
     <nav class="topnav" aria-label="Sections">
       <a href="#data">Challenge</a>
       <a href="#results">Results</a>
-      <a href="#features">Features</a>
-      <a href="#models">Models</a>
-      <a href="#ensemble">Ensemble</a>
-      <a href="#calibration">Calibration</a>
-      <a href="#error">Error analysis</a>
+      <a href="#strategy">Strategy</a>
+      <a href="#links">Links</a>
     </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
   </div>
@@ -137,129 +134,162 @@
     <p class="metrics-key">The full final leaderboard is viewable on the challenge's <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face Space</a> (Leaderboard tab). Organizers' write-ups: <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1 results</a> and the <a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">post-challenge wrap-up</a>.</p>
   </section>
 
-  <section id="features">
-    <h2>3. Feature families</h2>
+  <section id="strategy">
+    <h2>3. Strategy</h2>
     <p>
-      The production feature matrix (~2,103 dimensions) concatenates
-      complementary families:
+      Our strategy was built on Buterez et&nbsp;al.,
+      <a href="https://www.nature.com/articles/s41467-024-45566-8"><em>"Transfer learning with graph neural networks for improved molecular property prediction in the multi-fidelity setting"</em> (Nature Communications, 2024)</a>.
+      In hindsight, reaching that paper was one of the biggest reasons the result
+      landed where it did.
     </p>
-    <div class="feature-grid">
-      <div class="feature-cell"><h3>Classical 2D</h3><p>RDKit (41 + 217), Mordred, Jazzy hydration features, and a wide fingerprint registry (Morgan/ECFP, FCFP, MACCS, atom-pair, ErG…).</p></div>
-      <div class="feature-cell hi"><h3>Auxiliary log2fc</h3><p>Single-concentration reporter fold-change, plus a ChemProp encoder pretrained to predict log2fc — the two most influential features.</p></div>
-      <div class="feature-cell"><h3>Foundation embeddings</h3><p>CheMeleon, MoLFormer, ChemBERTa, ChemFM, and graph-transformer encoders, used as frozen representations.</p></div>
-      <div class="feature-cell"><h3>Boltz-2 structural</h3><p>Pose / confidence / affinity scalars, re-pooled pocket confidence, and 1,024-dim trunk embeddings vs. human PXR.</p></div>
+
+    <h3>The auxiliary data</h3>
+    <p>
+      At first we built features and models from the pEC50 training labels alone.
+      With only <strong>4,140</strong> pEC50 labels the accuracy plateaued quickly.
+      The provided challenge dataset also carries a lower-cost PXR assay: a
+      single-concentration reporter readout giving <strong>log2 fold-change</strong>
+      (log2fc) at 8.25&nbsp;µM and 33&nbsp;µM, available for many more compounds.
+      We knew this auxiliary signal was there but not how to use it well: simple
+      ideas such as turning it into pseudo pEC50 labels only lowered accuracy.
+    </p>
+    <p>
+      The dataset is really a multi-stage assay funnel, and different measured
+      labels reach different compounds. The dose-response gives both
+      <strong>pEC50</strong> and <strong>Emax</strong> (efficacy); a PXR-null
+      <strong>counter assay</strong> adds a selectivity readout; and the
+      single-concentration screen provides <strong>log2fc</strong> for far more
+      compounds than are ever taken to a full curve. The single-concentration
+      screen reports log2fc at <strong>two concentrations</strong>
+      (8.25&nbsp;µM and 33&nbsp;µM), i.e. two measurements per compound. The grid
+      below shows exactly which label each group carries. OpenADMET's own
+      dataset-construction diagram, tracing the full screening funnel, is in the
+      <a href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Phase 1 blog post</a>.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-coverage" class="chart" style="height:280px"></div>
+      <figcaption>Figure 1: Measured-label coverage by compound group. Cell shading is the fraction of the group carrying each label; the count is printed in the cell. The blinded test set carried no measured labels (structure only). log2fc is measured at two concentrations (8.25 and 33 µM).</figcaption>
+    </figure>
+
+    <h3>Finding Buterez et al.</h3>
+    <p>
+      To break the plateau, we had Claude Code draft a research prompt that laid
+      out the exact situation (scarce pEC50, an abundant auxiliary assay,
+      pseudo-labeling failing) and asked for ways to exploit the auxiliary signal.
+      Running that prompt through ChatGPT Deep Research surfaced Buterez et&nbsp;al.
+    </p>
+    <p>
+      The paper studies the <strong>multi-fidelity</strong> setting: when a few
+      expensive high-fidelity measurements sit alongside many cheap low-fidelity
+      ones, transfer learning with graph neural networks can lift the
+      high-fidelity prediction, and using the low-fidelity signal as a
+      <em>representation</em> or a <em>prediction</em> tends to beat using it as
+      extra labels. Mapped onto Track&nbsp;1:
+    </p>
+    <table class="spec-table">
+      <thead><tr><th>Multi-fidelity concept</th><th>Our PXR correspondence</th></tr></thead>
+      <tbody>
+        <tr><th>High-fidelity target</th><td>Track 1 pEC50 (4,140 labels)</td></tr>
+        <tr><th>Low-fidelity measurement</th><td>single-concentration log2fc at 8.25 and 33 µM</td></tr>
+        <tr><th>Low-fidelity model output</th><td>predicted log2fc, appended to the features (main axis)</td></tr>
+        <tr><th>Low-fidelity representation</th><td>frozen embedding of an encoder pretrained on log2fc (diversity axis)</td></tr>
+        <tr><th>Downstream high-fidelity model</th><td>TabPFN, as a per-member readout on the frozen representation</td></tr>
+      </tbody>
+    </table>
+    <p>
+      This was exactly the fit we needed: it gave a principled way to put the
+      auxiliary log2fc data to work for pEC50, instead of leaving it unused or
+      misusing it as pseudo-labels.
+    </p>
+
+    <h3>Predicted log2fc (pred): the strongest feature</h3>
+    <p>
+      Following the paper, we trained a <strong>ChemProp</strong> model to predict
+      the single-concentration log2fc and used that prediction, which we call
+      <strong>pred</strong>, as a feature. Because the assay is measured at two
+      concentrations, pred is also two columns (8.25&nbsp;µM and 33&nbsp;µM). How
+      the ChemProp predictor is built is covered in the ChemProp model section
+      below; here it is enough that pred became our single strongest input.
+    </p>
+    <p>
+      Figure&nbsp;2 puts the four log2fc variants side by side against training
+      pEC50. The predicted columns track pEC50 more tightly (Pearson r ≈ 0.75 and
+      0.80, over all 4,140 training compounds) than the raw observed measurements
+      (r ≈ 0.72 and 0.50, and only over the 2,722 and 2,659 compounds where the
+      assay was actually run). Predicting the assay, rather than using it raw, both
+      fills in that coverage gap and smooths the signal.
+    </p>
+    <p>
+      It also does something the raw assay cannot. Because pred is computed from
+      structure alone, it exists for <strong>every</strong> compound, including the
+      blinded test, which carries no measured log2fc (in fact no measured label at
+      all). The observed value simply is not available at test time, so only the
+      predicted form can serve as a model feature there. This is quietly important:
+      it is what lets an assay-derived signal reach the compounds we actually have
+      to score.
+    </p>
+    <figure class="chart-figure">
+      <div class="scatter-grid">
+        <div id="chart-feat-0" class="chart chart-mini" style="height:280px"></div>
+        <div id="chart-feat-1" class="chart chart-mini" style="height:280px"></div>
+        <div id="chart-feat-2" class="chart chart-mini" style="height:280px"></div>
+        <div id="chart-feat-3" class="chart chart-mini" style="height:280px"></div>
+      </div>
+      <figcaption>Figure 2: The four log2fc variants vs training pEC50 (one point per training compound): observed and predicted, each at 8.25 and 33 µM. The Pearson r is shown in each panel.</figcaption>
+    </figure>
+    <p>
+      pred does not stand alone. Figure&nbsp;3 ranks a set of representative
+      features by their single correlation with pEC50: pred sits at the top,
+      ahead of the raw observed log2fc, the Boltz-2 affinity score (which points
+      the opposite way, since it is a log10 IC50), logP, and the usual
+      physicochemical descriptors, which are individually weak. In the model these
+      weaker features still help, but as context around pred rather than as
+      standalone predictors.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-featcorr" class="chart" style="height:280px"></div>
+      <figcaption>Figure 3: Correlation of representative features with training pEC50, as Pearson r (top row) and Spearman r (bottom row). Green is positive, red is negative, and the value is printed in each cell. The two pred columns lead, then observed log2fc and the Boltz-2 affinity score, then the physicochemical descriptors, which are individually weak.</figcaption>
+    </figure>
+
+    <h3>How far does pred alone get?</h3>
+    <p>
+      To size the signal, we fit a few deliberately simple models on the training
+      pEC50 and scored them on the now-unblinded test (AS1 + AS2). The most telling
+      comparison is not against our full system but against a familiar baseline: a
+      default LightGBM on the full RDKit descriptor set.
+    </p>
+    <div class="table-scroll">
+      <table class="metric-table">
+        <thead>
+          <tr><th>Feature</th><th>Model</th><th>Dims</th><th>MAE</th><th>Spearman</th></tr>
+        </thead>
+        <tbody>
+          <tr class="hi"><th>pred 8.25 µM</th><td>linear</td><td>1</td><td>0.609</td><td>0.782</td></tr>
+          <tr class="hi"><th>pred 33 µM</th><td>linear</td><td>1</td><td>0.571</td><td>0.746</td></tr>
+          <tr class="hi"><th>pred log2fc (both)</th><td>linear</td><td>2</td><td>0.572</td><td>0.725</td></tr>
+          <tr><th>Boltz-2 affinity</th><td>linear</td><td>1</td><td>0.747</td><td>0.602</td></tr>
+          <tr><th>RDKit</th><td>LightGBM (untuned)</td><td>217</td><td>0.570</td><td>0.677</td></tr>
+          <tr class="ref"><th>Phase 1 submission</th><td>ensemble</td><td>~2,100</td><td>0.406</td><td>0.834</td></tr>
+        </tbody>
+      </table>
     </div>
-    <figure class="chart-figure">
-      <div id="chart-shap" class="chart" style="height:400px"></div>
-      <figcaption>Figure 3 — SHAP importance share by feature family across the selected top-500 features. The two predicted-log2fc scalars carry ~9% of the signal from just 2 features.</figcaption>
-    </figure>
-  </section>
-
-  <section id="models">
-    <h2>4. Modeling recipe</h2>
+    <p class="metrics-key">All rows are fit on the training pEC50 and scored on the unblinded test (AS1 + AS2, 513 compounds).</p>
     <p>
-      The central pattern is
-      <strong>low-fidelity pretrain → freeze → frozen embedding → TabPFN</strong>:
-      pretrain a chemical encoder on the abundant auxiliary log2fc signal, freeze
-      it, extract one fixed vector per compound, then fit
-      <strong>TabPFN</strong> on top. Because TabPFN degrades on very wide inputs,
-      a leak-free <strong>per-fold LightGBM-gain top-500 selection</strong>
-      compresses features first — this produced the first sub-0.40 single-model
-      out-of-fold MAE. Direct pEC50 neural fine-tuning consistently lost to the
-      frozen-embedding recipe.
+      Even a single predicted-log2fc column lands near MAE 0.57 to 0.61, and two
+      columns through a plain linear fit
+      <strong>match a 217-descriptor untuned LightGBM</strong> (0.570) while ranking
+      better (Spearman 0.72 to 0.78 vs 0.68). All of them clearly beat the Boltz-2
+      affinity score (0.75). One assay-derived signal, predicted, does the work of a
+      full generic descriptor model. The full Phase 1 submission (MAE ≈ 0.41) is of
+      course well ahead, but that is a reference point, not a build order: I ran this
+      comparison after the challenge, purely to size how much of the signal pred
+      alone accounts for. These are quick held-out fits
+      (<code>scripts/ablation_baselines.py</code>), not the production models.
     </p>
-  </section>
-
-  <section id="validation">
-    <h2>5. Validation strategy</h2>
-    <p>
-      The canonical split is a <strong>UMAP cluster split</strong>: Morgan
-      fingerprints → UMAP → 50 KMeans clusters → whole clusters distributed
-      across 5 folds so no chemical cluster spans train and validation. Several
-      diagnostic splits (analog-aware, mixed analog/diversity, test-NN,
-      adversarial) were built to mimic the analog test generation, but the key
-      lesson held throughout: <strong>UMAP-tuned models beat analog-tuned models
-      on the leaderboard despite worse out-of-fold error</strong>, so UMAP
-      remained canonical and analog splits stayed diagnostic.
-    </p>
-  </section>
-
-  <section id="ensemble">
-    <h2>6. Ensembling: Caruana selection</h2>
-    <p>
-      Members pass a hand-audited allow-list (out-of-fold RAE&nbsp;&lt;&nbsp;0.68;
-      reject if residual correlation to any member&nbsp;&gt;&nbsp;0.85). Weights
-      come from <strong>bagged Caruana forward selection</strong> — because
-      weights are discrete selection counts across 20 bags, no single member can
-      dominate, which structurally dampens the out-of-fold-vs-leaderboard gap.
-      Continuous optimizers were computed but distrusted: they found impressive
-      local gains that moved leaderboard predictions the wrong way.
-    </p>
-    <figure class="chart-figure">
-      <div id="chart-members" class="chart" style="height:440px"></div>
-      <figcaption>Figure 4 — Ensemble members: Caruana weight (bars) vs. standalone AS1 MAE (line). The ensemble (dashed) beats every single member.</figcaption>
-    </figure>
-  </section>
-
-  <section id="calibration">
-    <h2>7. Calibration and tail correction</h2>
-    <p>
-      Post-hoc calibration fits an order-preserving map on out-of-fold
-      predictions with honest nested CV, chosen to minimize MAE subject to
-      |ΔSpearman|&nbsp;&lt;&nbsp;0.005. A <strong>covariate-shift (importance-weighted)</strong>
-      calibration — a clipped train-vs-test density ratio — was the top-ranked
-      public submission during Phase&nbsp;1. The dominant error mode is
-      <strong>range compression</strong> (Figure 5), countered only by a sparse,
-      guardrail-checked upward lift on neighbors of the 46 potent seeds and by
-      ChEMBL-derived pairwise-ranking gates.
-    </p>
-    <figure class="chart-figure">
-      <div id="chart-calibration" class="chart" style="height:400px"></div>
-      <figcaption>Figure 5 — Range compression on the blinded AS2 set: the strongest bin is predicted too low, the weakest bin too high. Perfect calibration would sit on the dashed diagonal.</figcaption>
-    </figure>
-  </section>
-
-  <section id="phases">
-    <h2>8. Phase 1 → Phase 2</h2>
-    <p>
-      Phase&nbsp;1 had live leaderboard feedback; Phase&nbsp;2 released the 253
-      AS1 labels but gave <strong>no live leaderboard</strong>, so decisions
-      relied on pre-AS1 replay plus AS2 shift guardrails. A production model
-      retrained the top-500 TabPFN recipe with AS1 labels added
-      (4,140&nbsp;→&nbsp;4,393 rows). A direct AS1-augmented model fits AS1 almost
-      perfectly (MAE&nbsp;≈&nbsp;0.09) but pushes AS2 too far from the anchor, so
-      the final submission blended it back conservatively:
-      <code>AS2 = anchor + 0.45 × (AS1-aug − anchor)</code> plus two sparse
-      high-side gates.
-    </p>
-    <figure class="chart-figure">
-      <div id="chart-phase" class="chart" style="height:380px"></div>
-      <figcaption>Figure 6 — The five graded metrics for each phase (Phase 1 on AS1 + AS2, Phase 2 on AS2 only, so the two are not a like-for-like comparison). The conservative Phase&nbsp;2 update held the scale of the Phase&nbsp;1 result rather than chasing the released AS1 labels.</figcaption>
-    </figure>
-  </section>
-
-  <section id="error">
-    <h2>9. Error analysis and null results</h2>
-    <p>
-      <strong>Local error barely predicts blinded error.</strong> Across honest
-      candidates, local AS1 MAE and blinded AS2 MAE correlate only weakly
-      (Figure 7). This is the project's recurring theme: small local gains
-      routinely failed to transfer, and some reversed — adding correlated
-      members, Boltz Tier-0 scalars passing every gate yet regressing the
-      leaderboard, a ROCS self-match leak, fold-structure overfitting on
-      mega-concatenations. The consistent conclusion is that
-      <strong>conservative, correlation-gated, guardrail-checked changes</strong>
-      outperformed aggressive local optimization on this analog-expanded
-      benchmark.
-    </p>
-    <figure class="chart-figure">
-      <div id="chart-proxy" class="chart" style="height:440px"></div>
-      <figcaption>Figure 7 — Is local AS1 a good proxy for blinded AS2? Each point is a candidate submission. The weak correlation is the OOF/leaderboard disconnect made visible.</figcaption>
-    </figure>
   </section>
 
   <section id="links">
-    <h2>10. Reproducibility and links</h2>
+    <h2>4. Reproducibility and links</h2>
     <ul>
       <li>Phase 1 research log (day-by-day, some Japanese): <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
       <li>Phase 2 research log: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/208">issue #208</a></li>
