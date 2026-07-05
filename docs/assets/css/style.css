@@ -188,6 +188,38 @@ code {
   font-family: var(--font-mono); background: var(--surface); border: 1px solid var(--line);
   border-radius: 5px; padding: 0.1em 0.4em; font-size: .86em;
 }
+.official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
+
+.spec-table {
+  width: 100%; border-collapse: collapse; margin: 8px 0 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 6px 18px color-mix(in srgb, var(--color-blue) 12%, transparent);
+}
+:root[data-theme="dark"] .spec-table { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.spec-table th, .spec-table td { text-align: left; padding: 10px 16px; vertical-align: baseline; }
+.spec-table thead th {
+  font-family: var(--font-display); font-size: .74rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted); background: color-mix(in srgb, var(--color-blue) 8%, var(--surface));
+}
+:root[data-theme="dark"] .spec-table thead th { background: color-mix(in srgb, var(--color-blue) 16%, #3b4263); }
+.spec-table tbody th {
+  font-family: var(--font-display); font-weight: 600; color: var(--ink); white-space: nowrap;
+}
+.spec-table td.val {
+  font-weight: 700; font-size: 1.05rem; color: var(--color-blue);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.spec-table td:last-child { color: var(--muted); font-size: .92rem; }
+.spec-table tbody tr + tr th, .spec-table tbody tr + tr td { border-top: 1px solid var(--line); }
+@media (max-width: 560px) {
+  .spec-table thead { display: none; }
+  .spec-table tbody th, .spec-table td { display: block; width: auto; white-space: normal; padding: 2px 16px; }
+  .spec-table tbody th { padding-top: 12px; }
+  .spec-table td.val { font-size: 1.15rem; }
+  .spec-table td:last-child { padding-bottom: 12px; }
+  .spec-table tbody tr + tr th { border-top: 1px solid var(--line); }
+  .spec-table tbody tr + tr td { border-top: none; }
+}
 .note {
   background: color-mix(in srgb, var(--color-peach) 40%, var(--surface));
   border-left: 3px solid var(--color-coral);

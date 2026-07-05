@@ -22,7 +22,7 @@
   <div class="wrap header-inner">
     <a class="brand" href="#top">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</a>
     <nav class="topnav" aria-label="Sections">
-      <a href="#data">Data</a>
+      <a href="#data">Challenge</a>
       <a href="#features">Features</a>
       <a href="#models">Models</a>
       <a href="#ensemble">Ensemble</a>
@@ -70,27 +70,35 @@
   </section>
 
   <section id="data">
-    <h2>1. Task and data</h2>
+    <h2>1. The challenge</h2>
     <p>
-      The target is PXR activation pEC50 (higher&nbsp;=&nbsp;more potent inducer),
-      scored primarily by mean absolute error (MAE). Training used
-      <strong>4,140</strong> labeled compounds; the blinded test set of
-      <strong>513</strong> arrived in two waves:
+      This is the <strong>Track&nbsp;1 (Activity)</strong> model report for the
+      OpenADMET PXR Induction Challenge. For the challenge background, biology,
+      rules, and timeline, see the official pages:
     </p>
-    <ul>
-      <li><strong>Analog Set 1 (AS1)</strong> — 253 compounds, labels released at
-        the start of Phase&nbsp;2 for answer-checks and validation design.</li>
-      <li><strong>Analog Set 2 (AS2)</strong> — 260 compounds, blinded throughout.</li>
-    </ul>
+    <div class="official-links">
+      <a class="btn ghost" href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Official announcement ↗</a>
+      <a class="btn ghost" href="https://huggingface.co/spaces/openadmet/pxr-challenge">Challenge on Hugging Face ↗</a>
+    </div>
     <p class="note">
-      The test compounds are synthetic <em>analogs expanded from training hits</em>,
-      so random cross-validation is optimistic. Every validation and calibration
-      decision in this project is built around that fact.
+      This report focuses on the modeling approach and results. Exploratory data
+      analysis and a full description of the challenge are out of scope and
+      omitted here.
     </p>
-    <figure class="chart-figure">
-      <div id="chart-phase" class="chart" style="height:380px"></div>
-      <figcaption>Figure 1 — The five graded metrics for Phase&nbsp;1 and Phase&nbsp;2.</figcaption>
-    </figure>
+    <p>The task at a glance:</p>
+    <table class="spec-table">
+      <thead>
+        <tr><th>Item</th><th>Value</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>Target</th><td class="val">pEC50</td><td>higher is a stronger PXR inducer</td></tr>
+        <tr><th>Metric</th><td class="val">MAE</td><td>regression task</td></tr>
+        <tr><th>Training set</th><td class="val">4,140</td><td>labeled compounds</td></tr>
+        <tr><th>Analog Set 1</th><td class="val">253</td><td>unblinded at the start of Phase 2</td></tr>
+        <tr><th>Analog Set 2</th><td class="val">260</td><td>blinded throughout</td></tr>
+        <tr><th>Test total</th><td class="val">513</td><td>AS1 + AS2</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section id="features">
@@ -107,7 +115,7 @@
     </div>
     <figure class="chart-figure">
       <div id="chart-shap" class="chart" style="height:400px"></div>
-      <figcaption>Figure 2 — SHAP importance share by feature family across the selected top-500 features. The two predicted-log2fc scalars carry ~9% of the signal from just 2 features.</figcaption>
+      <figcaption>Figure 1 — SHAP importance share by feature family across the selected top-500 features. The two predicted-log2fc scalars carry ~9% of the signal from just 2 features.</figcaption>
     </figure>
   </section>
 
@@ -153,7 +161,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-members" class="chart" style="height:440px"></div>
-      <figcaption>Figure 3 — Ensemble members: Caruana weight (bars) vs. standalone AS1 MAE (line). The ensemble (dashed) beats every single member.</figcaption>
+      <figcaption>Figure 2 — Ensemble members: Caruana weight (bars) vs. standalone AS1 MAE (line). The ensemble (dashed) beats every single member.</figcaption>
     </figure>
   </section>
 
@@ -165,13 +173,13 @@
       |ΔSpearman|&nbsp;&lt;&nbsp;0.005. A <strong>covariate-shift (importance-weighted)</strong>
       calibration — a clipped train-vs-test density ratio — was the top-ranked
       public submission during Phase&nbsp;1. The dominant error mode is
-      <strong>range compression</strong> (Figure 4), countered only by a sparse,
+      <strong>range compression</strong> (Figure 3), countered only by a sparse,
       guardrail-checked upward lift on neighbors of the 46 potent seeds and by
       ChEMBL-derived pairwise-ranking gates.
     </p>
     <figure class="chart-figure">
       <div id="chart-calibration" class="chart" style="height:400px"></div>
-      <figcaption>Figure 4 — Range compression on the blinded AS2 set: the strongest bin is predicted too low, the weakest bin too high. Perfect calibration would sit on the dashed diagonal.</figcaption>
+      <figcaption>Figure 3 — Range compression on the blinded AS2 set: the strongest bin is predicted too low, the weakest bin too high. Perfect calibration would sit on the dashed diagonal.</figcaption>
     </figure>
   </section>
 
@@ -188,6 +196,10 @@
       <code>AS2 = anchor + 0.45 × (AS1-aug − anchor)</code> plus two sparse
       high-side gates.
     </p>
+    <figure class="chart-figure">
+      <div id="chart-phase" class="chart" style="height:380px"></div>
+      <figcaption>Figure 4 — The five graded metrics across the two phases. The conservative Phase&nbsp;2 update held the scale of the Phase&nbsp;1 result rather than chasing the released AS1 labels.</figcaption>
+    </figure>
   </section>
 
   <section id="results">
