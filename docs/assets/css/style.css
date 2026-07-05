@@ -354,6 +354,9 @@ code {
 }
 
 #strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
+#members h3 { font-size: 1.16rem; margin: 28px 0 8px; color: var(--ink); }
+#members h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
+.metric-table td.bk { text-align: left; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .viz-label { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--color-blue); margin: 18px 0 6px; }
 .cov-table td.cov0 { color: var(--muted); font-weight: 500; }
 
