@@ -54,8 +54,10 @@
     };
   }
 
+  // Per-load cache-buster so a reload always fetches the current data JSON.
+  var DATA_VERSION = "?v=" + Date.now();
   function getJSON(name) {
-    return fetch(DATA + name).then(function (r) {
+    return fetch(DATA + name + DATA_VERSION).then(function (r) {
       if (!r.ok) throw new Error("failed to load " + name);
       return r.json();
     });
