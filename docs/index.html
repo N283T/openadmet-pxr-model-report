@@ -251,7 +251,7 @@
       standalone predictors.
     </p>
     <figure class="chart-figure">
-      <div id="chart-featcorr" class="chart" style="height:280px"></div>
+      <div id="chart-featcorr" class="chart" style="height:210px"></div>
       <figcaption>Figure 3: Correlation of representative features with training pEC50, as Pearson r (top row) and Spearman r (bottom row). Green is positive, red is negative, and the value is printed in each cell. The two pred columns lead, then observed log2fc and the Boltz-2 affinity score, then the physicochemical descriptors, which are individually weak.</figcaption>
     </figure>
 
@@ -373,7 +373,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-member-mae" class="chart" style="height:460px"></div>
-      <figcaption>Per-member mean absolute error, sorted best to worst. Bars: test MAE (AS1 + AS2) vs training out-of-fold MAE.</figcaption>
+      <figcaption>Figure 6: Per-member mean absolute error, sorted best to worst. Bars: test MAE (AS1 + AS2) vs training out-of-fold MAE.</figcaption>
     </figure>
 
     <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
@@ -421,24 +421,24 @@
       <strong>tabular-top500</strong> first runs a per-fold LightGBM-gain
       <strong>top-500 selection</strong> and passes only those. Compressing the
       wide, partly noisy stack helps: out-of-fold error dips around K = 500 to 600
-      and rises again toward the full 2,103 dimensions (Figure 6). We fixed
+      and rises again toward the full 2,103 dimensions (Figure 7). We fixed
       K = 500: MAE is essentially flat from 500 to 600, but 500 gave the best
       Spearman, so we let ranking break the tie.
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 6: Out-of-fold MAE (left axis, blue) and Spearman ρ (right axis, teal) as the number of top-gain features TabPFN keeps varies. Both point to a sweet spot around 500 to 600 (MAE lowest, Spearman highest); keeping all 2,103 (dashed lines) is worse, and over-compressing below ~300 loses signal.</figcaption>
+      <figcaption>Figure 7: Out-of-fold MAE (left axis, blue) and Spearman ρ (right axis, teal) as the number of top-gain features TabPFN keeps varies. Both point to a sweet spot around 500 to 600 (MAE lowest, Spearman highest); keeping all 2,103 (dashed lines) is worse, and over-compressing below ~300 loses signal.</figcaption>
     </figure>
     <p>
       Using LightGBM for the selection also buys a little interpretability: its
       gain says which features it leaned on. About <strong>three quarters</strong>
       of the gain goes to the two predicted-log2fc columns, and the rest is spread
-      thinly across Mordred and CheMeleon (Figure 7). The selector is essentially
+      thinly across Mordred and CheMeleon (Figure 8). The selector is essentially
       "keep the two pred columns, then round out the space with descriptors."
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>Figure 7: Share of LightGBM gain by feature family (over the full stack). Two predicted-log2fc columns account for ~74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
+      <figcaption>Figure 8: Share of LightGBM gain by feature family (over the full stack). Two predicted-log2fc columns account for ~74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
     </figure>
     <p>
       Zooming in on the individual features tells the same story more sharply. The
@@ -669,7 +669,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Ways of pooling the Boltz trunk into one vector (out-of-fold MAE). The two coral bars are the poolings kept in the ensemble; axis starts at 0.45 to separate a tight band.</figcaption>
+      <figcaption>Figure 9: Ways of pooling the Boltz trunk into one vector (out-of-fold MAE). The two coral bars are the poolings kept in the ensemble; axis starts at 0.45 to separate a tight band.</figcaption>
     </figure>
     <p>
       Two things stand out. Which residues you pool over barely matters: a 13-residue
@@ -730,7 +730,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Public-LB MAE across the Phase 1 calibration and gate milestones (axis starts at 0.40). One real drop from calibration, then a plateau; id55 (coral) is the anchor.</figcaption>
+      <figcaption>Figure 10: Public-LB MAE across the Phase 1 calibration and gate milestones (axis starts at 0.40). One real drop from calibration, then a plateau; id55 (coral) is the anchor.</figcaption>
     </figure>
     <p>
       Calibration here means a post-hoc regression on the ensemble's own output. We
@@ -804,7 +804,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>True AS2 MAE (answer-key labels), from the Phase 1 anchor through the Phase 2 submissions. Every Phase 2 edit (coral) rose above id60; the winning score was 0.4061 (dashed line). The teal bar is a candidate we built but did not submit.</figcaption>
+      <figcaption>Figure 11: True AS2 MAE (answer-key labels), from the Phase 1 anchor through the Phase 2 submissions. Every Phase 2 edit (coral) rose above id60; the winning score was 0.4061 (dashed line). The teal bar is a candidate we built but did not submit.</figcaption>
     </figure>
     <table class="metric-table">
       <thead>

@@ -324,7 +324,7 @@
     });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 6, right: 6, top: 10, bottom: 10, containLabel: true },
+      grid: { left: 80, right: 12, top: 10, bottom: 82 },
       tooltip: {
         backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
@@ -345,7 +345,7 @@
       },
       visualMap: {
         show: true, min: -0.85, max: 0.85, dimension: 2, calculable: true,
-        orient: "horizontal", left: "center", bottom: 0,
+        orient: "horizontal", left: "center", bottom: 6, itemWidth: 14,
         inRange: { color: ["#e2725b", "#f4efe4", "#4fb79a"] },
         textStyle: { color: p.muted },
       },
@@ -396,12 +396,12 @@
       series: [
         { name: "OOF MAE", type: "line", yAxisIndex: 0, data: mae, symbolSize: 7,
           color: p.blue, lineStyle: { color: p.blue, width: 2 },
-          markLine: { silent: true, symbol: "none", lineStyle: { color: p.blue, type: "dashed", width: 1.5 },
+          markLine: { silent: true, symbol: "none", precision: 4, lineStyle: { color: p.blue, type: "dashed", width: 1.5 },
             data: [{ yAxis: d.fullMae }],
             label: { formatter: "full " + d.fullMae, color: p.blue, position: "insideStartTop", fontSize: 10 } } },
         { name: "Spearman ρ", type: "line", yAxisIndex: 1, data: spear, symbolSize: 7,
           color: p.teal, lineStyle: { color: p.teal, width: 2 },
-          markLine: { silent: true, symbol: "none", lineStyle: { color: p.teal, type: "dashed", width: 1.5 },
+          markLine: { silent: true, symbol: "none", precision: 4, lineStyle: { color: p.teal, type: "dashed", width: 1.5 },
             data: [{ yAxis: d.fullSpearman }],
             label: { formatter: "full " + d.fullSpearman, color: p.teal, position: "insideEndBottom", fontSize: 10 } } },
         { name: "OOF MAE", type: "scatter", yAxisIndex: 0, data: [[500, 0.4179]], symbolSize: 14,
@@ -502,7 +502,7 @@
     });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 8, right: 16, top: 22, bottom: 28, containLabel: true },
+      grid: { left: 58, right: 20, top: 18, bottom: 28 },
       tooltip: {
         trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
@@ -515,7 +515,7 @@
       },
       xAxis: Object.assign({ type: "category", data: cats }, axisStyle(p)),
       yAxis: Object.assign({ type: "value", name: "public-LB MAE", min: 0.4, max: 0.445,
-        nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+        nameLocation: "middle", nameRotate: 90, nameGap: 46 }, axisStyle(p)),
       series: [{
         type: "bar", data: data, barWidth: "56%",
         label: { show: true, position: "top", color: p.muted, fontSize: 11,
@@ -534,7 +534,7 @@
     });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 8, right: 16, top: 24, bottom: 28, containLabel: true },
+      grid: { left: 58, right: 20, top: 18, bottom: 28 },
       tooltip: {
         trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
@@ -544,11 +544,11 @@
       },
       xAxis: Object.assign({ type: "category", data: cats }, axisStyle(p)),
       yAxis: Object.assign({ type: "value", name: "AS2 MAE (true labels)", min: 0.404, max: 0.414,
-        nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+        nameLocation: "middle", nameRotate: 90, nameGap: 46 }, axisStyle(p)),
       series: [{
         type: "bar", data: data, barWidth: "52%",
         markLine: {
-          silent: true, symbol: "none",
+          silent: true, symbol: "none", precision: 4,
           lineStyle: { color: p.ink, type: "dashed", width: 1 },
           label: { formatter: "1st place " + d.winnerMae.toFixed(4), color: p.muted, fontSize: 10, position: "insideEndTop" },
           data: [{ yAxis: d.winnerMae }],
