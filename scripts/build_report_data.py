@@ -281,6 +281,19 @@ MEMBER_WEIGHTS_CSV = (
     "final_label_replay",
     "member_reweight_pre_post_weights.csv",
 )
+SUBMISSIONS_DIR = ("track1_activity", "submissions")
+# Each member's test-prediction submission CSV, for the member-correlation heatmap.
+MEMBER_SUBMISSION = {
+    "cheme_t10_full": "tabpfn_cheme_2d_full_boltz_log2fc_pred_optuna_trial10_seed5ens_umap_default.csv",
+    "cheme_t10_top500": "tabpfn_cheme_2d_full_boltz_log2fc_pred_optuna_trial10_seed5ens_top500_umap.csv",
+    "chemprop_embed": "tabpfn_chemprop_pretrain_embed_umap_default.csv",
+    "kermt": "tabpfn_kermt_pretrain_embed_umap_default.csv",
+    "pooled_boltz": "tabpfn_pooled_boltz_umap_default.csv",
+    "molformer_c3": "tabpfn_molformer_c3_pretrain_embed_umap.csv",
+    "pooled_boltz_allpairs": "tabpfn_pooled_boltz_allpairs_umap_default.csv",
+    "gatedgcn": "tabpfn_gatedgcn_pretrain_embed_umap_default.csv",
+    "attentivefp": "tabpfn_attentivefp_pretrain_embed_umap_default.csv",
+}
 
 
 def _find_col(df: pd.DataFrame, *candidates: str) -> str:
@@ -433,6 +446,28 @@ def build_ensemble_members(src: Path) -> None:
         members.append(entry)
     members.sort(key=lambda x: x["weight"], reverse=True)
     _write("ensemble_members.json", {"members": members})
+
+
+def build_member_corr(src: Path) -> None:
+    """Pairwise correlation of member test predictions, ordered by Caruana weight."""
+    w = pd.read_csv(src.joinpath(*MEMBER_WEIGHTS_CSV))
+    prod = w[(w["stage"] == "pre_as1") & (w["weight_source"] == "old_prod")]
+    weight_by_key = prod.set_index("member")["weight"]
+    ordered = sorted(ENSEMBLE_MEMBERS, key=lambda m: -float(weight_by_key[m["key"]]))
+    merged = None
+    for m in ordered:
+        csv = src.joinpath(*SUBMISSIONS_DIR, MEMBER_SUBMISSION[m["key"]])
+        d = pd.read_csv(csv)[["Molecule Name", "pEC50"]].rename(
+            columns={"pEC50": m["alias"]}
+        )
+        merged = d if merged is None else merged.merge(d, on="Molecule Name")
+    aliases = [m["alias"] for m in ordered]
+    corr = merged[aliases].corr()
+    matrix = [
+        [round(float(corr.iloc[i, j]), 2) for j in range(len(aliases))]
+        for i in range(len(aliases))
+    ]
+    _write("member_corr.json", {"aliases": aliases, "matrix": matrix})
 
 
 def build_proxy(src: Path) -> None:
@@ -679,6 +714,7 @@ def main() -> None:
     build_topk_sweep(src)
     build_lgbm_gain(src)
     build_lgbm_top_features(src)
+    build_member_corr(src)
     build_feature_scatter(src)
     build_feature_corr(src)
     logger.info("done -> %s", OUT_DIR)

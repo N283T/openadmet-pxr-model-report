@@ -341,6 +341,23 @@
       <div id="chart-weights" class="chart" style="height:340px"></div>
       <figcaption>Figure 4: Caruana weights of the nine production members, colored by family (blue = tabular core, teal = frozen embedding, coral = Boltz-2 structural). The two CheMeleon + 2D + Boltz + pred tabular members carry ~60% of the weight; the rest add decorrelated diversity. Hover for each member's role and single-model out-of-fold MAE.</figcaption>
     </figure>
+    <p>
+      It is worth asking how independent these members really are. Figure 5 shows
+      the correlation between their predictions, and the answer is: not very. They
+      are <strong>all highly correlated</strong> (r from 0.81 to 0.98, mean 0.88).
+      The two tabular cores are near-duplicates (0.98), the two Boltz-2 members are
+      too (0.97), and every chemistry member sits above 0.85 with the rest. So the
+      ensemble is less about blending independent views and more a
+      <strong>buffer</strong>: it keeps any one strong-but-correlated member,
+      especially top500, from dominating the prediction. The most decorrelated
+      members are the two Boltz-2 structural ones (0.81 to 0.88 against the
+      chemistry members), which is exactly why they earn weight despite being weak
+      on their own.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-membercorr" class="chart" style="height:440px"></div>
+      <figcaption>Figure 5: Pairwise correlation of the members' test predictions, ordered by Caruana weight. Darker is more correlated. The near-duplicate blocks (the two tabular cores; the two Boltz-2 trunks) and the lower Boltz-versus-chemistry corner stand out.</figcaption>
+    </figure>
   </section>
 
   <section id="members">
@@ -395,24 +412,24 @@
       <strong>tabular-top500</strong> first runs a per-fold LightGBM-gain
       <strong>top-500 selection</strong> and passes only those. Compressing the
       wide, partly noisy stack helps: out-of-fold error dips around K = 500 to 600
-      and rises again toward the full 2,103 dimensions (Figure 5). We fixed
+      and rises again toward the full 2,103 dimensions (Figure 6). We fixed
       K = 500: MAE is essentially flat from 500 to 600, but 500 gave the best
       Spearman, so we let ranking break the tie.
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 5: Out-of-fold MAE (left axis, blue) and Spearman ρ (right axis, teal) as the number of top-gain features TabPFN keeps varies. Both point to a sweet spot around 500 to 600 (MAE lowest, Spearman highest); keeping all 2,103 (dashed lines) is worse, and over-compressing below ~300 loses signal.</figcaption>
+      <figcaption>Figure 6: Out-of-fold MAE (left axis, blue) and Spearman ρ (right axis, teal) as the number of top-gain features TabPFN keeps varies. Both point to a sweet spot around 500 to 600 (MAE lowest, Spearman highest); keeping all 2,103 (dashed lines) is worse, and over-compressing below ~300 loses signal.</figcaption>
     </figure>
     <p>
       Using LightGBM for the selection also buys a little interpretability: its
       gain says which features it leaned on. About <strong>three quarters</strong>
       of the gain goes to the two predicted-log2fc columns, and the rest is spread
-      thinly across Mordred and CheMeleon (Figure 6). The selector is essentially
+      thinly across Mordred and CheMeleon (Figure 7). The selector is essentially
       "keep the two pred columns, then round out the space with descriptors."
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>Figure 6: Share of LightGBM gain by feature family (over the full stack). Two predicted-log2fc columns account for ~74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
+      <figcaption>Figure 7: Share of LightGBM gain by feature family (over the full stack). Two predicted-log2fc columns account for ~74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
     </figure>
     <p>
       Zooming in on the individual features tells the same story more sharply. The

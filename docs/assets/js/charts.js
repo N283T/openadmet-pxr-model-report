@@ -324,7 +324,7 @@
     });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 6, right: 6, top: 10, bottom: 92, containLabel: true },
+      grid: { left: 6, right: 6, top: 10, bottom: 10, containLabel: true },
       tooltip: {
         backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
@@ -441,10 +441,49 @@
     };
   }
 
+  // Member-vs-member prediction correlation heatmap (fixed teal palette, dark labels).
+  function optMemberCorr(d, p) {
+    var a = d.aliases;
+    var data = [];
+    d.matrix.forEach(function (row, i) {
+      row.forEach(function (v, j) { data.push([j, i, v]); });
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 8, top: 8, bottom: 10, containLabel: true },
+      tooltip: {
+        backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          return a[o.data[1]] + " vs " + a[o.data[0]] + "<br/>r = <b>" + o.data[2].toFixed(2) + "</b>";
+        },
+      },
+      xAxis: {
+        type: "category", data: a, position: "bottom",
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: { color: p.ink, interval: 0, rotate: 45, fontSize: 10, fontFamily: p.font },
+      },
+      yAxis: {
+        type: "category", data: a, inverse: true,
+        axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
+        axisLabel: { color: p.ink, interval: 0, fontSize: 11, fontFamily: p.font },
+      },
+      visualMap: { show: false, min: 0.8, max: 1.0, dimension: 2,
+        inRange: { color: ["#eaf3ef", "#7fc6b3", "#2f8f79"] } },
+      series: [{
+        type: "heatmap", data: data,
+        itemStyle: { borderColor: p.bg, borderWidth: 2, borderRadius: 3 },
+        label: { show: true, fontFamily: p.font, fontWeight: 600, color: "#243036", fontSize: 9,
+          formatter: function (o) { return o.data[2].toFixed(2); } },
+        emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
+      }],
+    };
+  }
+
   var SPECS = [
     { el: "chart-coverage", file: "coverage.json", build: optCoverage },
     { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
     { el: "chart-weights", file: "ensemble_members.json", build: optWeights },
+    { el: "chart-membercorr", file: "member_corr.json", build: optMemberCorr },
     { el: "chart-ksweep", file: "topk_sweep.json", build: optKSweep },
     { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
   ];
