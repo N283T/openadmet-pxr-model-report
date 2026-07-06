@@ -26,15 +26,6 @@
     };
   }
 
-  function baseGrid(p) {
-    return {
-      textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 56, right: 24, top: 48, bottom: 52, containLabel: true },
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line,
-        textStyle: { color: p.ink, fontFamily: p.font } },
-    };
-  }
-
   function axisStyle(p) {
     return {
       axisLine: { show: true, onZero: false, lineStyle: { color: p.muted, width: 1.6 } },
@@ -42,15 +33,6 @@
       axisLabel: { color: p.muted },
       splitLine: { lineStyle: { color: p.line, opacity: 0.5 } },
       nameTextStyle: { color: p.muted },
-    };
-  }
-
-  function diagonalSeries(min, max, p) {
-    return {
-      type: "line", showSymbol: false, silent: true,
-      data: [[min, min], [max, max]],
-      lineStyle: { color: p.muted, type: "dashed", width: 1 },
-      z: 1, tooltip: { show: false },
     };
   }
 
@@ -64,47 +46,6 @@
   }
 
   // ---- Individual chart builders (return ECharts option) ----
-
-  function optPhase(d, p) {
-    var metrics = [
-      { key: "mae", name: "MAE" }, { key: "rae", name: "RAE" },
-      { key: "r2", name: "R²" }, { key: "spearman", name: "Spearman ρ" },
-      { key: "kendall", name: "Kendall τ" },
-    ];
-    var cats = metrics.map(function (m) { return m.name; });
-    function series(ph, color) {
-      var row = d.phases.find(function (x) { return x.phase === ph; });
-      return { name: ph, type: "bar", itemStyle: { color: color, borderRadius: [4, 4, 0, 0] },
-        data: metrics.map(function (m) { return row[m.key]; }),
-        label: { show: true, position: "top", color: p.muted, fontSize: 10,
-          formatter: function (o) { return o.value.toFixed(3); } } };
-    }
-    return Object.assign(baseGrid(p), {
-      tooltip: { trigger: "axis", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink } },
-      legend: { data: ["Phase 1", "Phase 2"], textStyle: { color: p.ink }, top: 8 },
-      xAxis: Object.assign({ type: "category", data: cats }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", max: 1 }, axisStyle(p)),
-      series: [series("Phase 1", p.blue), series("Phase 2", p.coral)],
-    });
-  }
-
-  function optShap(d, p) {
-    var fams = d.families.slice().sort(function (a, b) { return a.share - b.share; });
-    return Object.assign(baseGrid(p), {
-      grid: { left: 90, right: 60, top: 20, bottom: 40, containLabel: true },
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          var f = fams[o.dataIndex];
-          return f.family + "<br/>share " + (f.share * 100).toFixed(1) + "%<br/>" + f.nSelected + " features";
-        } },
-      xAxis: Object.assign({ type: "value", axisLabel: { formatter: function (v) { return (v * 100) + "%"; } } }, axisStyle(p)),
-      yAxis: Object.assign({ type: "category", data: fams.map(function (f) { return f.family; }) }, axisStyle(p)),
-      series: [{ type: "bar", itemStyle: { color: p.blue, borderRadius: [0, 4, 4, 0] },
-        data: fams.map(function (f) { return f.share; }),
-        label: { show: true, position: "right", color: p.muted, fontSize: 11,
-          formatter: function (o) { return (o.value * 100).toFixed(1) + "%"; } } }],
-    });
-  }
 
   // Ensemble member Caruana weights (horizontal bars, colored by family).
   function optWeights(d, p) {
@@ -134,99 +75,6 @@
           formatter: function (o) { return o.value.toFixed(3); } },
       }],
     };
-  }
-
-  function optCalibration(d, p) {
-    var pts = d.bins.map(function (b) { return [b.meanTrue, b.meanPred, b.n, b.bin]; });
-    var lo = 2, hi = 7;
-    return Object.assign(baseGrid(p), {
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          if (o.seriesType !== "scatter") return "";
-          return "bin " + o.data[3] + " (n=" + o.data[2] + ")<br/>mean true " + o.data[0] +
-            "<br/>mean pred " + o.data[1] + "<br/>bias " + (o.data[1] - o.data[0]).toFixed(2);
-        } },
-      xAxis: Object.assign({ type: "value", name: "mean measured pEC50", min: lo, max: hi }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", name: "mean predicted pEC50", min: lo, max: hi }, axisStyle(p)),
-      series: [
-        diagonalSeries(lo, hi, p),
-        { type: "scatter", itemStyle: { color: p.teal, borderColor: p.surface, borderWidth: 1 },
-          data: pts,
-          symbolSize: function (v) { return Math.max(12, Math.sqrt(v[2]) * 2.4); },
-          label: { show: true, position: "right", color: p.muted, fontSize: 11,
-            formatter: function (o) { return o.data[3]; } } },
-      ],
-    });
-  }
-
-  function optLeaderboard(d, p) {
-    var others = [], me = [];
-    d.rows.forEach(function (r) {
-      var pt = [r.mae, r.spearman, r.username, r.rank];
-      (r.isMe ? me : others).push(pt);
-    });
-    return Object.assign(baseGrid(p), {
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          return "#" + o.data[3] + " " + o.data[2] + "<br/>MAE " + o.data[0] + "<br/>Spearman " + o.data[1];
-        } },
-      legend: { data: ["Competitors", "This submission (N283T)"], textStyle: { color: p.ink }, top: 8 },
-      xAxis: Object.assign({ type: "value", name: "MAE (lower better)", scale: true }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", name: "Spearman ρ (higher better)", scale: true }, axisStyle(p)),
-      series: [
-        { name: "Competitors", type: "scatter", data: others, symbolSize: 9,
-          itemStyle: { color: p.blue, opacity: 0.5, borderColor: p.line } },
-        { name: "This submission (N283T)", type: "scatter", data: me, symbolSize: 20,
-          itemStyle: { color: p.coral, borderColor: p.surface, borderWidth: 2, shadowBlur: 8,
-            shadowColor: "rgba(0,0,0,0.15)" },
-          label: { show: true, formatter: "N283T · #4", position: "right", color: p.coral, fontWeight: "bold" } },
-      ],
-    });
-  }
-
-  function optScatter(d, p) {
-    var as1 = [], as2 = [];
-    d.points.forEach(function (pt) {
-      (pt.set === "AS1" ? as1 : as2).push([pt.true, pt.pred, pt.name]);
-    });
-    var lo = 2, hi = 8;
-    return Object.assign(baseGrid(p), {
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          if (o.seriesType !== "scatter") return "";
-          return o.data[2] + "<br/>measured " + o.data[0] + "<br/>predicted " + o.data[1];
-        } },
-      legend: { data: ["AS1 (n=253)", "AS2 (n=260, blinded)"], textStyle: { color: p.ink }, top: 8 },
-      xAxis: Object.assign({ type: "value", name: "measured pEC50", min: lo, max: hi }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", name: "predicted pEC50", min: lo, max: hi }, axisStyle(p)),
-      series: [
-        diagonalSeries(lo, hi, p),
-        { name: "AS1 (n=253)", type: "scatter", data: as1, symbolSize: 7,
-          itemStyle: { color: p.blue, opacity: 0.65 } },
-        { name: "AS2 (n=260, blinded)", type: "scatter", data: as2, symbolSize: 7,
-          itemStyle: { color: p.coral, opacity: 0.7 } },
-      ],
-    });
-  }
-
-  function optProxy(d, p) {
-    var pts = d.points.map(function (x) { return [x.as1, x.as2, x.label]; });
-    var lo = 0.39, hi = 0.55;
-    return Object.assign(baseGrid(p), {
-      tooltip: { trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          if (o.seriesType !== "scatter") return "";
-          return o.data[2] + "<br/>AS1 MAE " + o.data[0] + "<br/>AS2 MAE " + o.data[1];
-        } },
-      graphic: [{ type: "text", right: 30, top: 40, style: {
-        text: "Pearson r = " + d.pearson, fill: p.muted, font: "13px " + p.font } }],
-      xAxis: Object.assign({ type: "value", name: "local AS1 MAE", min: lo, max: hi }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", name: "blinded AS2 MAE", min: lo, max: hi }, axisStyle(p)),
-      series: [
-        diagonalSeries(lo, hi, p),
-        { type: "scatter", data: pts, symbolSize: 8, itemStyle: { color: p.blue, opacity: 0.6 } },
-      ],
-    });
   }
 
   // Label-coverage heatmap: which compound group carries which measured label.
@@ -272,44 +120,6 @@
           formatter: function (o) { return o.data[3] > 0 ? o.data[3].toLocaleString() : "—"; },
         },
         emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
-      }],
-    };
-  }
-
-  // Assay-flow Sankey (alternative view of the same coverage).
-  function optSankey(d, p) {
-    var colorFor = {
-      "Single-conc screen": p.teal,
-      "Direct to dose-response": p.coral,
-      "Aux only (log2fc)": p.teal,
-      "Dose-response train": p.blue,
-      "Counter assay": p.blue,
-    };
-    var nodes = d.nodes.map(function (n) {
-      return { name: n.name, itemStyle: { color: colorFor[n.name] || p.blue, borderColor: p.line } };
-    });
-    return {
-      textStyle: { color: p.ink, fontFamily: p.font },
-      tooltip: {
-        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          if (o.dataType === "edge") {
-            return o.data.source + " → " + o.data.target + "<br/><b>" +
-              o.data.value.toLocaleString() + "</b> compounds";
-          }
-          return o.name + (o.value ? "<br/><b>" + o.value.toLocaleString() + "</b> compounds" : "");
-        },
-      },
-      series: [{
-        type: "sankey", left: 8, right: 158, top: 16, bottom: 16,
-        nodeWidth: 20, nodeGap: 20, draggable: false,
-        data: nodes, links: d.links,
-        label: {
-          color: p.ink, fontFamily: p.font, fontSize: 12, fontWeight: 600,
-          formatter: function (o) { return o.name + "  " + (o.value != null ? o.value.toLocaleString() : ""); },
-        },
-        lineStyle: { color: "source", opacity: 0.55, curveness: 0.5 },
-        emphasis: { focus: "adjacency", lineStyle: { opacity: 0.75 } },
       }],
     };
   }
