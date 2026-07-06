@@ -22,6 +22,7 @@
   <div class="wrap header-inner">
     <a class="brand" href="#top">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</a>
     <nav class="topnav" aria-label="Sections">
+      <a href="#tldr">TL;DR</a>
       <a href="#data">Challenge</a>
       <a href="#results">Results</a>
       <a href="#strategy">Strategy</a>
@@ -29,6 +30,7 @@
       <a href="#members">Members</a>
       <a href="#calibration">Calibration</a>
       <a href="#phase2">Phase 1 → 2</a>
+      <a href="#conclusion">Conclusion</a>
       <a href="#links">Links</a>
     </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
@@ -68,6 +70,16 @@
       <a class="btn" href="https://github.com/N283T/openadmet-pxr-model-report/blob/main/MODEL_REPORT.md">Read the Markdown report ↗</a>
       <a class="btn ghost" href="#results">Jump to results ↓</a>
     </p>
+  </section>
+
+  <section id="tldr">
+    <h2>0. TL;DR</h2>
+    <ul>
+      <li>Finished <strong>4th of 95</strong> (Tier 1) on the OpenADMET PXR Challenge Track 1 (Activity), predicting human PXR activation (pEC50) from structure alone: MAE <strong>0.4059</strong> in Phase 1, <strong>0.4113</strong> in Phase 2.</li>
+      <li>The idea that decided it was <strong>multi-fidelity transfer learning</strong> (after <a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a>): the challenge quietly ships a cheap, single-concentration <code>log2fc</code> readout, and a model's <strong>predicted log2fc is by far the single strongest feature</strong>, doing the work of a full descriptor stack on its own.</li>
+      <li>Around that signal sits a <strong>nine-member Caruana ensemble</strong> of frozen-embedding and tabular models read out by <strong>TabPFN</strong>. Boltz-2 earns a place not for its predicted structure or affinity (both too noisy) but as a learned representation.</li>
+      <li>Past the ensemble, one affine <strong>calibration</strong> was the only clear gain; the Phase 1 tail gates and the whole of Phase 2 mostly added noise or made things worse. Knowing when to stop was, in hindsight, one of the better calls.</li>
+    </ul>
   </section>
 
   <section id="data">
@@ -858,6 +870,33 @@
         it bought; the discipline of doing less was, twice over, the better model.
       </p>
     </div>
+  </section>
+
+  <section id="conclusion">
+    <h2>8. Conclusion</h2>
+    <p>
+      What actually decided this was a framing, not a model. Reaching
+      <strong>multi-fidelity transfer learning</strong> (after Buterez et al. 2024)
+      is the reason the submission worked at all: the challenge quietly ships a
+      cheap, single-concentration log2fc readout, and learning to predict it turns
+      that low-fidelity signal into the strongest feature we had. A few takeaways
+      worth keeping:
+    </p>
+    <ul>
+      <li><strong>Cheap activity data is underrated.</strong> Turning a low-cost, single-concentration assay into the backbone of a pEC50 model is exactly the kind of thing that should transfer to real screening pipelines, where noisy high-throughput readouts are plentiful and gold-standard labels are scarce.</li>
+      <li><strong>Use the raw signal.</strong> The predicted log2fc columns, straight from an assay the data already contains, beat every engineered descriptor and every foundation embedding on their own. When a directly relevant measurement exists, model it before reaching for generic features.</li>
+      <li><strong>TabPFN punches far above its weight</strong> as a readout head, and it was not alone: LightGBM and even a KAN readout, which barely made it into this report, were strong on the same vectors.</li>
+      <li><strong>Predicted structure and affinity disappointed.</strong> Boltz-2's pose and affinity head were too noisy to use directly; the model only paid off read as a representation. For actual activity prediction, off-the-shelf affinity models were the weakest link, a caution worth remembering for structure-based work.</li>
+    </ul>
+    <p>
+      On a personal note, this was my first competition, and finishing 4th of 95 is
+      more than I expected going in. Two things stand out looking back. I leaned
+      heavily on AI coding agents and ChatGPT throughout, for literature search,
+      code, and iteration, and got a great deal out of that workflow; I want to
+      write about it properly somewhere else. And the whole thing ran solo on a
+      single consumer gaming PC, which, for a Tier-1 finish against 95 entrants,
+      still feels a little unreasonable.
+    </p>
   </section>
 
   <section id="links">
