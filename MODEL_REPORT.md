@@ -488,6 +488,8 @@ thing ran solo on a single consumer gaming PC, which, for a Tier-1 finish agains
 
 ## Reproducibility and links
 
+- **Working repository** (code, feature pipeline, day-by-day logs):
+  [N283T/pxr-iduction-challenge](https://github.com/N283T/pxr-iduction-challenge).
 - **Public research logs** (day-by-day notes, wrong turns, null results, some in
   Japanese): Phase 1 issue
   [#100](https://github.com/N283T/pxr-iduction-challenge/issues/100), Phase 2 issue
