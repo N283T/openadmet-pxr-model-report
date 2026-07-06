@@ -488,7 +488,76 @@
     { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
     { el: "chart-member-mae", file: "model_cards.json", build: optMemberMae },
     { el: "chart-boltz-pool", file: "boltz_pooling.json", build: optBoltzPooling },
+    { el: "chart-calib-journey", file: "calibration_journey.json", build: optCalibJourney },
+    { el: "chart-phase2-as2", file: "phase2_as2.json", build: optPhase2As2 },
   ];
+
+  // Phase-1 calibration + tail-gate journey (public-LB MAE across milestones).
+  function optCalibJourney(d, p) {
+    var m = d.milestones;
+    var cats = m.map(function (x) { return x.short; });
+    var data = m.map(function (x) {
+      var color = x.anchor ? p.coral : (x.short === "raw" ? p.muted : p.blue);
+      return { value: x.lbMae, itemStyle: { color: color, borderRadius: [4, 4, 0, 0] } };
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 16, top: 22, bottom: 28, containLabel: true },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var x = m[o.dataIndex];
+          var dv = x.deltaId55;
+          return x.label + "<br/>public-LB MAE <b>" + x.lbMae.toFixed(4) + "</b>" +
+            "<br/>vs id55 " + (dv > 0 ? "+" : "") + dv.toFixed(4) +
+            (x.anchor ? "<br/><b>Phase 1 anchor</b>" : "");
+        },
+      },
+      xAxis: Object.assign({ type: "category", data: cats }, axisStyle(p)),
+      yAxis: Object.assign({ type: "value", name: "public-LB MAE", min: 0.4, max: 0.445,
+        nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "56%",
+        label: { show: true, position: "top", color: p.muted, fontSize: 11,
+          formatter: function (o) { return o.value.toFixed(3); } },
+      }],
+    };
+  }
+
+  // Phase-2 AS2 MAE regression (true answer-key labels) vs the winner's score.
+  function optPhase2As2(d, p) {
+    var m = d.milestones;
+    var kindColor = { phase1: p.blue, phase2: p.coral, best: p.teal };
+    var cats = m.map(function (x) { return x.label; });
+    var data = m.map(function (x) {
+      return { value: x.as2Mae, itemStyle: { color: kindColor[x.kind] || p.blue, borderRadius: [4, 4, 0, 0] } };
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 16, top: 24, bottom: 28, containLabel: true },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var x = m[o.dataIndex];
+          return x.label + "<br/>AS2 MAE <b>" + x.as2Mae.toFixed(4) + "</b><br/>" + x.note;
+        },
+      },
+      xAxis: Object.assign({ type: "category", data: cats }, axisStyle(p)),
+      yAxis: Object.assign({ type: "value", name: "AS2 MAE (true labels)", min: 0.404, max: 0.414,
+        nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "52%",
+        markLine: {
+          silent: true, symbol: "none",
+          lineStyle: { color: p.ink, type: "dashed", width: 1 },
+          label: { formatter: "1st place " + d.winnerMae.toFixed(4), color: p.muted, fontSize: 10, position: "insideEndTop" },
+          data: [{ yAxis: d.winnerMae }],
+        },
+        label: { show: true, position: "top", color: p.muted, fontSize: 11,
+          formatter: function (o) { return o.value.toFixed(4); } },
+      }],
+    };
+  }
 
   // Least-squares fit; returns the two endpoints of the trend line over the data x-range.
   function linfit(pts) {

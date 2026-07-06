@@ -27,6 +27,8 @@
       <a href="#strategy">Strategy</a>
       <a href="#ensemble">Ensemble</a>
       <a href="#members">Members</a>
+      <a href="#calibration">Calibration</a>
+      <a href="#phase2">Phase 1 → 2</a>
       <a href="#links">Links</a>
     </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
@@ -711,8 +713,155 @@
     </p>
   </section>
 
+  <section id="calibration">
+    <h2>6. Calibration and the final tail gates</h2>
+    <p>
+      Two levers were left once the ensemble was built: calibrating its output, and
+      a set of tail gates for specific failure modes. The honest summary is one
+      clear win followed by a plateau. A simple affine calibration of the ensemble
+      predictions was a real gain on the public leaderboard, pulling the raw Caruana
+      blend from about <strong>0.441</strong> down to <strong>0.408</strong>.
+      Everything after that, the id51 to id55 run of tail gates, moved the score by
+      less than 0.004 MAE in either direction, noise against the calibration step.
+      <strong>id55</strong> became the Phase 1 anchor by a hair. A few more tries
+      never beat it, an Optuna-tuned member swap (id56), a softer potent gate (id57),
+      and a pair of combo and high-activity gate ranks (id58, id59), so we closed
+      Phase 1 by resubmitting that same model unchanged as id60, our final entry.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-calib-journey" class="chart" style="height:340px"></div>
+      <figcaption>Public-LB MAE across the Phase 1 calibration and gate milestones (axis starts at 0.40). One real drop from calibration, then a plateau; id55 (coral) is the anchor.</figcaption>
+    </figure>
+    <p>
+      Calibration here means a post-hoc regression on the ensemble's own output. We
+      fit a one-dimensional map from the raw predicted pEC50 to a corrected one on
+      the 4,140 out-of-fold predictions against the true labels: a positive-slope
+      affine fit (with an isotonic variant), validated under 5-fold nested CV so the
+      calibrator itself could not overfit. The version that shipped,
+      <code>calibrated_importance</code>, adds a covariate-shift correction: each
+      training compound is reweighted by a density ratio
+      P(test|x) / (1 - P(test|x)), clipped to [1/3, 3], so the fit leans on the
+      training points that most resemble the blinded test set. In plain terms it
+      gently uncompresses the predicted range and tilts it toward the test
+      distribution. That single step is where the real 0.44 to 0.41 gain came from.
+    </p>
+    <p>
+      Everything past that was competition craft, not research. The id51 to id55
+      tuning was largely done by watching the public leaderboard: try a member swap
+      or a gate, submit, keep it if the score ticked down. The final anchor decodes
+      to a short recipe,
+      <code>id55 = calibrated ensemble (id51) + top500 member swap + a soft potent-46 high-activity lift (threshold 40, gain 0.35)</code>,
+      and there is not much scientific interest in the exact knobs. The whole run is
+      below, and the pattern is flat.
+    </p>
+    <table class="metric-table">
+      <thead>
+        <tr><th>id</th><th>Change</th><th>Public-LB MAE</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>id50</th><td>internal-decorrelation blend</td><td>0.4092</td></tr>
+        <tr><th>id51</th><td>meta-axis anchor over id50</td><td>0.4073</td></tr>
+        <tr><th>id52</th><td>re-pooled Boltz trunk swap</td><td>0.4087</td></tr>
+        <tr><th>id53</th><td>trunk core-only variant</td><td>0.4106</td></tr>
+        <tr><th>id54</th><td>id51 + potent gate</td><td>0.4096</td></tr>
+        <tr class="hi"><th>id55</th><td>+ top500 swap + soft potent-46 gate (anchor)</td><td>0.4071</td></tr>
+        <tr><th>id56</th><td>Optuna-tuned member swap</td><td>0.4135</td></tr>
+        <tr><th>id57</th><td>softer potent gate (g50)</td><td>0.4074</td></tr>
+        <tr><th>id58</th><td>combo gate rank</td><td>0.4075</td></tr>
+        <tr><th>id59</th><td>high-activity lift rank</td><td>0.4077</td></tr>
+        <tr class="hi"><th>id60</th><td>id55 resubmitted, final Phase 1 entry</td><td>0.4059</td></tr>
+      </tbody>
+    </table>
+    <p class="metrics-key">Public-LB MAE during Phase 1. id55 and id60 are the same model; the 0.4071 vs 0.4059 gap is pure leaderboard scatter, wider than most of the "improvements" in between.</p>
+    <p>
+      One thing none of it fixed was the <strong>tail</strong>. The most potent
+      compounds (pEC50 ≥ 6) are systematically under-predicted; the model shrinks
+      them toward the mean by nearly a full log unit (bias ≈ -0.8 in that bin), and
+      no global calibration reaches it. We tried the obvious handles, a
+      potent-compound lift and a few descriptor gates (log2fc, ring-count,
+      family-gap), but on the public leaderboard none of them separated from noise.
+      The tail stayed the one genuinely unsolved piece of Phase 1.
+    </p>
+  </section>
+
+  <section id="phase2">
+    <h2>7. Phase 1 → Phase 2</h2>
+    <p>
+      Ending Phase 1 back on that anchor looked timid at the time. On the public
+      leaderboard we were sitting around eighth, with several teams posting visibly
+      better public scores and, presumably, still tuning. But that board was exactly
+      the noisy proxy we had just decided not to chase, and on the blinded final test
+      the restraint paid off: <strong>4th of 95</strong>. Not overfitting the public
+      leaderboard was, in hindsight, one of the better calls of Phase 1.
+    </p>
+    <p>
+      In Phase 2 that same instinct had almost nothing safe to push on. Phase 2
+      Activity ran fully blind, with no public leaderboard to steer by, and on the
+      now-known AS2 labels every edit we made moved the predictions the wrong way.
+      The Phase 1 anchor (id55, resubmitted as id60) sat at 0.4075 on AS2; each
+      Phase 2 change drifted up and away from it, ending at 0.4123 for the submitted
+      id63.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
+      <figcaption>True AS2 MAE (answer-key labels), from the Phase 1 anchor through the Phase 2 submissions. Every Phase 2 edit (coral) rose above id60; the winning score was 0.4061 (dashed line). The teal bar is a candidate we built but did not submit.</figcaption>
+    </figure>
+    <table class="metric-table">
+      <thead>
+        <tr><th>id</th><th>What it added</th><th>AS2 MAE</th><th>Δ vs id60</th></tr>
+      </thead>
+      <tbody>
+        <tr class="hi"><th>id60 (=id55)</th><td>Phase 1 anchor</td><td>0.4075</td><td>baseline</td></tr>
+        <tr><th>id61</th><td>AS1 labels + top500 AS1-aug blend (α 0.40)</td><td>0.4121</td><td>+0.0046</td></tr>
+        <tr><th>id62</th><td>+ ChEMBL pairrank high-activity gate</td><td>0.4115</td><td>+0.0040</td></tr>
+        <tr class="hi"><th>id63</th><td>+ composite pairrank/ChemProp gate, α 0.45 (final)</td><td>0.4123</td><td>+0.0048</td></tr>
+      </tbody>
+    </table>
+    <p class="metrics-key">AS2 MAE on the now-unblinded labels; Phase 2 had no public leaderboard to check against. Every step away from the anchor added error.</p>
+    <p>What went wrong, roughly in order:</p>
+    <ul>
+      <li><strong>Retraining on the released AS1 labels and blending in a top500 AS1-augmented model.</strong> It pulled AS2 toward the new model, but AS1 retraining barely improved AS2 for most members, so the blend mostly imported error.</li>
+      <li><strong>A family of gate models to catch the tail</strong>, built from external <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> / public-PXR activity: pairrank ranking and classifier models, in the spirit of Boltz-2's affinity head, which itself trains on pairwise ranking. They spotted high-activity compounds well (AUC around 0.88), but identification was not the hard part: knowing <em>which</em> compounds to move says nothing about <em>how far</em>, and getting the magnitude wrong cost more MAE than the ranking saved.</li>
+      <li><strong>Leaving the low tail alone, the one call that paid off.</strong> A low-side shift risks a large error whenever it fires on the wrong compound, so we never applied one; the answer key later confirmed the restraint was right.</li>
+    </ul>
+    <p>
+      Those pieces became the submitted candidate, id63:
+      <code>id63 = AS1 rows filled with released labels; AS2 = the id55/id60 anchor blended 0.45 toward an AS1-augmented top500 model, plus a ChEMBL pairrank high-activity gate (+0.15) and a composite pairrank/ChemProp gate (+0.15), with no low-side shift</code>.
+      Every one of those AS2 moves, in the end, was in the wrong direction.
+    </p>
+    <p>
+      The blunt version: from the Phase 1 anchor onward, everything we could do to
+      AS2 made it worse, though going in we assumed the opposite. Folding in the
+      released AS1 labels felt like it could only help, so we even pushed the blend
+      from 0.40 up to 0.45. That doing <em>nothing</em> at all would have been the
+      right answer was not something we could have called at the time.
+    </p>
+    <p>
+      And it cuts both ways. The bar we did not submit,
+      <code>id55shape_t10top500_t40_soft_g35</code>, reaches <strong>0.4056</strong>
+      on the true AS2 labels, just under the winning 0.4061, and in hindsight would
+      have taken first; we benched it for moving too many values too far and failing
+      our own preflight check. At the other extreme, simply holding the conservative
+      id60 anchor (0.4075) would already have beaten what we submitted. Adding a
+      little was the worst of the three, and at submission time there was no way to
+      tell the winning bet from the losing one. That is the hard part of a blind
+      competition.
+    </p>
+    <div class="aside">
+      <p>
+        The full answer key (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>),
+        run after the competition, only sharpens the point. Even a mechanical
+        anchor-residual stacker built without ever looking at a leaderboard lands
+        around <strong>0.405</strong> on the full test, ahead of the
+        importance-calibrated ensemble (0.407) and of everything we actually
+        submitted in Phase 2. Past a certain point the extra machinery cost more than
+        it bought; the discipline of doing less was, twice over, the better model.
+      </p>
+    </div>
+  </section>
+
   <section id="links">
-    <h2>6. Reproducibility and links</h2>
+    <h2>Reproducibility and links</h2>
     <ul>
       <li>Phase 1 research log (day-by-day, some Japanese): <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
       <li>Phase 2 research log: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/208">issue #208</a></li>

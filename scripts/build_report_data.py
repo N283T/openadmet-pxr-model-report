@@ -555,6 +555,105 @@ def build_boltz_pooling(src: Path) -> None:
     _write("boltz_pooling.json", {"variants": variants})
 
 
+# Phase-1 calibration-and-gate journey, read from the LB submission ledger.
+# (lb_submission id, short axis label, full label, is-anchor).
+CALIB_LEDGER = (
+    "track1_activity",
+    "analysis",
+    "oof_proxy_diagnostics",
+    "lb_submission_direction_table.csv",
+)
+CALIB_JOURNEY = [
+    (13, "raw", "Caruana ensemble (raw)", False),
+    (31, "calibrated", "+ affine calibration", False),
+    (51, "id51", "id51 · decorrelation anchor", False),
+    (52, "id52", "id52 · trunk re-pool swap", False),
+    (53, "id53", "id53 · trunk core-only", False),
+    (54, "id54", "id54 · potent gate", False),
+    (55, "id55", "id55 · top500 + potent + soft gate", True),
+]
+
+
+def build_calibration_journey(src: Path) -> None:
+    """Public-LB MAE across the Phase-1 calibration + tail-gate milestones."""
+    df = pd.read_csv(src.joinpath(*CALIB_LEDGER))
+    mae_by_id = df.drop_duplicates("id").set_index("id")["lb_mae"]
+    delta_by_id = df.drop_duplicates("id").set_index("id")["delta_lb_mae_vs_id55"]
+    milestones = []
+    for sub_id, short, label, anchor in CALIB_JOURNEY:
+        if sub_id not in mae_by_id.index:
+            raise SystemExit(f"submission id not found in ledger: {sub_id}")
+        milestones.append(
+            {
+                "id": int(sub_id),
+                "short": short,
+                "label": label,
+                "lbMae": round(float(mae_by_id[sub_id]), 4),
+                "deltaId55": round(float(delta_by_id[sub_id]), 4),
+                "anchor": anchor,
+            }
+        )
+    _write("calibration_journey.json", {"milestones": milestones})
+
+
+# Phase-2 AS2 MAE regression, from the final-label answer-key replay.
+PHASE2_DB_REPLAY = (
+    "track1_activity",
+    "analysis",
+    "final_label_replay",
+    "db_submission_replay_all.csv",
+)
+PHASE2_CAND_REPLAY = (
+    "track1_activity",
+    "analysis",
+    "final_label_replay",
+    "candidate_replay_all_phase2_and_db_submissions.csv",
+)
+# (lb_submission id, short label, note, kind)
+PHASE2_AS2_SELECT = [
+    (55, "id60 (=id55)", "Phase 1 anchor, resubmitted as the final id60", "phase1"),
+    (61, "id61", "Phase 2: top500 AS1-aug blend", "phase2"),
+    (62, "id62", "Phase 2: + pairrank gate", "phase2"),
+    (63, "id63", "Phase 2 final (submitted)", "phase2"),
+]
+# Winner's public score (leaderboard rank 1, matcha-croissant).
+PHASE2_WINNER_MAE = 0.4061
+
+
+def build_phase2_as2(src: Path) -> None:
+    """True AS2 MAE across the Phase-1-anchor to Phase-2-final submissions."""
+    rep = pd.read_csv(src.joinpath(*PHASE2_DB_REPLAY))
+    mae_by_id = rep.drop_duplicates("id").set_index("id")["as2_mae"]
+    milestones = []
+    for sub_id, label, note, kind in PHASE2_AS2_SELECT:
+        if sub_id not in mae_by_id.index:
+            raise SystemExit(f"submission id not found in replay: {sub_id}")
+        milestones.append(
+            {
+                "label": label,
+                "note": note,
+                "kind": kind,
+                "as2Mae": round(float(mae_by_id[sub_id]), 4),
+            }
+        )
+    cand = pd.read_csv(src.joinpath(*PHASE2_CAND_REPLAY))
+    hit = cand[cand["label"].str.contains("id55shape_t10top500_t40_soft_g35", na=False)]
+    if hit.empty:
+        raise SystemExit("hindsight-best candidate not found in replay")
+    milestones.append(
+        {
+            "label": "id55shape",
+            "note": "best AS2 in hindsight (not submitted)",
+            "kind": "best",
+            "as2Mae": round(float(hit.iloc[0]["as2_mae"]), 4),
+        }
+    )
+    _write(
+        "phase2_as2.json",
+        {"milestones": milestones, "winnerMae": PHASE2_WINNER_MAE},
+    )
+
+
 def build_proxy(src: Path) -> None:
     """Local Analog-Set-1 MAE vs blinded Analog-Set-2 MAE across every candidate."""
     df = pd.read_csv(src.joinpath(*PROXY_CSV))
@@ -802,6 +901,8 @@ def main() -> None:
     build_member_corr(src)
     build_model_cards(src)
     build_boltz_pooling(src)
+    build_calibration_journey(src)
+    build_phase2_as2(src)
     build_feature_scatter(src)
     build_feature_corr(src)
     logger.info("done -> %s", OUT_DIR)
