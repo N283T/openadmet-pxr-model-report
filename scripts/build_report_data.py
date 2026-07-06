@@ -26,6 +26,7 @@ import json
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -470,6 +471,90 @@ def build_member_corr(src: Path) -> None:
     _write("member_corr.json", {"aliases": aliases, "matrix": matrix})
 
 
+def build_model_cards(src: Path) -> None:
+    """Per-member test (AS1+AS2) metrics + weight + OOF MAE, keyed by alias."""
+    truth = _load_true_labels(src)
+    w = pd.read_csv(src.joinpath(*MEMBER_WEIGHTS_CSV))
+    prod = w[(w["stage"] == "pre_as1") & (w["weight_source"] == "old_prod")]
+    weight_by_key = prod.set_index("member")["weight"]
+    cards = {}
+    for m in ENSEMBLE_MEMBERS:
+        sub = pd.read_csv(src.joinpath(*SUBMISSIONS_DIR, MEMBER_SUBMISSION[m["key"]]))
+        sub = sub.rename(columns={"Molecule Name": "name", "pEC50": "pred"})[
+            ["name", "pred"]
+        ]
+        d = truth.merge(sub, on="name").dropna(subset=["true", "pred"])
+        y = d["true"].to_numpy()
+        yh = d["pred"].to_numpy()
+        spear = float(d["true"].rank().corr(d["pred"].rank()))
+        cards[m["alias"]] = {
+            "family": m["family"],
+            "testMae": round(float(np.mean(np.abs(yh - y))), 3),
+            "testSpearman": round(spear, 3),
+            "oofMae": m["oofMae"],
+            "weight": round(float(weight_by_key[m["key"]]), 3),
+        }
+    _write("model_cards.json", {"cards": cards})
+
+
+# Curated Boltz trunk-pooling sweep, read from the trunk inventory report.
+# (exp_name, display label, kept-into-ensemble). OOF MAE (mean) is parsed from
+# the "Existing Boltz-Family Experiments" table so the numbers stay reproducible.
+BOLTZ_POOLING_REPORT = (
+    "track1_activity",
+    "analysis",
+    "boltz_trunk_fast_inventory",
+    "outputs",
+    "report.md",
+)
+# Blocks: s_prot_mean 384 + s_lig_mean 384 + z_mean 128 + z_max 128 (run_train.py).
+# dim = which of those blocks the variant keeps.
+BOLTZ_POOLING_SELECT = [
+    (
+        "tabpfn_pooled_boltz_allpairs_umap_default",
+        "all 434 residues (allpairs)",
+        True,
+        1024,
+    ),
+    ("tabpfn_pooled_boltz_umap_default", "13-residue core pocket", True, 1024),
+    ("tabpfn_pooled_boltz_ab_zonly_umap_default", "z pairs only", False, 256),
+    ("tabpfn_pooled_boltz_ab_zmean_umap_default", "z mean-pool", False, 128),
+    ("tabpfn_pooled_boltz_ab_sonly_umap_default", "single (s) only", False, 768),
+    ("tabpfn_pooled_boltz_ab_slig_umap_default", "ligand single only", False, 384),
+    ("tabpfn_pooled_boltz_ab_sprot_umap_default", "protein single only", False, 384),
+    ("tabpfn_pooled_boltz_ab_zmax_umap_default", "z max-pool only", False, 128),
+]
+
+
+def build_boltz_pooling(src: Path) -> None:
+    """Boltz trunk-pooling sweep (OOF MAE), curated from the inventory report."""
+    text = src.joinpath(*BOLTZ_POOLING_REPORT).read_text()
+    mae_by_name: dict[str, float] = {}
+    for line in text.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        try:
+            mae_by_name[cells[1]] = float(cells[2])
+        except ValueError:
+            continue
+    variants = []
+    for exp_name, label, kept, dim in BOLTZ_POOLING_SELECT:
+        if exp_name not in mae_by_name:
+            raise SystemExit(f"pooling variant not found in report: {exp_name}")
+        variants.append(
+            {
+                "label": label,
+                "oofMae": round(mae_by_name[exp_name], 3),
+                "kept": kept,
+                "dim": dim,
+            }
+        )
+    _write("boltz_pooling.json", {"variants": variants})
+
+
 def build_proxy(src: Path) -> None:
     """Local Analog-Set-1 MAE vs blinded Analog-Set-2 MAE across every candidate."""
     df = pd.read_csv(src.joinpath(*PROXY_CSV))
@@ -715,6 +800,8 @@ def main() -> None:
     build_lgbm_gain(src)
     build_lgbm_top_features(src)
     build_member_corr(src)
+    build_model_cards(src)
+    build_boltz_pooling(src)
     build_feature_scatter(src)
     build_feature_corr(src)
     logger.info("done -> %s", OUT_DIR)

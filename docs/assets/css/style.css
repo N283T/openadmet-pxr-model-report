@@ -217,6 +217,19 @@ code {
 .roster-table .yes { color: #3f9e8b; font-weight: 700; }
 .roster-table .no { color: var(--color-coral); font-weight: 800; }
 
+/* Boltz pooled-vector composition strip (mimics the 1024-d block diagram) */
+.vblocks { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 6px; }
+.vblock-row { display: flex; align-items: center; gap: 12px; }
+.vblock-name { width: 84px; flex-shrink: 0; text-align: right; font-family: var(--font-mono); font-weight: 700; font-size: .84rem; color: var(--ink); }
+.vblock-bar { display: flex; flex: 1; height: 40px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.vblock-seg { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: .72rem; font-weight: 600; line-height: 1.15; text-align: center; padding: 0 4px; }
+.vblock-seg small { font-weight: 500; opacity: .82; font-size: .64rem; }
+.vb-sprot { background: var(--color-blue); }
+.vb-slig { background: var(--color-coral); }
+.vb-zmean { background: var(--color-teal); }
+.vb-zmax { background: color-mix(in srgb, var(--color-teal) 55%, #fff); color: var(--ink); }
+.vblocks-note { font-size: .82rem; color: var(--muted); margin: 4px 0 0 96px; }
+
 /* Numeric comparison table (ablation baselines, metrics) */
 .table-scroll { overflow-x: auto; margin: 10px 0 6px; -webkit-overflow-scrolling: touch; }
 .metric-table {

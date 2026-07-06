@@ -486,6 +486,8 @@
     { el: "chart-membercorr", file: "member_corr.json", build: optMemberCorr },
     { el: "chart-ksweep", file: "topk_sweep.json", build: optKSweep },
     { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
+    { el: "chart-member-mae", file: "model_cards.json", build: optMemberMae },
+    { el: "chart-boltz-pool", file: "boltz_pooling.json", build: optBoltzPooling },
   ];
 
   // Least-squares fit; returns the two endpoints of the trend line over the data x-range.
@@ -543,6 +545,76 @@
     };
     if (cache["feature_vs_pec50.json"]) apply(cache["feature_vs_pec50.json"]);
     else getJSON("feature_vs_pec50.json").then(apply).catch(function (e) { console.error(e); });
+  }
+
+  // Per-member OOF vs test MAE (grouped horizontal bars).
+  function optMemberMae(d, p) {
+    var rows = Object.keys(d.cards).map(function (k) {
+      var c = d.cards[k];
+      return { name: k, test: c.testMae, oof: c.oofMae, family: c.family };
+    });
+    rows.sort(function (a, b) { return b.test - a.test; }); // worst first; inverse axis puts best on top
+    var cats = rows.map(function (r) { return r.name; });
+    function bar(key, color, name) {
+      return {
+        name: name, type: "bar", barGap: "28%", barWidth: "34%", barCategoryGap: "34%",
+        data: rows.map(function (r) { return r[key]; }),
+        itemStyle: { color: color, borderRadius: [0, 4, 4, 0] },
+        label: { show: true, position: "right", color: p.muted, fontSize: 10,
+          formatter: function (o) { return o.value.toFixed(3); } },
+      };
+    }
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 54, top: 36, bottom: 30, containLabel: true },
+      legend: { top: 4, itemWidth: 14, itemHeight: 10, textStyle: { color: p.ink },
+        data: ["test MAE (AS1+AS2)", "OOF MAE"] },
+      tooltip: {
+        trigger: "axis", axisPointer: { type: "shadow" },
+        backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (arr) {
+          var r = rows[arr[0].dataIndex];
+          var gap = r.test - r.oof;
+          return r.name + "<br/>test MAE <b>" + r.test.toFixed(3) + "</b><br/>OOF MAE <b>" +
+            r.oof.toFixed(3) + "</b><br/>gap " + (gap >= 0 ? "+" : "") + gap.toFixed(3);
+        },
+      },
+      xAxis: Object.assign({ type: "value", name: "MAE", min: 0,
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
+      series: [bar("test", p.coral, "test MAE (AS1+AS2)"), bar("oof", p.blue, "OOF MAE")],
+    };
+  }
+
+  // Boltz trunk-pooling sweep (OOF MAE); kept variants highlighted.
+  function optBoltzPooling(d, p) {
+    var rows = d.variants.slice().sort(function (a, b) { return b.oofMae - a.oofMae; });
+    var cats = rows.map(function (r) { return r.label; });
+    var data = rows.map(function (r) {
+      return { value: r.oofMae, itemStyle: {
+        color: r.kept ? p.coral : p.blue, borderRadius: [0, 4, 4, 0], opacity: r.kept ? 1 : 0.5 } };
+    });
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 48, top: 12, bottom: 30, containLabel: true },
+      tooltip: {
+        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (o) {
+          var r = rows[o.dataIndex];
+          return r.label + "<br/>OOF MAE <b>" + r.oofMae.toFixed(3) + "</b>" +
+            "<br/>vector size <b>" + r.dim + "d</b>" +
+            (r.kept ? "<br/><b>kept in ensemble</b>" : "");
+        },
+      },
+      xAxis: Object.assign({ type: "value", name: "OOF MAE", min: 0.45,
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "58%",
+        label: { show: true, position: "right", color: p.muted, fontSize: 11,
+          formatter: function (o) { return o.value.toFixed(3); } },
+      }],
+    };
   }
 
   function renderAll() {

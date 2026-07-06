@@ -364,8 +364,15 @@
     <h2>5. The members</h2>
     <p>
       The nine members fall into three groups. This section opens each one up,
-      family by family, using the aliases from the roster above.
+      family by family, using the aliases from the roster above. First, how each
+      member does on its own: out-of-fold on the training set versus the unblinded
+      test (AS1 + AS2). The tabular pair leads; the gap between the two bars is the
+      generalization story, and for most members the test bar is only slightly worse.
     </p>
+    <figure class="chart-figure">
+      <div id="chart-member-mae" class="chart" style="height:460px"></div>
+      <figcaption>Per-member mean absolute error, sorted best to worst. Bars: test MAE (AS1 + AS2) vs training out-of-fold MAE.</figcaption>
+    </figure>
 
     <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
     <p>
@@ -519,17 +526,47 @@
 
     <h4>ChemProp</h4>
     <p>
-      The prototype, and the strongest of the embedding members (OOF MAE 0.437,
-      Caruana weight 0.151). It is worth pausing on because the same
-      ChemProp-on-log2fc family appears <strong>twice</strong> in the system: as
-      the two predicted-log2fc scalars inside the tabular core, and as this
-      standalone 256-dimension frozen embedding. Those are the two ways to inject
-      the log2fc signal from Strategy: as a strong prediction (the main axis) and
-      as a spread-out representation (a different, decorrelated view). Direct
-      alternatives were all weaker (scratch 0.530, full fine-tune 0.507,
-      frozen-head fine-tune 0.456), which is what made the frozen-embed recipe the
-      template for everything below.
+      ChemProp is the prototype, and the strongest embedding member (OOF MAE 0.437,
+      Caruana weight 0.151). It matters twice over: the same ChemProp-on-log2fc
+      model is what produces the <strong>pred</strong> columns in the tabular core
+      (Strategy and 5.1), and its 256-dimension frozen embedding is this standalone
+      member. Two ways to inject the same log2fc signal, one as a sharp prediction,
+      one as a spread-out representation.
     </p>
+    <p>The log2fc pretraining is a small multi-task setup:</p>
+    <ul>
+      <li><strong>Two regression heads</strong>, one per concentration: log2fc at
+        8.25 µM and at 33 µM.</li>
+      <li>Trained on all 13,136 compounds, with missing targets masked out.</li>
+      <li>Hyperparameters chosen with <a href="https://optuna.org/">Optuna</a>,
+        tuned not for the log2fc loss itself but for the downstream pEC50
+        out-of-fold MAE.</li>
+    </ul>
+    <p>
+      <strong>Seed averaging</strong> was the main lever that sharpened pred: we
+      pretrain ChemProp with several seeds and average their predicted log2fc,
+      cutting variance. Going from 5 to 10 seeds improved the downstream (top-500
+      OOF MAE 0.399 to 0.397), and 15 seeds tapered off, so we stopped at a
+      seed ensemble. That is why pred correlates as tightly with pEC50 as it does.
+    </p>
+    <p>
+      Freezing the encoder and reading its embedding with TabPFN, rather than
+      fine-tuning it, is the recipe carried over from Buterez et&nbsp;al. (Strategy).
+      The direct alternatives were all weaker out-of-fold: scratch pEC50 0.530,
+      full fine-tune 0.507, frozen-head fine-tune 0.456, versus 0.437 for the
+      frozen embedding. This is what made the frozen-embed recipe the template for
+      every member below.
+    </p>
+    <div class="aside">
+      <p>
+        A curiosity worth flagging: those out-of-fold numbers oversold the frozen
+        recipe's margin. Training ChemProp directly on pEC50 scored a weak ~0.53
+        out-of-fold, yet on the now-unblinded test (AS1 + AS2) it reaches ~0.48,
+        much closer to the frozen-embed member's 0.44 on the same test. The frozen
+        recipe still won, but out-of-fold ranking exaggerated by how much: another
+        small case of OOF and the blinded test disagreeing.
+      </p>
+    </div>
 
     <h4>Foundation encoders: KERMT &amp; MoLFormer</h4>
     <p>
@@ -541,50 +578,136 @@
       LoRA-pretrained on log2fc, giving a frozen 768-dim [CLS] vector (0.475,
       weight 0.040). Both predict about 0.92-correlated with the tabular core (same
       log2fc signal), but their different backbones shift the errors enough to earn
-      weight. Fine-tuning MoLFormer-XL straight to pEC50, by contrast, was weak
-      (0.529) and dropped, echoing the ChemProp lesson.
+      weight. Not every backbone cleared the bar: <strong>ChemBERTa</strong> (the
+      5M/10M multitask-regression variants), run through the same frozen recipe,
+      sat around 0.53 out-of-fold and failed the Caruana add-value gate (no MAE
+      gain, negligible weight), so it was left out. A closer call was
+      <strong><a href="https://github.com/deepmodeling/Uni-Mol">UniMol-v2</a></strong>,
+      a 3D-conformer foundation model given the same frozen log2fc pretraining: it
+      reached a respectable ~0.484 out-of-fold, near the members that stayed, but
+      still did not earn enough added value for Caruana to keep it. Fine-tuning
+      MoLFormer-XL straight to pEC50, by contrast, was weak (0.529) and dropped,
+      echoing the ChemProp lesson.
     </p>
 
     <h4>Extra GNNs: GatedGCN &amp; AttentiveFP</h4>
     <p>
-      Two further GNN backbones (gated message passing and graph attention), same
-      recipe, 512-dim embeddings. Individually there is little to say: they are
-      weak alone (0.474, 0.484) and carry tiny weights (0.018, 0.002). They earn
-      their place as a <strong>diversity reserve</strong>. Dropping them looks
-      better out-of-fold, but it makes Caruana pile weight back onto the
-      cheme/log2fc family (family share rising toward ~0.94), and that
-      over-concentration regressed the leaderboard: shedding ~0.02 of member weight
-      amplified into ~0.1 more on the core and cost ~0.006 MAE. Low weight did not
-      mean safe to drop.
+      Two more GNN backbones (gated message passing and graph attention), same
+      frozen recipe, 512-dim embeddings. Several GNN variants were tried; these two
+      are simply the ones that came out best, and there is no deeper meaning to the
+      specific architectures. Alone they are weak (0.474, 0.484) and carry tiny
+      weights (0.018, 0.002). Their real job is the one the whole ensemble is built
+      around: a <strong>buffer</strong> that keeps Caruana from leaning everything
+      back onto the top500 / cheme-log2fc core. Drop them and it looks better
+      out-of-fold, but family share climbs toward ~0.94, and that over-concentration
+      regressed the leaderboard: shedding ~0.02 of member weight amplified into ~0.1
+      more on the core and cost ~0.006 MAE. Low weight did not mean safe to drop.
     </p>
 
     <h3>5.3 Boltz-2 structural (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
-      The only two members with no log2fc: they come purely from predicted
-      structure. <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> co-folds
-      PXR (UniProt O75469, 434 residues) with each ligand, and instead of using the
-      final pose or the affinity head we take
-      Boltz's internal <strong>trunk representation</strong> (the per-token
-      single tensor <code>s</code> and the token-pair tensor <code>z</code>) and
-      pool it into a fixed <strong>1,024-dimension</strong> vector per compound for
-      TabPFN. The two members differ only in which pairs they pool:
-      <strong>Boltz-pocket</strong> over a fixed 13-residue core pocket by ligand
-      atoms, <strong>Boltz-allpairs</strong> over all 434 residues by ligand atoms
-      (both then add the mean protein and mean ligand single vectors).
+      First, a clarification the name obscures: despite &ldquo;structural&rdquo;,
+      these two never use Boltz-2's predicted 3D pose. They read Boltz's internal
+      learned <strong>representation</strong> and hand it to TabPFN. Here
+      &ldquo;Boltz&rdquo; labels where the features come from, not a docking or
+      structure score. Read them as representation models that happen to be built
+      on a structure predictor.
     </p>
     <p>
-      An s/z ablation showed the <em>pair</em> representation carries most of the
-      signal (z alone ≈ 0.489 OOF MAE; the single vectors are weaker), which lines
-      up with Boltz-2's own affinity module emphasizing protein-ligand pairs: PXR
-      activity needs the pocket-ligand interaction, not just the ligand's shape.
+      Both members come with the most winding backstory in the ensemble. The
+      original plan was to use
+      <a href="https://github.com/jwohlwend/boltz">Boltz-2</a>'s predicted
+      structure and its affinity head directly: co-fold PXR (UniProt O75469, 434
+      residues) with each ligand and read activity off the pose or the affinity
+      score. Honestly, neither was usable on its own; the poses and the affinity
+      scalar were too noisy to carry PXR activity (that affinity scalar survives
+      only as one weak column inside the tabular core, back in the Strategy
+      section). But co-folding every compound had taken about four days of compute,
+      and the run had been launched with <code>--write_embeddings</code>, so the
+      trunk representation was already sitting on disk. Rather than waste it, the
+      question became whether Boltz is more useful as a <strong>representation</strong>
+      than as a structure predictor.
+    </p>
+    <p>
+      So instead of the pose or the affinity head we take Boltz's internal
+      <strong>trunk representation</strong> (the per-token single tensor
+      <code>s</code> and the token-pair tensor <code>z</code>) and pool it into a
+      fixed <strong>1,024-dimension</strong> vector per compound for TabPFN. That
+      vector is four blocks:
+    </p>
+    <div class="vblocks">
+      <div class="vblock-row">
+        <span class="vblock-name">pocket</span>
+        <div class="vblock-bar">
+          <div class="vblock-seg vb-sprot" style="flex:384">s_prot_mean<small>384d</small></div>
+          <div class="vblock-seg vb-slig" style="flex:384">s_lig_mean<small>384d</small></div>
+          <div class="vblock-seg vb-zmean" style="flex:128">z_if_mean<small>128d</small></div>
+          <div class="vblock-seg vb-zmax" style="flex:128">z_if_max<small>128d</small></div>
+        </div>
+      </div>
+      <div class="vblock-row">
+        <span class="vblock-name">allpairs</span>
+        <div class="vblock-bar">
+          <div class="vblock-seg vb-sprot" style="flex:384">s_prot_mean<small>384d</small></div>
+          <div class="vblock-seg vb-slig" style="flex:384">s_lig_mean<small>384d</small></div>
+          <div class="vblock-seg vb-zmean" style="flex:128">z_xp_mean<small>128d</small></div>
+          <div class="vblock-seg vb-zmax" style="flex:128">z_xp_max<small>128d</small></div>
+        </div>
+      </div>
+      <p class="vblocks-note">Same <code>s</code> blocks (768d); only the <code>z</code> pooling mask changes.</p>
+    </div>
+    <ul>
+      <li><strong>s (single)</strong> is the per-token summary: <code>s_prot_mean</code> averages Boltz's single vector over the 434 PXR residue tokens, <code>s_lig_mean</code> over the ligand atom tokens. Each side described on its own.</li>
+      <li><strong>z (pair)</strong> is the residue-by-atom interaction block: <code>z_mean</code> and <code>z_max</code> pool the protein-ligand pair cells of the trunk. This is where the pocket-ligand interaction lives, and it carries most of the signal.</li>
+      <li><strong>pocket vs allpairs</strong> keep identical <code>s</code> blocks and differ only in which pair cells feed <code>z</code>: a fixed 13-residue core pocket (<code>z_if</code>) versus all 434 residues (<code>z_xp</code>), both by ligand atoms. In practice this barely moved the error.</li>
+    </ul>
+    <p>
+      How to pool was its own small search, over twenty variants of which tokens
+      and which tensor to reduce.
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
+      <figcaption>Ways of pooling the Boltz trunk into one vector (out-of-fold MAE). The two coral bars are the poolings kept in the ensemble; axis starts at 0.45 to separate a tight band.</figcaption>
+    </figure>
+    <p>
+      Two things stand out. Which residues you pool over barely matters: a 13-residue
+      core pocket and all 434 residues land within 0.001 MAE. How you reduce the
+      pair tensor matters a lot: mean-pooling <code>z</code> is fine, but max-pooling
+      <code>z</code> alone collapses to 0.576. The <em>pair</em> representation
+      carries most of the signal (z alone ≈ 0.489; the single vectors are weaker),
+      which matches Boltz-2's own affinity module emphasizing protein-ligand pairs:
+      PXR activity needs the pocket-ligand interaction, not just the ligand's shape.
+      Feeding the embeddings through an affinity-style head, or mixing in the
+      distogram the way Boltz's native affinity module does, did not particularly
+      help. Two poolings survived into the ensemble: <strong>Boltz-pocket</strong>
+      (the 13-residue core) and <strong>Boltz-allpairs</strong> (all 434 residues),
+      each about 0.486 alone.
+    </p>
+    <p>
       The trunk dimensions have no interpretable names, so a non-linear reader
       helps: TabPFN (0.486) beat LightGBM and an MLP (0.512, 0.538) on the same
-      vector. Each member scores ~0.486 alone with small weights (0.046, 0.035),
-      but they add a genuinely different structural axis. Swapping in a stronger
-      re-pooled variant, or dropping them, looked better out-of-fold yet regressed
-      the leaderboard, the same reverse-amplification as the extra GNNs, so they
-      stay as a structural reserve. (The Boltz affinity <em>scalar</em> from
-      Figure 3 lives inside the tabular core, not here.)
+      vector. Each carries a small weight (0.046, 0.035), but together they add a
+      genuinely different, structural axis to an ensemble otherwise built on 2D
+      descriptors and log2fc. Dropping them or swapping in a re-pooled variant
+      looked better out-of-fold yet regressed the leaderboard, the same
+      reverse-amplification as the extra GNNs, so they stay as a structural reserve.
+    </p>
+    <p>
+      Step back and these two say something. They ended up the only members
+      carrying <strong>no log2fc at all</strong>, and the most decorrelated from the
+      rest of the ensemble: their agreement with the other members averages about
+      0.85, below the ~0.88 pack and among the lowest of any member, though still
+      far from independent. Reaching roughly <strong>0.486 from co-folded structure
+      alone</strong>, with none of the log2fc signal that powers every other member,
+      says the Boltz representation holds real standalone signal. Set against a
+      direct language-model fine-tune like MoLFormer-XL, which only managed 0.529,
+      it is a strong showing for a structure-derived model, and a sign of how much
+      Boltz can do on its own. The caveat, echoing the ChemProp aside above, is not
+      to overstate it: on the unblinded AS1 + AS2 a from-scratch ChemProp actually
+      reached about 0.484, so structure is not uniquely winning here. But it is a
+      nice negative-space finding in its own right: for this target, Boltz-2 was
+      worth more read as a learned representation than used for its predicted
+      structure or affinity.
     </p>
   </section>
 
