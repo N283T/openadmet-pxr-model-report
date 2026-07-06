@@ -76,9 +76,9 @@
     <h2>0. TL;DR</h2>
     <ul>
       <li>Finished <strong>4th of 95</strong> (Tier 1) on the OpenADMET PXR Challenge Track 1 (Activity), predicting human PXR activation (pEC50) from structure alone: MAE <strong>0.4059</strong> in Phase 1, <strong>0.4113</strong> in Phase 2.</li>
-      <li>The idea that decided it was <strong>multi-fidelity transfer learning</strong> (after <a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a>): the challenge quietly ships a cheap, single-concentration <code>log2fc</code> readout, and a model's <strong>predicted log2fc is by far the single strongest feature</strong>, doing the work of a full descriptor stack on its own.</li>
-      <li>Around that signal sits a <strong>nine-member Caruana ensemble</strong> of frozen-embedding and tabular models read out by <strong>TabPFN</strong>. Boltz-2 earns a place not for its predicted structure or affinity (both too noisy) but as a learned representation.</li>
-      <li>Past the ensemble, one affine <strong>calibration</strong> was the only clear gain; the Phase 1 tail gates and the whole of Phase 2 mostly added noise or made things worse. Knowing when to stop was, in hindsight, one of the better calls.</li>
+      <li>The idea that decided it was <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a> (after <a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a>): the challenge quietly ships a cheap, single-concentration <code>log2fc</code> readout, and a model's <strong>predicted log2fc is by far the single strongest feature</strong>, doing the work of a full descriptor stack on its own.</li>
+      <li>Around that signal sits a <a href="#ensemble"><strong>nine-member Caruana ensemble</strong></a> of frozen-embedding and tabular models read out by <strong>TabPFN</strong>. <a href="#members">Boltz-2</a> earns a place not for its predicted structure or affinity (both too noisy) but as a learned representation.</li>
+      <li>Past the ensemble, one affine <a href="#calibration"><strong>calibration</strong></a> was the only clear gain; the Phase 1 tail gates and the whole of <a href="#phase2">Phase 2</a> mostly added noise or made things worse. Knowing when to stop was, in hindsight, one of the better calls.</li>
     </ul>
   </section>
 
@@ -224,8 +224,9 @@
       the single-concentration log2fc and used that prediction, which we call
       <strong>pred</strong>, as a feature. Because the assay is measured at two
       concentrations, pred is also two columns (8.25&nbsp;µM and 33&nbsp;µM). How
-      the ChemProp predictor is built is covered in the ChemProp model section
-      below; here it is enough that pred became our single strongest input.
+      the ChemProp predictor is built is covered in the
+      <a href="#members">ChemProp model section</a> below; here it is enough that
+      pred became our single strongest input.
     </p>
     <p>
       Figure&nbsp;2 puts the four log2fc variants side by side against training
@@ -297,7 +298,7 @@
       better (Spearman 0.72 to 0.78 vs 0.68). All of them clearly beat the Boltz-2
       affinity score (0.75). One assay-derived signal, predicted, does the work of a
       full generic descriptor model. The full Phase 1 submission (MAE ≈ 0.41) is of
-      course well ahead, but that is a reference point, not a build order: I ran this
+      course well ahead, but that is a reference point, not a build order: we ran this
       comparison after the challenge, purely to size how much of the signal pred
       alone accounts for. These are quick held-out fits
       (<code>scripts/ablation_baselines.py</code>), not the production models.
@@ -497,14 +498,17 @@
         top500 weight (0.31) was close to the AS2-optimal (0.33), and simply
         zeroing it would have edged us out by a hair. The failure mode is letting
         out-of-fold optimization inflate top500 to 0.84, which blows up on AS2,
-        not top500 itself
-        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>).
+        not top500 itself.
+        These rows are a post-hoc member-weight study on the released AS2 labels
+        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>),
+        not the literal Phase 2 submission, whose tail gates sat higher
+        (<a href="#phase2">Section 7</a>).
       </p>
       <div class="table-scroll">
         <table class="metric-table">
           <thead><tr><th>Weighting</th><th>top500 weight</th><th>AS2 MAE</th></tr></thead>
           <tbody>
-            <tr><th>Our actual submission</th><td>0.31</td><td>0.405</td></tr>
+            <tr><th>Our weights (as used)</th><td>0.31</td><td>0.405</td></tr>
             <tr><th>Zero the top500 weight</th><td>0.00</td><td>0.402</td></tr>
             <tr><th>Optimized on AS2 (oracle)</th><td>0.33</td><td>0.399</td></tr>
             <tr><th>Optimized on out-of-fold</th><td>0.84</td><td>0.422</td></tr>
@@ -543,7 +547,7 @@
       ChemProp is the prototype, and the strongest embedding member (OOF MAE 0.437,
       Caruana weight 0.151). It matters twice over: the same ChemProp-on-log2fc
       model is what produces the <strong>pred</strong> columns in the tabular core
-      (Strategy and 5.1), and its 256-dimension frozen embedding is this standalone
+      (<a href="#strategy">Strategy</a> and 5.1), and its 256-dimension frozen embedding is this standalone
       member. Two ways to inject the same log2fc signal, one as a sharp prediction,
       one as a spread-out representation.
     </p>
@@ -635,8 +639,8 @@
       residues) with each ligand and read activity off the pose or the affinity
       score. Honestly, neither was usable on its own; the poses and the affinity
       scalar were too noisy to carry PXR activity (that affinity scalar survives
-      only as one weak column inside the tabular core, back in the Strategy
-      section). But co-folding every compound had taken about four days of compute,
+      only as one weak column inside the tabular core, back in the
+      <a href="#strategy">Strategy</a> section). But co-folding every compound had taken about four days of compute,
       and the run had been launched with <code>--write_embeddings</code>, so the
       trunk representation was already sitting on disk. Rather than waste it, the
       question became whether Boltz is more useful as a <strong>representation</strong>
