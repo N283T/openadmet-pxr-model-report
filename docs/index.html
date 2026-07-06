@@ -43,11 +43,9 @@
     <p class="eyebrow">OpenADMET PXR Blind Challenge · 2026-04-01 → 07-01</p>
     <h1>Predicting PXR activation (pEC50) for 513 blinded compounds</h1>
     <p class="lede">
-      A post-challenge technical report for the Track&nbsp;1 Activity submission.
-      The system is a Caruana-bagged ensemble of frozen-encoder&nbsp;→&nbsp;TabPFN
-      models over chemical descriptors, foundation-model embeddings, and Boltz-2
-      structural features, with covariate-shift calibration and sparse
-      tail correction.
+      A post-challenge technical report for the Track&nbsp;1 (Activity) submission.
+      The short version is the TL;DR just below; the sections that follow trace how
+      the model was built, and where it went wrong.
     </p>
     <div class="result-cards">
       <div class="result-card">
