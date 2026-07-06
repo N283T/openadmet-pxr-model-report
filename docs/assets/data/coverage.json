@@ -1,0 +1,1 @@
+{"groups": [{"name": "Train (dose-response)", "n": 4140}, {"name": "Blinded test", "n": 513}, {"name": "Single-conc-only aux", "n": 8483}], "labels": ["pEC50", "Emax", "Counter", "log2fc"], "matrix": [[4140, 4140, 2648, 2392], [0, 0, 0, 0], [0, 0, 0, 8483]]}
