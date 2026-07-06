@@ -126,19 +126,32 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 }
 .header-inner { display: flex; align-items: center; gap: 16px; height: 58px; }
 .brand { font-family: var(--font-display); font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
-.topnav { display: flex; gap: 16px; margin-left: auto; overflow-x: auto; }
-.topnav a { position: relative; color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
-.topnav a::after {
-  content: ""; position: absolute; left: 0; bottom: -4px; height: 2px; width: 0;
-  border-radius: 2px; background: var(--color-coral); transition: width 0.2s ease;
-}
-.topnav a:hover { color: var(--ink); }
-.topnav a:hover::after { width: 100%; }
 .theme-toggle {
+  margin-left: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
   border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 15px; flex: none;
 }
 .theme-toggle:hover { border-color: var(--color-coral); }
+
+/* Section nav (fixed on-page map with scroll-spy, wide screens only) */
+.section-nav { display: none; }
+@media (min-width: 1300px) {
+  .section-nav {
+    display: flex; flex-direction: column; gap: 10px;
+    position: fixed; top: 118px; left: calc(50% + 31rem); z-index: 20;
+  }
+}
+.sn-link {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: var(--muted); text-decoration: none;
+  transition: color 0.15s ease;
+}
+.sn-link span:last-child { white-space: nowrap; }
+.sn-link:hover { color: var(--color-coral); }
+.sn-dot { flex: none; height: 1px; width: 16px; background: var(--line); transition: all 0.2s ease; }
+.sn-link:hover .sn-dot { background: var(--color-coral); }
+.sn-link.is-active { color: var(--ink); }
+.sn-link.is-active .sn-dot { width: 24px; height: 2px; background: var(--color-coral); }
 
 /* ============================================================
    Hero
@@ -397,7 +410,6 @@ figcaption { color: var(--muted); font-size: .88rem; margin-top: 10px; padding: 
 .site-footer { padding: 34px 0; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); }
 
 @media (max-width: 640px) {
-  .topnav { display: none; }
   .hero { padding-top: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {

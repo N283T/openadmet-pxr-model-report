@@ -21,21 +21,22 @@
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="#top">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</a>
-    <nav class="topnav" aria-label="Sections">
-      <a href="#tldr">TL;DR</a>
-      <a href="#data">Challenge</a>
-      <a href="#results">Results</a>
-      <a href="#strategy">Strategy</a>
-      <a href="#ensemble">Ensemble</a>
-      <a href="#members">Members</a>
-      <a href="#calibration">Calibration</a>
-      <a href="#phase2">Phase 1 → 2</a>
-      <a href="#conclusion">Conclusion</a>
-      <a href="#links">Links</a>
-    </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
   </div>
 </header>
+
+<nav class="section-nav" aria-label="On this page">
+  <a class="sn-link" href="#tldr" data-sn="tldr"><span class="sn-dot"></span><span>TL;DR</span></a>
+  <a class="sn-link" href="#data" data-sn="data"><span class="sn-dot"></span><span>Challenge</span></a>
+  <a class="sn-link" href="#results" data-sn="results"><span class="sn-dot"></span><span>Results</span></a>
+  <a class="sn-link" href="#strategy" data-sn="strategy"><span class="sn-dot"></span><span>Strategy</span></a>
+  <a class="sn-link" href="#ensemble" data-sn="ensemble"><span class="sn-dot"></span><span>Ensemble</span></a>
+  <a class="sn-link" href="#members" data-sn="members"><span class="sn-dot"></span><span>Members</span></a>
+  <a class="sn-link" href="#calibration" data-sn="calibration"><span class="sn-dot"></span><span>Calibration</span></a>
+  <a class="sn-link" href="#phase2" data-sn="phase2"><span class="sn-dot"></span><span>Phase 1 → 2</span></a>
+  <a class="sn-link" href="#conclusion" data-sn="conclusion"><span class="sn-dot"></span><span>Conclusion</span></a>
+  <a class="sn-link" href="#links" data-sn="links"><span class="sn-dot"></span><span>Links</span></a>
+</nav>
 
 <main id="top" class="wrap">
 
@@ -926,5 +927,52 @@
 
 <script src="assets/vendor/echarts.min.js"></script>
 <script src="assets/js/charts.js"></script>
+<script>
+  // Section nav scroll-spy: highlight the section currently under the fold line.
+  (function () {
+    var OFFSET = 110;
+    var nav = document.querySelector(".section-nav");
+    if (!nav) return;
+    var links = [].slice.call(nav.querySelectorAll(".sn-link"));
+    var targets = links
+      .map(function (l) { return document.getElementById(l.getAttribute("data-sn")); })
+      .filter(Boolean);
+    if (!targets.length) return;
+    function setActive(id) {
+      links.forEach(function (l) { l.classList.toggle("is-active", l.getAttribute("data-sn") === id); });
+    }
+    function currentId() {
+      var id = targets[0].id;
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].getBoundingClientRect().top - OFFSET <= 1) id = targets[i].id;
+        else break;
+      }
+      if (window.innerHeight + Math.ceil(window.scrollY) >= document.documentElement.scrollHeight - 2) {
+        id = targets[targets.length - 1].id;
+      }
+      return id;
+    }
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    links.forEach(function (l) {
+      l.addEventListener("click", function (e) {
+        var el = document.getElementById(l.getAttribute("data-sn"));
+        if (!el) return;
+        e.preventDefault();
+        setActive(l.getAttribute("data-sn"));
+        el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        history.replaceState(null, "", "#" + l.getAttribute("data-sn"));
+      });
+    });
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { setActive(currentId()); ticking = false; });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    setActive(currentId());
+  })();
+</script>
 </body>
 </html>
