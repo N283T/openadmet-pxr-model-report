@@ -130,7 +130,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 .header-links a { display: inline-flex; align-items: center; color: var(--muted); text-decoration: none; transition: color 0.15s ease, transform 0.15s ease; }
 .header-links a:hover { color: var(--color-coral); transform: translateY(-1px); }
 .header-links svg { display: block; }
-.header-links .hf-icon { font-size: 19px; line-height: 1; }
 .theme-toggle {
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
   border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 15px; flex: none;
