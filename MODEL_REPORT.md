@@ -486,6 +486,12 @@ of that workflow; I want to write about it properly somewhere else. And the whol
 thing ran solo on a single consumer gaming PC, which, for a Tier-1 finish against
 95 entrants, still feels a little unreasonable.
 
+Finally, sincere thanks to the [OpenADMET](https://openadmet.org/) team for
+running the PXR Induction Challenge. It was a genuinely well-constructed
+benchmark, and releasing the data and the unblinded labels afterwards is what made
+this whole post-mortem, and the honest answer-checks throughout, possible. Thank
+you.
+
 ## Reproducibility and links
 
 - **Working repository** (code, feature pipeline, day-by-day logs):
