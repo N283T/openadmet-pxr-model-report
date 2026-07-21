@@ -18,9 +18,40 @@
   font-size: 0.9rem;
   color: var(--muted);
 }
-.slide.title { text-align: center; place-content: center; grid-template-rows: 1fr; row-gap: 0; }
+.slide.title { text-align: center; place-items: center; grid-template-rows: 1fr; row-gap: 0; }
 .slide.title h1 { font-size: 5rem; }
 .slide.title .subtitle { color: var(--muted); font-size: 1.6rem; margin-top: 1rem; }
+.slide.title .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 1.2em 0;
+}
+.slide.title .byline {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 2.5em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  line-height: 1.5;
+}
+.slide.title .byline-name { color: var(--color-ink); }
+.slide.title::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    var(--color-coral) 0%,
+    var(--color-peach) 33%,
+    var(--color-teal) 66%,
+    var(--color-blue) 100%);
+}
 .slide aside.notes { display: none; }
 
 /* JS-driven slide mode: only show the active slide */
@@ -135,8 +166,11 @@ body[data-mode="slide"] .slide.is-active .slide-number {
 body[data-mode="slide"] .slide.is-active h1 { font-size: 96px; }
 body[data-mode="slide"] .slide.is-active h2 { font-size: 60px; }
 body[data-mode="slide"] .slide.is-active .body { font-size: 32px; line-height: 1.5; }
-body[data-mode="slide"] .slide.is-active.title h1 { font-size: 128px; }
+body[data-mode="slide"] .slide.is-active.title h1 { font-size: 112px; line-height: 1.15; }
 body[data-mode="slide"] .slide.is-active.title .subtitle { font-size: 40px; margin-top: 24px; }
+body[data-mode="slide"] .slide.is-active.title .eyebrow { font-size: 40px; margin: 0 0 48px 0; }
+body[data-mode="slide"] .slide.is-active.title .byline { font-size: 28px; margin-top: 96px; gap: 12px; }
+body[data-mode="slide"] .slide.is-active.title::before { height: 8px; }
 /* .body becomes a flex column so bullets/tables take natural height and
    the chart/placeholder fills whatever remains — no more chart eating
    the whole slide and clipping other content. */
