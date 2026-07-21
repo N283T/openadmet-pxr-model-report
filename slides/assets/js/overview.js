@@ -22,6 +22,6 @@
     if (!slide) return;
     const slides = Array.from(document.querySelectorAll('#deck .slide'));
     const i = slides.indexOf(slide);
-    if (i >= 0) { setMode('slide'); window.Deck.goto(i, 0); }
+    if (i >= 0 && window.Deck) { setMode('slide'); window.Deck.goto(i, 0); }
   });
 })();
