@@ -22,3 +22,14 @@
 .slide.title h1 { font-size: 5rem; }
 .slide.title .subtitle { color: var(--muted); font-size: 1.6rem; margin-top: 1rem; }
 .slide aside.notes { display: none; }
+
+/* JS-driven slide mode: only show the active slide */
+body[data-mode="slide"] .slide { display: none; }
+body[data-mode="slide"] .slide.is-active { display: grid; }
+
+/* Fragment reveal */
+body[data-mode="slide"] [data-fragment] { opacity: 0; transform: translateY(6px); transition: opacity .25s ease, transform .25s ease; pointer-events: none; }
+body[data-mode="slide"] [data-fragment].is-visible { opacity: 1; transform: none; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) {
+  body[data-mode="slide"] [data-fragment] { transition: none; }
+}

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="assets/css/deck.css">
     <link rel="stylesheet" href="assets/css/slide.css">
   </head>
-  <body>
+  <body data-mode="slide">
     <div id="deck">
 
       <section class="slide title" id="s-01-title">
@@ -24,6 +24,7 @@
         <h2>TL;DR</h2>
         <div class="body">
           <p>PXR pEC50 予測で 4th/95。鍵は multi-fidelity transfer learning。</p>
+          <p data-fragment="1">Ensemble は 9-member Caruana ＋ TabPFN 読み出し。</p>
         </div>
         <div class="slide-number">02</div>
         <aside class="notes">結論を先に。詳細は後続スライドで。</aside>
@@ -39,5 +40,6 @@
       </section>
 
     </div>
+    <script src="assets/js/deck.js"></script>
   </body>
 </html>
