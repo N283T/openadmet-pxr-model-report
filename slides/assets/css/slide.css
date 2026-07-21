@@ -137,7 +137,25 @@ body[data-mode="slide"] .slide.is-active h2 { font-size: 60px; }
 body[data-mode="slide"] .slide.is-active .body { font-size: 32px; line-height: 1.5; }
 body[data-mode="slide"] .slide.is-active.title h1 { font-size: 128px; }
 body[data-mode="slide"] .slide.is-active.title .subtitle { font-size: 40px; margin-top: 24px; }
-body[data-mode="slide"] .slide.is-active .body { overflow: hidden; }
-/* Chart / placeholder in slide mode: fill the .body row */
-body[data-mode="slide"] .slide.is-active .chart,
-body[data-mode="slide"] .slide.is-active .chart-placeholder { height: 100% !important; min-height: 0 !important; }
+/* .body becomes a flex column so bullets/tables take natural height and
+   the chart/placeholder fills whatever remains — no more chart eating
+   the whole slide and clipping other content. */
+body[data-mode="slide"] .slide.is-active .body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+  min-height: 0;
+}
+body[data-mode="slide"] .slide.is-active .body > .chart,
+body[data-mode="slide"] .slide.is-active .body > .chart-placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto !important;
+  width: 100% !important;
+}
+body[data-mode="slide"] .slide.is-active .body > ul,
+body[data-mode="slide"] .slide.is-active .body > ol,
+body[data-mode="slide"] .slide.is-active .body > p,
+body[data-mode="slide"] .slide.is-active .body > table,
+body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
