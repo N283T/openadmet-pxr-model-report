@@ -1,0 +1,24 @@
+:root {
+  --color-ink: #3a4257;
+  --color-blue: #5b7bb0;
+  --color-teal: #7ac4b8;
+  --color-coral: #ef9f8c;
+  --color-peach: #f7d9cf;
+  --color-bg: #fbf7f2;
+  --color-surface: #ffffff;
+  --color-line: #e7e0d6;
+
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --ink: var(--color-ink);
+  --muted: #6b7488;
+  --line: var(--color-line);
+
+  --font-display: "Outfit", "Klee One", system-ui, sans-serif;
+  --font-body: "Zen Maru Gothic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "PlemolJP", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html, body { margin: 0; padding: 0; }
+html { background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+* { box-sizing: border-box; }
