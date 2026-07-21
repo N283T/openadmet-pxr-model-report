@@ -68,3 +68,35 @@ body[data-mode="overview"] .chart { height: 100% !important; }
 @media print {
   .chart { height: 100% !important; }
 }
+
+/* Chart placeholder for slides whose charts aren't yet implemented */
+.chart-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+.chart-placeholder::before {
+  content: "📊";
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+/* Overview + print: shrink placeholder same as .chart */
+body[data-mode="overview"] .chart-placeholder { min-height: 60%; font-size: 0.6rem; }
+@media print { .chart-placeholder { min-height: 30vh; } }
+/* List style tweaks for slide bodies */
+.slide .body ul { padding-left: 1.4em; margin: 0.5em 0; }
+.slide .body li { margin: 0.6em 0; line-height: 1.6; }
+.slide .body li + li { margin-top: 0.8em; }
+.slide .body p { margin: 0.6em 0; }
+/* Long content slides need scroll-safety when viewport is short */
+.slide .body { overflow: auto; }
