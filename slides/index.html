@@ -55,11 +55,62 @@
             </div>
           </div>
         </div>
-        <div class="slide-number">02 / 19</div>
+        <div class="slide-number">02 / 20</div>
         <aside class="notes">背景の紹介。OpenADMETのブラインドチャレンジに参加して、Track 1で4位を取ったという2点だけ簡単に。PXRとは何か・Trackの内訳・データセットの詳細はこの後のスライドで。</aside>
       </section>
 
-      <section class="slide" id="s-03-pxr-task">
+      <section class="slide" id="s-03-challenge">
+        <h2>The Challenge</h2>
+        <div class="body">
+          <p class="challenge-lead">PXR 誘導活性に関する AI モデル開発コンペティション　2 つの Track からなり いずれも正解は <strong>OpenADMET 独自の実験データ</strong></p>
+          <div class="track-stack">
+            <article class="track-card track-card--focus">
+              <div class="track-card__head">
+                <span class="track-card__label">Track 1</span>
+                <h3 class="track-card__title">Activity</h3>
+                <span class="track-card__desc">各化合物と PXR の活性を予測</span>
+                <span class="track-card__badge">this talk</span>
+              </div>
+              <dl class="spec-row">
+                <div class="spec"><dt>Input</dt><dd>SMILES</dd></div>
+                <div class="spec"><dt>Target</dt><dd>pEC50</dd></div>
+                <div class="spec"><dt>Task</dt><dd>Regression</dd></div>
+                <div class="spec"><dt>Metric</dt><dd>MAE</dd></div>
+                <div class="spec"><dt>Train / Test</dt><dd>4,140 / 513</dd></div>
+              </dl>
+            </article>
+            <article class="track-card track-card--slim">
+              <div class="track-card__head">
+                <span class="track-card__label">Track 2</span>
+                <h3 class="track-card__title">Structure</h3>
+                <span class="track-card__desc">Ligand–PXR 複合体の立体構造を予測</span>
+                <span class="track-card__badge track-card__badge--dim">not attempted</span>
+              </div>
+            </article>
+          </div>
+          <div class="timeline">
+            <div class="timeline__row timeline__row--dates">
+              <time>2026-04-01</time>
+              <time>2026-05-25 → 26</time>
+              <time>2026-07-01</time>
+            </div>
+            <div class="timeline__row timeline__row--track">
+              <span class="timeline__dot"></span>
+              <span class="timeline__dot"></span>
+              <span class="timeline__dot"></span>
+            </div>
+            <div class="timeline__row timeline__row--labels">
+              <span>Open</span>
+              <span>Phase 1 close → 2 start</span>
+              <span>Phase 2 close</span>
+            </div>
+          </div>
+        </div>
+        <div class="slide-number">03 / 20</div>
+        <aside class="notes">コンペの構造だけ話す — 2トラックあり、Track 1 (Activity) は SMILES→pEC50 の回帰を513化合物のブラインドセットで評価、MAE。Track 2 (Structure) は SMILES→PDB の構造予測、110フラグメント、lDDT-PLI評価で今回は不参加。期間3か月。PXRの詳細は次スライドで。</aside>
+      </section>
+
+      <section class="slide" id="s-04-pxr-task">
         <h2>PXRとは／課題設定</h2>
         <div class="body">
           <ul>
@@ -69,11 +120,11 @@
             <li>チャレンジ運営: OpenADMET、期間 2026-04-01 → 2026-07-01。</li>
           </ul>
         </div>
-        <div class="slide-number">03 / 19</div>
+        <div class="slide-number">04 / 20</div>
         <aside class="notes">化学・薬理の人には自明だが、ML寄りの人のためにPXRを一言で説明する。ここは深入りせず、「なぜこの受容体を予測したいのか」の直感だけ共有できれば十分。</aside>
       </section>
 
-      <section class="slide" id="s-04-data-overview">
+      <section class="slide" id="s-05-data-overview">
         <h2>データの全体像</h2>
         <div class="body">
           <ul>
@@ -87,11 +138,11 @@
             <span>Chart TBD: アッセイファネルの図（漏斗 or 積み上げ図） — Train 4,140 / AS1 253 / AS2 260 / Test計 513、log2fc実測 2,722件（8.25µM）・2,659件（33µM）、log2fc事前学習コーパス13,136件</span>
           </div>
         </div>
-        <div class="slide-number">04 / 19</div>
+        <div class="slide-number">05 / 20</div>
         <aside class="notes">ここが今日の話の伏線。「pEC50は4,140件しかないが、安価なlog2fcアッセイはもっと広くカバーしている」という非対称性が、この後のmulti-fidelity戦略の出発点になる。</aside>
       </section>
 
-      <section class="slide" id="s-05-final-results">
+      <section class="slide" id="s-06-final-results">
         <h2>最終結果（Phase 1 / Phase 2）</h2>
         <div class="body">
           <ul>
@@ -102,11 +153,11 @@
           </ul>
           <div class="chart" data-chart="results" data-src="results" style="width:100%; height:60vh;"></div>
         </div>
-        <div class="slide-number">05 / 19</div>
+        <div class="slide-number">06 / 20</div>
         <aside class="notes">まず結果を見せてから、なぜこの結果になったかを掘り下げる構成。「4位」という数字だけでなく、MAE以外の指標（Spearman/Kendall）も一貫して良いことに触れ、順位相関も強いモデルであることを示す。</aside>
       </section>
 
-      <section class="slide" id="s-06-plateau">
+      <section class="slide" id="s-07-plateau">
         <h2>出発点——pEC50だけでは頭打ち</h2>
         <div class="body">
           <ul>
@@ -116,11 +167,11 @@
             <li>log2fcを疑似pEC50ラベルに変換する試みは、むしろ精度を<strong>下げた</strong>（失敗）。</li>
           </ul>
         </div>
-        <div class="slide-number">06 / 19</div>
+        <div class="slide-number">07 / 20</div>
         <aside class="notes">ここは「詰まった」話。正直に、疑似ラベル変換という自然に見えるアイデアが失敗したことを話す。次のスライドで、この停滞をどう突破したかにつなげる。</aside>
       </section>
 
-      <section class="slide" id="s-07-breakthrough">
+      <section class="slide" id="s-08-breakthrough">
         <h2>突破口——Multi-fidelity transfer learning</h2>
         <div class="body">
           <ul>
@@ -133,11 +184,11 @@
             <span>Chart TBD: 概念図 — 高精度ターゲット／低精度測定／低精度モデル出力／低精度表現／下流の高精度モデルの対応表をダイアグラム化</span>
           </div>
         </div>
-        <div class="slide-number">07 / 19</div>
+        <div class="slide-number">08 / 20</div>
         <aside class="notes">ここが今日のスライドの中で一番「発見の物語」らしい部分。論文名はしっかり画面に出す。技術的詳細（GNNアーキテクチャなど）には立ち入らず、「安いデータを予測値や表現として使うと効く」という着想だけを伝える。</aside>
       </section>
 
-      <section class="slide" id="s-08-pred-feature">
+      <section class="slide" id="s-09-pred-feature">
         <h2>最強の特徴量——predicted log2fc（pred）</h2>
         <div class="body">
           <ul>
@@ -165,11 +216,11 @@
             <span>Chart TBD: feature/model/dims/MAE/Spearman 比較バーチャート（post-challenge held-out fits、本番モデルではない）</span>
           </div>
         </div>
-        <div class="slide-number">08 / 19</div>
+        <div class="slide-number">09 / 20</div>
         <aside class="notes">このスライドが今日のハイライトの一つ。「たった2列の予測値が、217次元の記述子スタック一式と互角」というインパクトを強調する。なぜ効くかは前スライドのmulti-fidelityの理屈で説明済みなので、ここは数字で畳みかける。</aside>
       </section>
 
-      <section class="slide" id="s-09-ensemble-1">
+      <section class="slide" id="s-10-ensemble-1">
         <h2>アンサンブル構成 I——9メンバー、TabPFN、Caruana選択</h2>
         <div class="body">
           <ul>
@@ -205,11 +256,11 @@
             <span>Chart TBD: 9メンバーの OOF MAE / Weight 比較（一部欠損値あり、要フォローアップ）</span>
           </div>
         </div>
-        <div class="slide-number">09 / 19</div>
+        <div class="slide-number">10 / 20</div>
         <aside class="notes">9メンバーもあるが、聞く側が全部覚える必要はない。「3つのグループがある」「読み出しは全部TabPFN」の2点だけ持ち帰ってもらえば十分、という前置きをしてから表を見せる。</aside>
       </section>
 
-      <section class="slide" id="s-10-ensemble-2">
+      <section class="slide" id="s-11-ensemble-2">
         <h2>アンサンブル構成 II——相関構造とBoltz-2の使い方</h2>
         <div class="body">
           <ul>
@@ -223,11 +274,11 @@
             <span>Chart TBD: メンバー間相関サマリー（範囲0.81–0.98、平均0.88、near-duplicateペア0.98/0.97）</span>
           </div>
         </div>
-        <div class="slide-number">10 / 19</div>
+        <div class="slide-number">11 / 20</div>
         <aside class="notes">「9モデルの多様性アンサンブル」に見えて、実態はかなり相関している——ここを正直に話す。Boltz-2が「構造予測ではなく表現として使うと効いた」という話は、今日のもう一つの意外性のある発見として強調する。</aside>
       </section>
 
-      <section class="slide" id="s-11-calibration">
+      <section class="slide" id="s-12-calibration">
         <h2>キャリブレーション——唯一の明確な勝ち筋</h2>
         <div class="body">
           <ul>
@@ -240,11 +291,11 @@
             <span>Chart TBD: 生アンサンブル(0.441) → キャリブレーション後(0.408) の2本バー比較</span>
           </div>
         </div>
-        <div class="slide-number">11 / 19</div>
+        <div class="slide-number">12 / 20</div>
         <aside class="notes">ここが「効いた」施策の話。キャリブレーションという地味な後処理1つが、この後のどんな工夫よりも効いたという事実を先に言ってしまい、次のスライドで「その後は何をやってもほぼ横ばいだった」というコントラストにつなげる。</aside>
       </section>
 
-      <section class="slide" id="s-12-tail-gates">
+      <section class="slide" id="s-13-tail-gates">
         <h2>テールゲート——横ばいの探索と未解決のテール</h2>
         <div class="body">
           <ul>
@@ -275,11 +326,11 @@
             <span>Chart TBD: id50〜id60 の Public-LB MAE 推移（ほぼ横ばい）</span>
           </div>
         </div>
-        <div class="slide-number">12 / 19</div>
+        <div class="slide-number">13 / 20</div>
         <aside class="notes">このスライドで伝えたいのは「頑張って11回チューニングしたが、実質何も変わらなかった」という正直な事実。グラフがほぼ横一直線に見えることそのものが主張になる。テール問題は最後まで解けなかった、とはっきり言う。</aside>
       </section>
 
-      <section class="slide" id="s-13-phase1-lesson">
+      <section class="slide" id="s-14-phase1-lesson">
         <h2>Phase 1の教訓——やめ時を見極める</h2>
         <div class="body">
           <ul>
@@ -291,11 +342,11 @@
             <span>Chart TBD: Public LB ~8位前後 → 最終ブラインド 4位/95 の2点比較（8位は概数）</span>
           </div>
         </div>
-        <div class="slide-number">13 / 19</div>
+        <div class="slide-number">14 / 20</div>
         <aside class="notes">ここは今日のプロセス面のハイライトの一つ。「見た目のスコアが悪くても、無理に追いかけない」という判断が結果的に報われた、という話を、次のPhase 2の反例とセットで聞いてもらう。</aside>
       </section>
 
-      <section class="slide" id="s-14-phase2-lesson">
+      <section class="slide" id="s-15-phase2-lesson">
         <h2>Phase 2の教訓——何をやっても悪化した</h2>
         <div class="body">
           <ul>
@@ -320,11 +371,11 @@
             <span>Chart TBD: id60→id61→id62→id63 の AS2 MAE 推移（一貫して悪化）</span>
           </div>
         </div>
-        <div class="slide-number">14 / 19</div>
+        <div class="slide-number">15 / 20</div>
         <aside class="notes">ここは今日いちばん正直に話すべきスライド。「良かれと思ってやったことが全部裏目に出た」というnull resultを、恥ずかしがらずそのまま見せる。特に低活性側に手を出さなかった判断が結果的に正しかった点は強調する。</aside>
       </section>
 
-      <section class="slide" id="s-15-hindsight">
+      <section class="slide" id="s-16-hindsight">
         <h2>答え合わせ（issue #222）——後知恵で見えたこと</h2>
         <div class="body">
           <ul>
@@ -352,11 +403,11 @@
             <span>Chart TBD: 提出id63 / id60アンカー / id55shape / 優勝スコア / stacker / importance-calibrated の比較</span>
           </div>
         </div>
-        <div class="slide-number">15 / 19</div>
+        <div class="slide-number">16 / 20</div>
         <aside class="notes">ブラインドコンペの本質的な難しさを一番よく表すスライド。「後から見れば分かるが、当時は分からなかった」という点を強調し、判断の正しさではなく「判断できない状況だった」という事実の方を伝える。</aside>
       </section>
 
-      <section class="slide" id="s-16-ai-workflow">
+      <section class="slide" id="s-17-ai-workflow">
         <h2>AI支援ワークフロー（軽く触れる程度）</h2>
         <div class="body">
           <ul>
@@ -368,11 +419,11 @@
             <span>Chart TBD: 状況整理プロンプト（Claude Code）→ ChatGPT Deep Research → Buterez et al. 発見 の3ステップ矢印図</span>
           </div>
         </div>
-        <div class="slide-number">16 / 19</div>
+        <div class="slide-number">17 / 20</div>
         <aside class="notes">ここは短めに。「AIをどう使ったか」の詳細に踏み込むと今日の主役（PXR予測の中身）がぼやけるので、1枚で軽く触れて次に進む、ということを聴衆にも明言してから話す。</aside>
       </section>
 
-      <section class="slide" id="s-17-conclusion">
+      <section class="slide" id="s-18-conclusion">
         <h2>結論——持ち帰ってほしいこと</h2>
         <div class="body">
           <ul>
@@ -383,11 +434,11 @@
             <li><strong>予測構造・affinityは期待外れだった。</strong>Boltz-2のポーズとaffinityヘッドは直接使うにはノイズが多すぎ、学習表現として使って初めて効いた。活性予測という点では既製のaffinityモデルが最も弱いリンクだった。</li>
           </ul>
         </div>
-        <div class="slide-number">17 / 19</div>
+        <div class="slide-number">18 / 20</div>
         <aside class="notes">§8の結論を4つの箇条書きにまとめて読み上げる。ここは新しい情報を足さず、これまで話した内容の要約であることを明言する。</aside>
       </section>
 
-      <section class="slide" id="s-18-closing">
+      <section class="slide" id="s-19-closing">
         <h2>おわりに——個人的な振り返りと謝辞</h2>
         <div class="body">
           <ul>
@@ -396,11 +447,11 @@
             <li>OpenADMETチームへの謝辞: よく設計されたベンチマークを運営し、データとunblind後のラベルを公開してくれたことが、この振り返りと答え合わせ（issue #222）を可能にした。</li>
           </ul>
         </div>
-        <div class="slide-number">18 / 19</div>
+        <div class="slide-number">19 / 20</div>
         <aside class="notes">発表の締めとして、個人的な感想と謝辞を短く。ここで技術的な話は増やさず、次のスライド（参考文献）にそのままつなげる。</aside>
       </section>
 
-      <section class="slide" id="s-19-references">
+      <section class="slide" id="s-20-references">
         <h2>参考文献・リンク集（付録）</h2>
         <div class="body">
           <ul>
@@ -413,7 +464,7 @@
             <li>運営の書き起こし: <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1結果</a>、<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">最終まとめ</a></li>
           </ul>
         </div>
-        <div class="slide-number">19 / 19</div>
+        <div class="slide-number">20 / 20</div>
         <aside class="notes">質疑応答のための保険スライド。基本的に読み上げず、質問が出たときに参照する形で使う。</aside>
       </section>
 

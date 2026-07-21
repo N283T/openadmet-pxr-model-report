@@ -346,3 +346,154 @@ body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
 }
 .slide .info-block__link a:hover { border-bottom-color: var(--color-blue); }
 .slide .info-block__link span { color: var(--muted); margin-left: 0.2em; }
+
+/* Challenge slide: intro lead + stacked track cards + horizontal timeline */
+.slide .challenge-lead {
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin: 0;
+}
+.slide .track-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.slide .track-card {
+  padding: 1em 1.5em;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+.slide .track-card--focus {
+  border-color: var(--color-coral);
+  background: rgba(230, 120, 100, 0.05);
+  box-shadow: 0 12px 34px -22px rgba(230, 120, 100, 0.4);
+}
+.slide .track-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  flex-wrap: wrap;
+}
+.slide .track-card__label {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.72em;
+}
+.slide .track-card__title {
+  font-family: var(--font-display);
+  font-size: 1.5em;
+  margin: 0;
+  color: var(--color-ink);
+  line-height: 1;
+}
+.slide .track-card__desc {
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .track-card__badge {
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  padding: 0.25em 0.8em;
+  border-radius: 999px;
+  background: rgba(230, 120, 100, 0.14);
+  color: var(--color-coral);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+.slide .track-card__badge--dim {
+  background: rgba(120, 120, 120, 0.1);
+  color: var(--muted);
+}
+.slide .spec-row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.7em;
+}
+.slide .spec {
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.7em 0.6em;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  justify-content: center;
+}
+.slide .spec dt {
+  font-family: var(--font-mono);
+  font-size: 0.65em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.slide .spec dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Horizontal timeline — vertical placement handled by the body's
+   space-evenly distribution (see the challenge slide override below) */
+.slide .timeline {
+  padding: 0.6em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+}
+.slide .timeline__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.slide .timeline__row > * { text-align: center; }
+.slide .timeline__row--dates time {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+.slide .timeline__row--track {
+  position: relative;
+  height: 12px;
+  align-items: center;
+}
+.slide .timeline__row--track::before {
+  content: "";
+  position: absolute;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: var(--color-line);
+}
+.slide .timeline__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-coral);
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 0 5px var(--color-bg);
+}
+.slide .timeline__row--labels span {
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* Auto-distribute the challenge slide's blocks (lead / cards / timeline)
+   evenly over the full slide height instead of hand-tuning margins. */
+body[data-mode="slide"] .slide.is-active#s-03-challenge .body {
+  justify-content: space-evenly;
+}
