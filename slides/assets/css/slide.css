@@ -100,3 +100,30 @@ body[data-mode="overview"] .chart-placeholder { min-height: 60%; font-size: 0.6r
 .slide .body p { margin: 0.6em 0; }
 /* Long content slides need scroll-safety when viewport is short */
 .slide .body { overflow: auto; }
+
+/* ============================================================
+   16:9 presentation format (slide mode only)
+   Active slide fits a 16:9 canvas centered in a dark letterbox.
+   Padding uses vmin so text/padding scales with the fitted
+   canvas rather than the raw viewport.
+   ============================================================ */
+body[data-mode="slide"] {
+  background: #1a1a1a;
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+body[data-mode="slide"] .slide.is-active {
+  min-height: 0;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  padding: 4vmin 6vmin;
+  border-bottom: none;
+  background: var(--bg);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+body[data-mode="slide"] .slide.is-active .slide-number {
+  right: 2%; bottom: 2%;
+}
