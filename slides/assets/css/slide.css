@@ -159,3 +159,50 @@ body[data-mode="slide"] .slide.is-active .body > ol,
 body[data-mode="slide"] .slide.is-active .body > p,
 body[data-mode="slide"] .slide.is-active .body > table,
 body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
+
+/* ============================================================
+   Signature accents — adapted from N283T.github.io
+   Restrained "same-author" cues, sized in em so they scale
+   automatically across slide mode (1920x1080 canvas), overview
+   (thumbnails), and print without per-mode overrides.
+   - coral→peach gradient underline under every h1/h2
+   - ✦ prefix on every h2
+   - coral vertical tick on the slide-number
+   ============================================================ */
+.slide h1,
+.slide h2 { position: relative; }
+.slide h1::after,
+.slide h2::after {
+  content: "";
+  display: block;
+  height: 0.08em;
+  min-height: 3px;
+  width: 1.6em;
+  margin-top: 0.28em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-coral), var(--color-peach));
+}
+.slide.title h1::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+.slide h2::before {
+  content: "\2726"; /* ✦ */
+  color: var(--color-coral);
+  font-size: 0.5em;
+  margin-right: 0.6em;
+  vertical-align: 0.35em;
+}
+.slide .slide-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.slide .slide-number::before {
+  content: "";
+  width: 0.22em;
+  min-width: 3px;
+  height: 1em;
+  border-radius: 0.1em;
+  background: var(--color-coral);
+}
