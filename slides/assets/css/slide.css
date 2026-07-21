@@ -62,3 +62,9 @@ body[data-mode="overview"] .slide h1 { font-size: 1.4rem; }
 body[data-mode="overview"] .slide h2 { font-size: 1rem; }
 body[data-mode="overview"] .slide .body { font-size: 0.7rem; }
 body[data-mode="overview"] .slide .slide-number { font-size: 0.7rem; }
+
+/* Overview/print: chart containers must fill their parent, not the viewport */
+body[data-mode="overview"] .chart { height: 100% !important; }
+@media print {
+  .chart { height: 100% !important; }
+}
