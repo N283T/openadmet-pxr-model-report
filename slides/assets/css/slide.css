@@ -102,28 +102,42 @@ body[data-mode="overview"] .chart-placeholder { min-height: 60%; font-size: 0.6r
 .slide .body { overflow: auto; }
 
 /* ============================================================
-   16:9 presentation format (slide mode only)
-   Active slide fits a 16:9 canvas centered in a dark letterbox.
-   Padding uses vmin so text/padding scales with the fitted
-   canvas rather than the raw viewport.
+   16:9 fixed-canvas presentation format (slide mode only)
+   Each active slide is a fixed 1920x1080 stage. fit.js applies
+   a transform: scale() to fit whatever viewport (fullscreen or
+   windowed) with letterboxing. Authoring against a fixed pixel
+   canvas keeps every layout predictable regardless of display.
    ============================================================ */
 body[data-mode="slide"] {
   background: #1a1a1a;
   margin: 0;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-}
-body[data-mode="slide"] .slide.is-active {
-  min-height: 0;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
-  padding: 4vmin 6vmin;
-  border-bottom: none;
-  background: var(--bg);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
-body[data-mode="slide"] .slide.is-active .slide-number {
-  right: 2%; bottom: 2%;
+body[data-mode="slide"] .slide.is-active {
+  position: fixed;
+  top: 0; left: 0;
+  min-height: 0;
+  width: 1920px;
+  height: 1080px;
+  padding: 60px 100px;
+  border-bottom: none;
+  background: var(--bg);
+  transform-origin: top left;
+  overflow: hidden;
+  /* transform assigned by assets/js/fit.js */
 }
+body[data-mode="slide"] .slide.is-active .slide-number {
+  right: 20px; bottom: 20px;
+  font-size: 18px;
+}
+/* Font sizing tuned for the 1920x1080 canvas */
+body[data-mode="slide"] .slide.is-active h1 { font-size: 96px; }
+body[data-mode="slide"] .slide.is-active h2 { font-size: 60px; }
+body[data-mode="slide"] .slide.is-active .body { font-size: 32px; line-height: 1.5; }
+body[data-mode="slide"] .slide.is-active.title h1 { font-size: 128px; }
+body[data-mode="slide"] .slide.is-active.title .subtitle { font-size: 40px; margin-top: 24px; }
+body[data-mode="slide"] .slide.is-active .body { overflow: hidden; }
+/* Chart / placeholder in slide mode: fill the .body row */
+body[data-mode="slide"] .slide.is-active .chart,
+body[data-mode="slide"] .slide.is-active .chart-placeholder { height: 100% !important; min-height: 0 !important; }
