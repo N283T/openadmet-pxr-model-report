@@ -68,3 +68,94 @@ body[data-mode="overview"] .chart { height: 100% !important; }
 @media print {
   .chart { height: 100% !important; }
 }
+
+/* Chart placeholder for slides whose charts aren't yet implemented */
+.chart-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+.chart-placeholder::before {
+  content: "📊";
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+/* Overview + print: shrink placeholder same as .chart */
+body[data-mode="overview"] .chart-placeholder { min-height: 60%; font-size: 0.6rem; }
+@media print { .chart-placeholder { min-height: 30vh; } }
+/* List style tweaks for slide bodies */
+.slide .body ul { padding-left: 1.4em; margin: 0.5em 0; }
+.slide .body li { margin: 0.6em 0; line-height: 1.6; }
+.slide .body li + li { margin-top: 0.8em; }
+.slide .body p { margin: 0.6em 0; }
+/* Long content slides need scroll-safety when viewport is short */
+.slide .body { overflow: auto; }
+
+/* ============================================================
+   16:9 fixed-canvas presentation format (slide mode only)
+   Each active slide is a fixed 1920x1080 stage. fit.js applies
+   a transform: scale() to fit whatever viewport (fullscreen or
+   windowed) with letterboxing. Authoring against a fixed pixel
+   canvas keeps every layout predictable regardless of display.
+   ============================================================ */
+body[data-mode="slide"] {
+  background: #1a1a1a;
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+}
+body[data-mode="slide"] .slide.is-active {
+  position: fixed;
+  top: 0; left: 0;
+  min-height: 0;
+  width: 1920px;
+  height: 1080px;
+  padding: 60px 100px;
+  border-bottom: none;
+  background: var(--bg);
+  transform-origin: top left;
+  overflow: hidden;
+  /* transform assigned by assets/js/fit.js */
+}
+body[data-mode="slide"] .slide.is-active .slide-number {
+  right: 20px; bottom: 20px;
+  font-size: 18px;
+}
+/* Font sizing tuned for the 1920x1080 canvas */
+body[data-mode="slide"] .slide.is-active h1 { font-size: 96px; }
+body[data-mode="slide"] .slide.is-active h2 { font-size: 60px; }
+body[data-mode="slide"] .slide.is-active .body { font-size: 32px; line-height: 1.5; }
+body[data-mode="slide"] .slide.is-active.title h1 { font-size: 128px; }
+body[data-mode="slide"] .slide.is-active.title .subtitle { font-size: 40px; margin-top: 24px; }
+/* .body becomes a flex column so bullets/tables take natural height and
+   the chart/placeholder fills whatever remains — no more chart eating
+   the whole slide and clipping other content. */
+body[data-mode="slide"] .slide.is-active .body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+  min-height: 0;
+}
+body[data-mode="slide"] .slide.is-active .body > .chart,
+body[data-mode="slide"] .slide.is-active .body > .chart-placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto !important;
+  width: 100% !important;
+}
+body[data-mode="slide"] .slide.is-active .body > ul,
+body[data-mode="slide"] .slide.is-active .body > ol,
+body[data-mode="slide"] .slide.is-active .body > p,
+body[data-mode="slide"] .slide.is-active .body > table,
+body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }

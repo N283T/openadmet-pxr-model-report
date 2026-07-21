@@ -2,16 +2,21 @@
 @media print {
   html, body { background: white; }
   body[data-mode="slide"] .slide,
+  body[data-mode="slide"] .slide.is-active,
   body[data-mode="overview"] .slide {
     display: grid !important;
+    position: static !important;
     page-break-after: always;
     break-after: page;
     min-height: 167mm;
     height: 167mm;
     width: 297mm;
+    padding: 12mm 20mm !important;
     border: none;
     outline: none;
     aspect-ratio: auto;
+    transform: none !important;
+    box-shadow: none !important;
   }
   body[data-mode="overview"] #deck {
     display: block !important;

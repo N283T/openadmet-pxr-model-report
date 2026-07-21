@@ -7,13 +7,18 @@
       window.echarts.registerTheme('deck', theme);
       const chart = window.echarts.init(el, 'deck', { renderer: 'svg' });
       chart.setOption({
-        grid: { left: 60, right: 20, top: 40, bottom: 40 },
+        grid: { left: 60, right: 20, top: 50, bottom: 50 },
         legend: { data: ['Phase 1', 'Phase 2'], top: 0 },
-        xAxis: { type: 'category', data: data.metrics },
-        yAxis: { type: 'value' },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          valueFormatter: function (v) { return typeof v === 'number' ? v.toFixed(4) : v; },
+        },
+        xAxis: { type: 'category', data: data.metrics, axisLabel: { fontSize: 14 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 14 } },
         series: [
-          { name: 'Phase 1', type: 'bar', data: data.phase1 },
-          { name: 'Phase 2', type: 'bar', data: data.phase2 },
+          { name: 'Phase 1', type: 'bar', data: data.phase1, emphasis: { focus: 'series' } },
+          { name: 'Phase 2', type: 'bar', data: data.phase2, emphasis: { focus: 'series' } },
         ],
       });
       return {
