@@ -6,12 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="assets/fonts.css">
     <link rel="stylesheet" href="assets/css/deck.css">
+    <link rel="stylesheet" href="assets/css/slide.css">
   </head>
   <body>
-    <main style="display:grid; place-items:center; min-height:100vh;">
-      <h1 style="font-family: var(--font-display); font-weight: 700; font-size: 4rem;">
-        Deck stub
-      </h1>
-    </main>
+    <div id="deck">
+
+      <section class="slide title" id="s-01-title">
+        <div>
+          <h1>OpenADMET PXR Challenge</h1>
+          <p class="subtitle">Track 1 Activity — 4th of 95</p>
+        </div>
+        <div class="slide-number">01</div>
+        <aside class="notes">タイトルスライド。挨拶と自己紹介、話す内容の予告。</aside>
+      </section>
+
+      <section class="slide" id="s-02-tldr">
+        <h2>TL;DR</h2>
+        <div class="body">
+          <p>PXR pEC50 予測で 4th/95。鍵は multi-fidelity transfer learning。</p>
+        </div>
+        <div class="slide-number">02</div>
+        <aside class="notes">結論を先に。詳細は後続スライドで。</aside>
+      </section>
+
+      <section class="slide" id="s-03-challenge">
+        <h2>チャレンジ概要</h2>
+        <div class="body">
+          <p>OpenADMET PXR Induction Challenge — 2026-04-01 → 2026-07-01。</p>
+        </div>
+        <div class="slide-number">03</div>
+        <aside class="notes">課題設定、データ、評価指標を説明。</aside>
+      </section>
+
+    </div>
   </body>
 </html>
