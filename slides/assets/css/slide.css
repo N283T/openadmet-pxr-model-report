@@ -33,3 +33,32 @@ body[data-mode="slide"] [data-fragment].is-visible { opacity: 1; transform: none
 @media (prefers-reduced-motion: reduce) {
   body[data-mode="slide"] [data-fragment] { transition: none; }
 }
+
+/* Overview mode: thumbnail grid */
+body[data-mode="overview"] { overflow: auto; }
+body[data-mode="overview"] #deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 32px;
+}
+body[data-mode="overview"] .slide {
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  padding: 3vh 4vw;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transform-origin: top left;
+  overflow: hidden;
+  display: grid; /* override the JS-driven display:none */
+}
+body[data-mode="overview"] .slide.is-active {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 2px;
+}
+body[data-mode="overview"] .slide h1 { font-size: 1.4rem; }
+body[data-mode="overview"] .slide h2 { font-size: 1rem; }
+body[data-mode="overview"] .slide .body { font-size: 0.7rem; }
+body[data-mode="overview"] .slide .slide-number { font-size: 0.7rem; }
