@@ -114,7 +114,7 @@
   const chartHandles = new Map(); // el → handle
 
   function mountCharts() {
-    const nodes = document.querySelectorAll('.chart');
+    const nodes = document.querySelectorAll('[data-chart]');
     nodes.forEach(function (el) {
       const name = el.dataset.chart;
       const key = el.dataset.src;

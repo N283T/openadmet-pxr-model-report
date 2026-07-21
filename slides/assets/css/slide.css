@@ -156,6 +156,9 @@ body[data-mode="slide"] .slide.is-active {
   background: var(--bg);
   transform-origin: top left;
   overflow: hidden;
+  /* Tight gap between the h2 (which already carries a gradient underline)
+     and the body — the divider makes a large gap redundant. */
+  row-gap: 18px;
   /* transform assigned by assets/js/fit.js */
 }
 body[data-mode="slide"] .slide.is-active .slide-number {
@@ -240,3 +243,425 @@ body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
   border-radius: 0.1em;
   background: var(--color-coral);
 }
+
+/* Background slide: editorial two-column with hero logo and stat card */
+.slide .background-hero {
+  display: grid;
+  grid-template-columns: 5fr 6fr;
+  gap: 4em;
+  align-items: center;
+  height: 100%;
+}
+.slide .background-hero__logo {
+  margin: 0;
+  padding: 1.2em;
+  background: var(--color-surface);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px -20px rgba(41, 92, 148, 0.25);
+}
+.slide .background-hero__logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.slide .background-hero__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6em;
+}
+.slide .info-block { display: flex; flex-direction: column; gap: 0.4em; }
+.slide .info-block__label {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.7em;
+  margin: 0;
+}
+.slide .info-block__body {
+  font-size: 1.1em;
+  line-height: 1.5;
+  margin: 0;
+  color: var(--color-ink);
+}
+.slide .info-block__meta {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  font-size: 0.8em;
+  margin: 0;
+}
+.slide .info-divider {
+  height: 1px;
+  background: linear-gradient(90deg,
+    var(--color-line) 0%,
+    var(--color-line) 40%,
+    transparent 100%);
+}
+.slide .rank-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  margin: 0.1em 0 0 0;
+}
+.slide .rank-display__value {
+  font-family: var(--font-display);
+  font-size: 4.5em;
+  line-height: 0.9;
+  color: var(--color-coral);
+  font-weight: 600;
+}
+.slide .rank-display__unit {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .result-panel {
+  display: flex;
+  align-items: center;
+  gap: 2.2em;
+}
+.slide .metric-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 1.4em;
+  row-gap: 0.35em;
+  margin: 0;
+  padding: 0.6em 1em;
+  border-left: 2px solid var(--color-line);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+.slide .metric-grid dt { color: var(--muted); margin: 0; }
+.slide .metric-grid dd { color: var(--color-ink); margin: 0; font-weight: 600; text-align: right; }
+.slide .info-block__link {
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  margin: 0.3em 0 0 0;
+}
+.slide .info-block__link a {
+  color: var(--color-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(41, 92, 148, 0.3);
+  padding-bottom: 1px;
+  transition: border-color 0.15s ease;
+}
+.slide .info-block__link a:hover { border-bottom-color: var(--color-blue); }
+.slide .info-block__link span { color: var(--muted); margin-left: 0.2em; }
+
+/* Challenge slide: intro lead + stacked track cards + horizontal timeline */
+.slide .challenge-lead {
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin: 0;
+}
+.slide .track-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.slide .track-card {
+  padding: 1em 1.5em;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+.slide .track-card--focus {
+  border-color: var(--color-coral);
+  background: rgba(230, 120, 100, 0.05);
+  box-shadow: 0 12px 34px -22px rgba(230, 120, 100, 0.4);
+}
+.slide .track-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  flex-wrap: wrap;
+}
+.slide .track-card__label {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.72em;
+}
+.slide .track-card__title {
+  font-family: var(--font-display);
+  font-size: 1.5em;
+  margin: 0;
+  color: var(--color-ink);
+  line-height: 1;
+}
+.slide .track-card__desc {
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .track-card__badge {
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  padding: 0.25em 0.8em;
+  border-radius: 999px;
+  background: rgba(230, 120, 100, 0.14);
+  color: var(--color-coral);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+.slide .track-card__badge--dim {
+  background: rgba(120, 120, 120, 0.1);
+  color: var(--muted);
+}
+.slide .spec-row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.7em;
+}
+.slide .spec {
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.7em 0.6em;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  justify-content: center;
+}
+.slide .spec dt {
+  font-family: var(--font-mono);
+  font-size: 0.65em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.slide .spec dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Horizontal timeline — vertical placement handled by the body's
+   space-evenly distribution (see the challenge slide override below) */
+.slide .timeline {
+  padding: 0.6em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+}
+.slide .timeline__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.slide .timeline__row > * { text-align: center; }
+.slide .timeline__row--dates time {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+.slide .timeline__row--track {
+  position: relative;
+  height: 12px;
+  align-items: center;
+}
+.slide .timeline__row--track::before {
+  content: "";
+  position: absolute;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: var(--color-line);
+}
+.slide .timeline__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-coral);
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 0 5px var(--color-bg);
+}
+.slide .timeline__row--labels span {
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* Auto-distribute the challenge slide's blocks (lead / cards / timeline)
+   evenly over the full slide height instead of hand-tuning margins. */
+body[data-mode="slide"] .slide.is-active#s-03-challenge .body {
+  justify-content: space-evenly;
+}
+
+/* PXR slide — full-width lead, then liabilities | viewer, then a note */
+.slide .pxr-lead {
+  font-size: 1.15em;
+  line-height: 1.6;
+  color: var(--color-ink);
+  margin: 0;
+}
+.slide .pxr-mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 3em;
+}
+.slide .pxr-col {
+  flex: 3 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7em;
+}
+.slide .pxr-subhead {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  color: var(--color-ink);
+  /* negative bottom pulls ACTIVATION LIABILITIES up under this heading */
+  margin: 0 0 -0.3em 0;
+}
+/* Right side: ~40% width column (3:2 vs the text), just the square viewer.
+   Width is driven by the flex ratio — NOT by the square's height — so the
+   viewer can never overflow the slide's right edge. */
+.slide .pxr-figwrap {
+  flex: 2 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.slide .pxr-liabilities {
+  border-left: 3px solid var(--color-coral);
+  padding-left: 1em;
+}
+.slide .pxr-example {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.6em 0.9em;
+}
+.slide .pxr-example__label {
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+  margin: 0 0 0.25em 0;
+}
+.slide .pxr-example p:last-child {
+  margin: 0;
+  font-size: 0.8em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .pxr-liabilities__label {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-coral);
+  margin: 0 0 0.5em 0;
+}
+.slide .pxr-liabilities ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+/* Override the deck's default .body li margins so the list stays tight */
+.slide .pxr-liabilities li { margin: 0; line-height: 1.35; }
+.slide .pxr-structure {
+  border-left: 3px solid var(--color-blue);
+  padding-left: 1em;
+}
+.slide .pxr-structure__label {
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+  margin: 0 0 0.4em 0;
+}
+.slide .pxr-note {
+  font-size: 0.9em;
+  color: var(--color-ink);
+  line-height: 1.45;
+  margin: 0;
+  text-wrap: pretty; /* avoid a lone "promiscuous" on the last line */
+}
+.slide .pxr-note strong { color: var(--color-coral); white-space: nowrap; }
+.slide .pxr-figure {
+  flex: 1 1 auto;         /* fill the figwrap height left over by the note */
+  min-height: 0;
+  margin: 0;
+  aspect-ratio: 1 / 1;   /* square; clamped by max-width so it stays inside */
+  width: auto;
+  max-width: 100%;
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.slide .mol-viewer {
+  position: absolute;
+  inset: 0;
+}
+/* 3Dmol injects an absolutely-positioned canvas; keep it inside the box */
+.slide .mol-viewer canvas { display: block; border-radius: 14px; }
+.slide .pxr-figure__caption {
+  position: absolute;
+  bottom: 0.6em;
+  right: 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  background: rgba(251, 247, 242, 0.7);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+/* Spin toggle button, overlaid top-right of the viewer */
+.slide .mol-spin {
+  position: absolute;
+  top: 0.7em;
+  right: 0.7em;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.35em 0.8em;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.slide .mol-spin:hover { color: var(--color-ink); }
+.slide .mol-spin.is-on {
+  color: var(--color-coral);
+  border-color: var(--color-coral);
+}
+.slide .mol-spin.is-on .mol-spin__icon {
+  animation: mol-spin-rot 2s linear infinite;
+}
+@keyframes mol-spin-rot { to { transform: rotate(360deg); } }
+.slide .mol-spin__icon { display: inline-block; line-height: 1; }
