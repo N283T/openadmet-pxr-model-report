@@ -156,6 +156,9 @@ body[data-mode="slide"] .slide.is-active {
   background: var(--bg);
   transform-origin: top left;
   overflow: hidden;
+  /* Tight gap between the h2 (which already carries a gradient underline)
+     and the body — the divider makes a large gap redundant. */
+  row-gap: 18px;
   /* transform assigned by assets/js/fit.js */
 }
 body[data-mode="slide"] .slide.is-active .slide-number {
@@ -497,3 +500,168 @@ body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
 body[data-mode="slide"] .slide.is-active#s-03-challenge .body {
   justify-content: space-evenly;
 }
+
+/* PXR slide — full-width lead, then liabilities | viewer, then a note */
+.slide .pxr-lead {
+  font-size: 1.15em;
+  line-height: 1.6;
+  color: var(--color-ink);
+  margin: 0;
+}
+.slide .pxr-mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 3em;
+}
+.slide .pxr-col {
+  flex: 3 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7em;
+}
+.slide .pxr-subhead {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  color: var(--color-ink);
+  /* negative bottom pulls ACTIVATION LIABILITIES up under this heading */
+  margin: 0 0 -0.3em 0;
+}
+/* Right side: ~40% width column (3:2 vs the text), just the square viewer.
+   Width is driven by the flex ratio — NOT by the square's height — so the
+   viewer can never overflow the slide's right edge. */
+.slide .pxr-figwrap {
+  flex: 2 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.slide .pxr-liabilities {
+  border-left: 3px solid var(--color-coral);
+  padding-left: 1em;
+}
+.slide .pxr-example {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.6em 0.9em;
+}
+.slide .pxr-example__label {
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+  margin: 0 0 0.25em 0;
+}
+.slide .pxr-example p:last-child {
+  margin: 0;
+  font-size: 0.8em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .pxr-liabilities__label {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-coral);
+  margin: 0 0 0.5em 0;
+}
+.slide .pxr-liabilities ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+/* Override the deck's default .body li margins so the list stays tight */
+.slide .pxr-liabilities li { margin: 0; line-height: 1.35; }
+.slide .pxr-structure {
+  border-left: 3px solid var(--color-blue);
+  padding-left: 1em;
+}
+.slide .pxr-structure__label {
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+  margin: 0 0 0.4em 0;
+}
+.slide .pxr-note {
+  font-size: 0.9em;
+  color: var(--color-ink);
+  line-height: 1.45;
+  margin: 0;
+  text-wrap: pretty; /* avoid a lone "promiscuous" on the last line */
+}
+.slide .pxr-note strong { color: var(--color-coral); white-space: nowrap; }
+.slide .pxr-figure {
+  flex: 1 1 auto;         /* fill the figwrap height left over by the note */
+  min-height: 0;
+  margin: 0;
+  aspect-ratio: 1 / 1;   /* square; clamped by max-width so it stays inside */
+  width: auto;
+  max-width: 100%;
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.slide .mol-viewer {
+  position: absolute;
+  inset: 0;
+}
+/* 3Dmol injects an absolutely-positioned canvas; keep it inside the box */
+.slide .mol-viewer canvas { display: block; border-radius: 14px; }
+.slide .pxr-figure__caption {
+  position: absolute;
+  bottom: 0.6em;
+  right: 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  background: rgba(251, 247, 242, 0.7);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+/* Spin toggle button, overlaid top-right of the viewer */
+.slide .mol-spin {
+  position: absolute;
+  top: 0.7em;
+  right: 0.7em;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.35em 0.8em;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.slide .mol-spin:hover { color: var(--color-ink); }
+.slide .mol-spin.is-on {
+  color: var(--color-coral);
+  border-color: var(--color-coral);
+}
+.slide .mol-spin.is-on .mol-spin__icon {
+  animation: mol-spin-rot 2s linear infinite;
+}
+@keyframes mol-spin-rot { to { transform: rotate(360deg); } }
+.slide .mol-spin__icon { display: inline-block; line-height: 1; }

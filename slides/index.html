@@ -111,17 +111,43 @@
       </section>
 
       <section class="slide" id="s-04-pxr-task">
-        <h2>PXRとは／課題設定</h2>
+        <h2>Pregnane X Receptor (PXR)</h2>
         <div class="body">
-          <ul>
-            <li><strong>PXR（pregnane X receptor）</strong>: 体内に入った異物・薬物を感知し、薬物代謝酵素の遺伝子発現をオンにする核内受容体。ML側の聴衆向けに一言で：「薬同士の飲み合わせリスク（薬物相互作用）に関わるセンサー分子」。</li>
-            <li>タスク: 513化合物（blind test）についてPXR活性化の強さ（<strong>pEC50</strong>、高いほど強い誘導）を構造から予測する回帰タスク。</li>
-            <li>評価指標: <strong>MAE</strong>（平均絶対誤差、低いほど良い）。</li>
-            <li>チャレンジ運営: OpenADMET、期間 2026-04-01 → 2026-07-01。</li>
-          </ul>
+          <p class="pxr-lead">体内に入った異物や薬物を感知する<strong>核内受容体（xenobiotic sensor）</strong>　薬物代謝酵素の転写を活性化してオンにする　主に <strong>CYP3A4</strong>（市販薬の約 <strong>50%</strong> を代謝する酵素）を制御する</p>
+          <div class="pxr-mid">
+            <div class="pxr-col">
+              <h3 class="pxr-subhead">Why PXR in ADMET?</h3>
+              <div class="pxr-liabilities">
+                <p class="pxr-liabilities__label">Activation liabilities</p>
+                <ul>
+                  <li><strong>薬物間相互作用（DDI）</strong>　代謝が速まり 併用薬が有効濃度を下回る</li>
+                  <li><strong>肝毒性</strong>　反応性の高い毒性代謝物が増える</li>
+                  <li><strong>化学療法抵抗性</strong>　腫瘍細胞で抗がん剤の排出が促進される</li>
+                </ul>
+              </div>
+              <div class="pxr-example">
+                <p class="pxr-example__label">Recent example</p>
+                <p>COVID Moonshot の主要 Mpro 阻害剤 <strong>(S)-x38 (DNDI-6510)</strong> は 強い PXR 活性化で代謝クリアランスが激増し 有効血中濃度を維持できず前臨床で開発中止に</p>
+              </div>
+              <div class="pxr-structure">
+                <p class="pxr-structure__label">Structural feature</p>
+                <p class="pxr-note">大きくて柔軟な結合部位 → 無差別に何でも結合する性質 <strong>"promiscuous"</strong></p>
+              </div>
+            </div>
+            <div class="pxr-figwrap">
+              <figure class="pxr-figure">
+                <div class="mol-viewer" data-chart="molecule" data-src="pxr-mol"></div>
+                <button class="mol-spin" type="button" aria-pressed="false" title="Toggle spin">
+                  <span class="mol-spin__icon" aria-hidden="true">⟳</span>
+                  <span class="mol-spin__text">spin</span>
+                </button>
+                <figcaption class="pxr-figure__caption">PXR LBD · rifampicin (PDB 1SKX)</figcaption>
+              </figure>
+            </div>
+          </div>
         </div>
         <div class="slide-number">04 / 20</div>
-        <aside class="notes">化学・薬理の人には自明だが、ML寄りの人のためにPXRを一言で説明する。ここは深入りせず、「なぜこの受容体を予測したいのか」の直感だけ共有できれば十分。</aside>
+        <aside class="notes">ML寄りの聴衆向けにPXRを一言で。異物センサーとして働き、CYP3A4など薬物代謝酵素の転写をオンにする核内受容体。活性化するとDDI・肝毒性・化学療法抵抗性のリスク。モデル化が難しい理由は「大きく柔軟な結合ポケット」＋「データが少ない」。深入りせず直感だけ共有。</aside>
       </section>
 
       <section class="slide" id="s-05-data-overview">
@@ -470,9 +496,12 @@
 
     </div>
     <script src="assets/vendor/echarts.min.js"></script>
+    <script src="assets/vendor/3Dmol-min.js"></script>
     <script src="assets/js/echarts-theme.js"></script>
     <script src="assets/js/charts/results.js"></script>
+    <script src="assets/js/charts/molecule.js"></script>
     <script src="assets/data/results.js"></script>
+    <script src="assets/data/pxr-mol.js"></script>
     <script src="assets/js/deck.js"></script>
     <script src="assets/js/overview.js"></script>
     <script src="assets/js/notes.js"></script>
