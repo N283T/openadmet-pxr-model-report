@@ -111,5 +111,36 @@
   document.body.setAttribute('data-mode', 'slide');
   loadFromUrl();
 
+  const chartHandles = new Map(); // el → handle
+
+  function mountCharts() {
+    const nodes = document.querySelectorAll('.chart');
+    nodes.forEach(function (el) {
+      const name = el.dataset.chart;
+      const key = el.dataset.src;
+      const mod = window.DeckCharts && window.DeckCharts[name];
+      const data = window.DeckData && window.DeckData[key];
+      if (!mod || !data) return;
+      const handle = mod.init(el, data);
+      chartHandles.set(el, handle);
+      if (window.ResizeObserver) {
+        new ResizeObserver(function () { handle.resize(); }).observe(el);
+      }
+    });
+  }
+
+  function fireLifecycle() {
+    const activeSlide = slides[state.index];
+    chartHandles.forEach(function (handle, el) {
+      if (activeSlide.contains(el)) handle.onEnter();
+      else handle.onLeave();
+    });
+  }
+
+  // Hook into state changes
+  on('change', fireLifecycle);
+  mountCharts();
+  fireLifecycle();
+
   window.Deck = { state: state, goto: goto, next: next, prev: prev, on: on };
 })();
