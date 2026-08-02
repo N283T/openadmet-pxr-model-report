@@ -39,6 +39,20 @@ The script uses [PEP 723](https://peps.python.org/pep-0723/) inline dependencies
 and runs under [uv](https://docs.astral.sh/uv/). It reads nothing from the
 network.
 
+## Capturing slides
+
+With the local server running at `http://127.0.0.1:8000/`, capture a slide at
+the fixed 1920×1080 design size:
+
+```bash
+node scripts/capture_slides.mjs --slide 4
+node scripts/capture_slides.mjs --all
+```
+
+PNG files are written to `output/slide-captures/`. The script uses the locally
+installed Chrome or Edge browser and allows the web fonts and slide JavaScript
+to render before taking each screenshot.
+
 ## Scope
 
 This public repository is a **report-only artifact**. Raw competition data,

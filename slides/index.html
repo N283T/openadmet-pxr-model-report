@@ -55,7 +55,6 @@
             </div>
           </div>
         </div>
-        <div class="slide-number">02 / 20</div>
         <aside class="notes">背景の紹介。OpenADMETのブラインドチャレンジに参加して、Track 1で4位を取ったという2点だけ簡単に。PXRとは何か・Trackの内訳・データセットの詳細はこの後のスライドで。</aside>
       </section>
 
@@ -106,8 +105,70 @@
             </div>
           </div>
         </div>
-        <div class="slide-number">03 / 20</div>
         <aside class="notes">コンペの構造だけ話す — 2トラックあり、Track 1 (Activity) は SMILES→pEC50 の回帰を513化合物のブラインドセットで評価、MAE。Track 2 (Structure) は SMILES→PDB の構造予測、110フラグメント、lDDT-PLI評価で今回は不参加。期間3か月。PXRの詳細は次スライドで。</aside>
+      </section>
+
+      <section class="slide" id="s-04-admet">
+        <h2>What is ADMET?</h2>
+        <div class="body">
+          <p class="admet-lead"><strong>効く（efficacy）だけでは薬にならない</strong>　体内でどう振る舞うかを示す ADMET が創薬の成否を分ける</p>
+          <ul class="admet-cards">
+            <li class="admet-card">
+              <span class="admet-card__letter">A</span>
+              <span class="admet-card__term">Absorption</span>
+              <span class="admet-card__ja">吸収</span>
+              <span class="admet-card__desc">体内にどれだけ入るか</span>
+              <ul class="admet-card__ex">
+                <li>Caco-2</li><li>Solubility</li><li>F%</li>
+              </ul>
+            </li>
+            <li class="admet-card">
+              <span class="admet-card__letter">D</span>
+              <span class="admet-card__term">Distribution</span>
+              <span class="admet-card__ja">分布</span>
+              <span class="admet-card__desc">組織へどう行き渡るか</span>
+              <ul class="admet-card__ex">
+                <li>LogD</li><li>PPB</li><li>Vd</li>
+              </ul>
+            </li>
+            <li class="admet-card admet-card--pxr">
+              <span class="admet-card__tag">PXR</span>
+              <span class="admet-card__letter">M</span>
+              <span class="admet-card__term">Metabolism</span>
+              <span class="admet-card__ja">代謝</span>
+              <span class="admet-card__desc">どれだけ速く分解されるか</span>
+              <ul class="admet-card__ex">
+                <li>CYP</li><li>CLint</li><li>t½</li>
+              </ul>
+            </li>
+            <li class="admet-card">
+              <span class="admet-card__letter">E</span>
+              <span class="admet-card__term">Excretion</span>
+              <span class="admet-card__ja">排泄</span>
+              <span class="admet-card__desc">どう体外へ出ていくか</span>
+              <ul class="admet-card__ex">
+                <li>CL</li><li>Renal</li><li>Biliary</li>
+              </ul>
+            </li>
+            <li class="admet-card admet-card--pxr">
+              <span class="admet-card__tag">PXR</span>
+              <span class="admet-card__letter">T</span>
+              <span class="admet-card__term">Toxicity</span>
+              <span class="admet-card__ja">毒性</span>
+              <span class="admet-card__desc">体にとって安全か</span>
+              <ul class="admet-card__ex">
+                <li>hERG</li><li>DILI</li><li>Ames</li>
+              </ul>
+            </li>
+          </ul>
+          <ul class="admet-bridge">
+            <li>ADMET の問題は<strong>臨床試験での脱落や開発中止</strong>につながる主要な要因</li>
+            <li>合成や実験の前にリスクを見極めるため<strong>創薬の初期段階から計算科学による予測</strong>を活用</li>
+            <li>特に<strong>機械学習を用いた ADMET 予測モデル</strong>の研究開発が活発に進んでいる</li>
+            <li>5 要素のうち <strong>PXR</strong> が深く関わるのは 代謝(M) と 毒性(T)</li>
+          </ul>
+        </div>
+        <aside class="notes">PXRの前に、そもそもADMETとは何かを混合聴衆向けに1枚で。ADMET = Absorption/Distribution/Metabolism/Excretion/Toxicity。薬は効く（efficacy）だけでは不十分で、体内での振る舞い（ADMET）が悪いと臨床試験で脱落する。だから合成前に計算で予測したい＝OpenADMETの狙い。5要素のうちPXRは代謝(M)と毒性(T)に深く関わる、と次スライドへ橋渡し。深入りしない。</aside>
       </section>
 
       <section class="slide" id="s-04-pxr-task">
@@ -146,7 +207,6 @@
             </div>
           </div>
         </div>
-        <div class="slide-number">04 / 20</div>
         <aside class="notes">ML寄りの聴衆向けにPXRを一言で。異物センサーとして働き、CYP3A4など薬物代謝酵素の転写をオンにする核内受容体。活性化するとDDI・肝毒性・化学療法抵抗性のリスク。モデル化が難しい理由は「大きく柔軟な結合ポケット」＋「データが少ない」。深入りせず直感だけ共有。</aside>
       </section>
 
@@ -164,7 +224,6 @@
             <span>Chart TBD: アッセイファネルの図（漏斗 or 積み上げ図） — Train 4,140 / AS1 253 / AS2 260 / Test計 513、log2fc実測 2,722件（8.25µM）・2,659件（33µM）、log2fc事前学習コーパス13,136件</span>
           </div>
         </div>
-        <div class="slide-number">05 / 20</div>
         <aside class="notes">ここが今日の話の伏線。「pEC50は4,140件しかないが、安価なlog2fcアッセイはもっと広くカバーしている」という非対称性が、この後のmulti-fidelity戦略の出発点になる。</aside>
       </section>
 
@@ -179,7 +238,6 @@
           </ul>
           <div class="chart" data-chart="results" data-src="results" style="width:100%; height:60vh;"></div>
         </div>
-        <div class="slide-number">06 / 20</div>
         <aside class="notes">まず結果を見せてから、なぜこの結果になったかを掘り下げる構成。「4位」という数字だけでなく、MAE以外の指標（Spearman/Kendall）も一貫して良いことに触れ、順位相関も強いモデルであることを示す。</aside>
       </section>
 
@@ -193,7 +251,6 @@
             <li>log2fcを疑似pEC50ラベルに変換する試みは、むしろ精度を<strong>下げた</strong>（失敗）。</li>
           </ul>
         </div>
-        <div class="slide-number">07 / 20</div>
         <aside class="notes">ここは「詰まった」話。正直に、疑似ラベル変換という自然に見えるアイデアが失敗したことを話す。次のスライドで、この停滞をどう突破したかにつなげる。</aside>
       </section>
 
@@ -210,7 +267,6 @@
             <span>Chart TBD: 概念図 — 高精度ターゲット／低精度測定／低精度モデル出力／低精度表現／下流の高精度モデルの対応表をダイアグラム化</span>
           </div>
         </div>
-        <div class="slide-number">08 / 20</div>
         <aside class="notes">ここが今日のスライドの中で一番「発見の物語」らしい部分。論文名はしっかり画面に出す。技術的詳細（GNNアーキテクチャなど）には立ち入らず、「安いデータを予測値や表現として使うと効く」という着想だけを伝える。</aside>
       </section>
 
@@ -242,7 +298,6 @@
             <span>Chart TBD: feature/model/dims/MAE/Spearman 比較バーチャート（post-challenge held-out fits、本番モデルではない）</span>
           </div>
         </div>
-        <div class="slide-number">09 / 20</div>
         <aside class="notes">このスライドが今日のハイライトの一つ。「たった2列の予測値が、217次元の記述子スタック一式と互角」というインパクトを強調する。なぜ効くかは前スライドのmulti-fidelityの理屈で説明済みなので、ここは数字で畳みかける。</aside>
       </section>
 
@@ -282,7 +337,6 @@
             <span>Chart TBD: 9メンバーの OOF MAE / Weight 比較（一部欠損値あり、要フォローアップ）</span>
           </div>
         </div>
-        <div class="slide-number">10 / 20</div>
         <aside class="notes">9メンバーもあるが、聞く側が全部覚える必要はない。「3つのグループがある」「読み出しは全部TabPFN」の2点だけ持ち帰ってもらえば十分、という前置きをしてから表を見せる。</aside>
       </section>
 
@@ -300,7 +354,6 @@
             <span>Chart TBD: メンバー間相関サマリー（範囲0.81–0.98、平均0.88、near-duplicateペア0.98/0.97）</span>
           </div>
         </div>
-        <div class="slide-number">11 / 20</div>
         <aside class="notes">「9モデルの多様性アンサンブル」に見えて、実態はかなり相関している——ここを正直に話す。Boltz-2が「構造予測ではなく表現として使うと効いた」という話は、今日のもう一つの意外性のある発見として強調する。</aside>
       </section>
 
@@ -317,7 +370,6 @@
             <span>Chart TBD: 生アンサンブル(0.441) → キャリブレーション後(0.408) の2本バー比較</span>
           </div>
         </div>
-        <div class="slide-number">12 / 20</div>
         <aside class="notes">ここが「効いた」施策の話。キャリブレーションという地味な後処理1つが、この後のどんな工夫よりも効いたという事実を先に言ってしまい、次のスライドで「その後は何をやってもほぼ横ばいだった」というコントラストにつなげる。</aside>
       </section>
 
@@ -352,7 +404,6 @@
             <span>Chart TBD: id50〜id60 の Public-LB MAE 推移（ほぼ横ばい）</span>
           </div>
         </div>
-        <div class="slide-number">13 / 20</div>
         <aside class="notes">このスライドで伝えたいのは「頑張って11回チューニングしたが、実質何も変わらなかった」という正直な事実。グラフがほぼ横一直線に見えることそのものが主張になる。テール問題は最後まで解けなかった、とはっきり言う。</aside>
       </section>
 
@@ -368,7 +419,6 @@
             <span>Chart TBD: Public LB ~8位前後 → 最終ブラインド 4位/95 の2点比較（8位は概数）</span>
           </div>
         </div>
-        <div class="slide-number">14 / 20</div>
         <aside class="notes">ここは今日のプロセス面のハイライトの一つ。「見た目のスコアが悪くても、無理に追いかけない」という判断が結果的に報われた、という話を、次のPhase 2の反例とセットで聞いてもらう。</aside>
       </section>
 
@@ -397,7 +447,6 @@
             <span>Chart TBD: id60→id61→id62→id63 の AS2 MAE 推移（一貫して悪化）</span>
           </div>
         </div>
-        <div class="slide-number">15 / 20</div>
         <aside class="notes">ここは今日いちばん正直に話すべきスライド。「良かれと思ってやったことが全部裏目に出た」というnull resultを、恥ずかしがらずそのまま見せる。特に低活性側に手を出さなかった判断が結果的に正しかった点は強調する。</aside>
       </section>
 
@@ -429,7 +478,6 @@
             <span>Chart TBD: 提出id63 / id60アンカー / id55shape / 優勝スコア / stacker / importance-calibrated の比較</span>
           </div>
         </div>
-        <div class="slide-number">16 / 20</div>
         <aside class="notes">ブラインドコンペの本質的な難しさを一番よく表すスライド。「後から見れば分かるが、当時は分からなかった」という点を強調し、判断の正しさではなく「判断できない状況だった」という事実の方を伝える。</aside>
       </section>
 
@@ -445,7 +493,6 @@
             <span>Chart TBD: 状況整理プロンプト（Claude Code）→ ChatGPT Deep Research → Buterez et al. 発見 の3ステップ矢印図</span>
           </div>
         </div>
-        <div class="slide-number">17 / 20</div>
         <aside class="notes">ここは短めに。「AIをどう使ったか」の詳細に踏み込むと今日の主役（PXR予測の中身）がぼやけるので、1枚で軽く触れて次に進む、ということを聴衆にも明言してから話す。</aside>
       </section>
 
@@ -460,7 +507,6 @@
             <li><strong>予測構造・affinityは期待外れだった。</strong>Boltz-2のポーズとaffinityヘッドは直接使うにはノイズが多すぎ、学習表現として使って初めて効いた。活性予測という点では既製のaffinityモデルが最も弱いリンクだった。</li>
           </ul>
         </div>
-        <div class="slide-number">18 / 20</div>
         <aside class="notes">§8の結論を4つの箇条書きにまとめて読み上げる。ここは新しい情報を足さず、これまで話した内容の要約であることを明言する。</aside>
       </section>
 
@@ -473,7 +519,6 @@
             <li>OpenADMETチームへの謝辞: よく設計されたベンチマークを運営し、データとunblind後のラベルを公開してくれたことが、この振り返りと答え合わせ（issue #222）を可能にした。</li>
           </ul>
         </div>
-        <div class="slide-number">19 / 20</div>
         <aside class="notes">発表の締めとして、個人的な感想と謝辞を短く。ここで技術的な話は増やさず、次のスライド（参考文献）にそのままつなげる。</aside>
       </section>
 
@@ -490,7 +535,6 @@
             <li>運営の書き起こし: <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1結果</a>、<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">最終まとめ</a></li>
           </ul>
         </div>
-        <div class="slide-number">20 / 20</div>
         <aside class="notes">質疑応答のための保険スライド。基本的に読み上げず、質問が出たときに参照する形で使う。</aside>
       </section>
 
@@ -507,5 +551,6 @@
     <script src="assets/js/notes.js"></script>
     <script src="assets/js/fullscreen.js"></script>
     <script src="assets/js/fit.js"></script>
+    <script src="assets/js/authoring.js"></script>
   </body>
 </html>

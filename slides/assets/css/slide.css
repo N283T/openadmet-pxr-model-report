@@ -54,6 +54,36 @@
 }
 .slide aside.notes { display: none; }
 
+/* Authoring diagnostics. authoring.js adds these only when content exceeds
+   the fixed 1920x1080 canvas. Hidden while the all-slide audit is running. */
+.slide.has-overflow {
+  box-shadow: inset 0 0 0 8px #d64545;
+}
+.slide .overflow-warning {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 10000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #d64545;
+  color: #fff;
+  font: 700 18px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+body.is-auditing-slides .slide { visibility: hidden !important; }
+body[data-mode="overview"] .slide .overflow-warning {
+  top: 4px;
+  right: 4px;
+  padding: 3px 5px;
+  font-size: 8px;
+}
+@media print {
+  .slide.has-overflow { box-shadow: none !important; }
+  .overflow-warning { display: none !important; }
+}
+
 /* JS-driven slide mode: only show the active slide */
 body[data-mode="slide"] .slide { display: none; }
 body[data-mode="slide"] .slide.is-active { display: grid; }
@@ -158,7 +188,7 @@ body[data-mode="slide"] .slide.is-active {
   overflow: hidden;
   /* Tight gap between the h2 (which already carries a gradient underline)
      and the body — the divider makes a large gap redundant. */
-  row-gap: 18px;
+  row-gap: 8px;
   /* transform assigned by assets/js/fit.js */
 }
 body[data-mode="slide"] .slide.is-active .slide-number {
@@ -665,3 +695,167 @@ body[data-mode="slide"] .slide.is-active#s-03-challenge .body {
 }
 @keyframes mol-spin-rot { to { transform: rotate(360deg); } }
 .slide .mol-spin__icon { display: inline-block; line-height: 1; }
+
+/* ADMET slide — lead, five tall A/D/M/E/T cards, then a bridge note.
+   Signature: only the two cards PXR touches (M, T) are "lit" — coral fill,
+   coral letter, PXR tag — so the eye lands on them and sets up the next slide. */
+.slide .admet-lead {
+  font-size: 1.1em;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+  max-width: 48em;
+}
+.slide .admet-lead strong { color: var(--color-ink); font-weight: 600; }
+
+.slide .body .admet-cards {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0 0;                 /* room for the top accent bar's shadow */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+.slide .body .admet-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  line-height: normal;
+  padding: 1.5em 1.15em 1.4em;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 20px 44px -32px rgba(58, 66, 87, 0.4);
+}
+/* Top accent bar — hairline-neutral by default, gradient-coral when lit */
+.slide .admet-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--color-line);
+}
+.slide .admet-card__letter {
+  font-family: var(--font-display);
+  font-size: 4.8em;
+  font-weight: 600;
+  line-height: 0.85;
+  color: var(--color-blue);
+  margin-top: 0.05em;
+}
+.slide .admet-card__term {
+  font-family: var(--font-display);
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-top: 0.55em;
+  line-height: 1.15;
+}
+.slide .admet-card__ja {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--muted);
+  letter-spacing: 0.22em;
+  margin-top: 0.35em;
+}
+.slide .admet-card__desc {
+  font-size: 0.7em;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 0.6em;
+  white-space: nowrap;
+}
+/* Representative assays / parameters — pinned to the card's base */
+.slide .body .admet-card__ex {
+  list-style: none;
+  margin: auto 0 0 0;
+  padding: 0.9em 0 0 0;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.3em;
+}
+.slide .body .admet-card__ex li,
+.slide .body .admet-card__ex li + li {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.56em;
+  line-height: 1.2;
+  color: var(--muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.28em 0.52em;
+  white-space: nowrap;
+}
+/* Lit cards — the two ADMET axes PXR acts on */
+.slide .admet-card--pxr {
+  border-color: var(--color-coral);
+  background: linear-gradient(180deg, rgba(239, 159, 140, 0.12), rgba(247, 217, 207, 0.05));
+  box-shadow: 0 24px 50px -28px rgba(239, 159, 140, 0.6);
+}
+.slide .admet-card--pxr::before {
+  background: linear-gradient(90deg, var(--color-coral), var(--color-peach));
+}
+.slide .admet-card--pxr .admet-card__letter {
+  background: linear-gradient(140deg, var(--color-coral), #e07f66);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.slide .admet-card--pxr .admet-card__desc {
+  color: var(--color-ink);
+}
+.slide .admet-card--pxr .admet-card__ex {
+  border-top-color: rgba(239, 159, 140, 0.45);
+}
+.slide .admet-card--pxr .admet-card__ex li {
+  color: #c26a52;
+  background: rgba(239, 159, 140, 0.12);
+  border-color: rgba(239, 159, 140, 0.5);
+}
+.slide .admet-card__tag {
+  position: absolute;
+  top: 1em; right: 1em;
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  padding: 0.3em 0.75em;
+  border-radius: 999px;
+  background: var(--color-coral);
+  color: var(--color-surface);
+  letter-spacing: 0.18em;
+}
+.slide .body .admet-bridge {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.24em;
+  font-size: 1em;
+  line-height: 1.3;
+  color: var(--color-ink);
+  margin: 0.35em 0 0;
+  padding: 0;
+}
+.slide .body .admet-bridge li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  margin: 0;
+  line-height: 1.3;
+}
+.slide .body .admet-bridge li + li { margin-top: 0; }
+.slide .body .admet-bridge li::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.38em;
+  height: 0.38em;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-0.08em);
+}
+.slide .admet-bridge strong { color: inherit; }
