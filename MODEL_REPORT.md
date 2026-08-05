@@ -140,8 +140,8 @@ model. These are quick post-challenge held-out fits
 
 The final system is nine members. They differ in how they turn a molecule into
 features but share one thing: every member uses
-[TabPFN](https://github.com/PriorLabs/tabpfn) as its readout head. Most encoders
-are frozen and pretrained on the auxiliary log2fc signal.
+[TabPFN](https://github.com/PriorLabs/tabpfn) v2.6 as its readout head. Most
+encoders are frozen and pretrained on the auxiliary log2fc signal.
 
 | Alias | Encoder / features | Family | log2fc |
 |---|---|---|:--:|
