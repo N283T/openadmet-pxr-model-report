@@ -104,9 +104,9 @@
     <h2>0. TL;DR</h2>
     <ul>
       <li>Finished <strong>4th of 95</strong> (Tier 1) on the OpenADMET PXR Challenge Track 1 (Activity), predicting PXR induction (pEC50) from SMILES alone. MAE was <strong>0.4059</strong> on the interim leaderboard (AS1 + AS2) and <strong>0.4113</strong> on the final Phase 2 set (AS2).</li>
-      <li>The idea that decided it was <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a> (after <a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a>). The challenge ships a cheap, single-concentration <code>log2fc</code> readout as auxiliary data, measured on 10,875 compounds against only 4,140 pEC50 labels — and <strong>a model's predicted log2fc turned out to be the single strongest feature</strong>.</li>
-      <li>Around that signal sits a <a href="#ensemble"><strong>nine-member Caruana ensemble</strong></a>. The members fall into <a href="#members">three families</a> — tabular core, frozen embed, and Boltz trunk — and every one of them reads out through <strong>TabPFN</strong>.</li>
-      <li>Past the ensemble, one affine <a href="#calibration"><strong>calibration</strong></a> was the only clear gain. The late Phase 1 tail gates and the whole of <a href="#phase2">Phase 2</a> mostly added noise or made things worse. Knowing when to stop was, in hindsight, one of the better calls.</li>
+      <li>What decided it was <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a> (after <a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a>). The challenge ships a cheap, single-concentration <code>log2fc</code> readout as auxiliary data, measured on 10,875 compounds against only 4,140 pEC50 labels — and <strong>a model's predicted log2fc turned out to be the single strongest feature</strong>.</li>
+      <li>Around that signal sits a <a href="#ensemble"><strong>nine-member Caruana ensemble</strong></a>. The members fall into <a href="#members">three families</a> — tabular core, frozen embed, and Boltz trunk — and every one of them uses <strong>TabPFN</strong> as its readout head.</li>
+      <li>Downstream of the ensemble, the only thing that clearly helped was a single affine <a href="#calibration"><strong>calibration</strong></a>. The late Phase 1 tail gates and the whole of <a href="#phase2">Phase 2</a> mostly added noise or made things worse. Knowing when to stop was, in hindsight, one of the better calls.</li>
     </ul>
   </section>
 
@@ -148,7 +148,7 @@
   <section id="results">
     <h2>2. Results</h2>
     <p>
-      Scores for this challenge came out essentially <strong>three</strong> times. The live
+      This challenge produced scores at <strong>three</strong> points. The live
       leaderboard moved with every submission, so these three are the only standings that stay put.
     </p>
     <div class="phase-block">
@@ -201,14 +201,14 @@
     <p>
       At first we built features and models from the Train pEC50 labels alone. But there are only
       <strong>4,140</strong> pEC50 labels, and accuracy plateaued almost immediately.
-      The challenge data also ships a single-concentration reporter assay &mdash;
-      <strong>log2 fold-change</strong> (log2fc) at 8.25&nbsp;µM and 33&nbsp;µM &mdash; as auxiliary
+      The challenge data also ships a single-concentration reporter assay —
+      <strong>log2 fold-change</strong> (log2fc) at 8.25&nbsp;µM and 33&nbsp;µM — as auxiliary
       data, and it covers far more compounds. We knew that auxiliary signal was there; we did not know
       how to use it well. Naive ideas such as converting it into pseudo pEC50 labels only lowered accuracy.
     </p>
     <ul>
-      <li><strong>Train / Test / AUX data</strong> are the three sets distributed, and each fills in a different set of columns (Table&nbsp;2)</li>
-      <li><strong>Test is SMILES only</strong> &mdash; it carries no measured values, so no log2fc is available for Test either</li>
+      <li><strong>Train / Test / AUX data</strong> — the three distributed sets, each with a different set of columns filled in (Table&nbsp;2)</li>
+      <li><strong>Test is SMILES only</strong> — it carries no measured values, so no log2fc is available for Test either</li>
       <li>log2fc is measured at two concentrations, so there are two readings per compound</li>
     </ul>
     <figure class="chart-figure">
@@ -230,7 +230,7 @@
     <h3>Finding Buterez et al.</h3>
     <p>
       To break the plateau, we had Claude Code draft a research prompt that wrote out the situation as
-      it was &mdash; scarce pEC50, an abundant auxiliary assay, pseudo-labeling failing &mdash; and asked
+      it was — scarce pEC50, an abundant auxiliary assay, pseudo-labeling failing — and asked
       for ways to exploit the auxiliary signal. Running that prompt through ChatGPT Deep Research
       surfaced Buterez et&nbsp;al.
     </p>
@@ -293,8 +293,8 @@
     </figure>
     <p>Two things mainly differed from the paper.</p>
     <ul>
-      <li><strong>The raw labels are unusable</strong> &mdash; test has no measurements, so <span class="strat-ref">1</span> and <span class="strat-ref">3</span> were off the table from the start</li>
-      <li><strong>Far less LF data</strong> &mdash; the paper had over a million measurements, we had 10,875 compounds</li>
+      <li><strong>The raw labels are unusable</strong> — Test has no measurements, so <span class="strat-ref">1</span> and <span class="strat-ref">3</span> were off the table from the start</li>
+      <li><strong>Far less LF data</strong> — the paper had over a million measurements; we had 10,875 compounds</li>
     </ul>
     <p>
       Of what was left, we took <span class="strat-ref coral">2</span> and <span class="strat-ref coral">4</span>.
@@ -356,15 +356,13 @@
     </p>
     <p>
       Accuracy is not the only thing it buys. pred log2fc is computed from SMILES, so it exists for Test
-      as well, which carries no measured labels at all. The measurement is not available for Test, so the
-      predicted form is the only way an assay-derived signal reaches the compounds we are scored on.
+      as well, which carries no measured labels at all. The predicted form is therefore the only way an assay-derived signal reaches the compounds we are scored on.
     </p>
 
     <h3>How far does pred log2fc alone get? <span class="badge post">post-challenge</span></h3>
     <p>
       To size the signal, we fit a few deliberately simple models on the Train pEC50 and scored them on
-      the now-unblinded Test (AS1 + AS2) (Table&nbsp;5). The comparison point is a default-setting
-      LightGBM on the full RDKit descriptor set.
+      the now-unblinded Test (AS1 + AS2) (Table&nbsp;5). The comparison point is an untuned LightGBM on the full RDKit descriptor set.
     </p>
     <figure class="chart-figure">
       <div class="table-scroll">
@@ -402,9 +400,9 @@
       <strong>how the features are built</strong>, and that splits three ways.
     </p>
     <ul>
-      <li><strong>tabular core</strong> &mdash; the 2,103 dimensions of descriptors and pred log2fc, handed over as they are</li>
-      <li><strong>frozen embed</strong> &mdash; an encoder pretrained on log2fc, frozen, with its embedding handed over instead</li>
-      <li><strong>Boltz trunk</strong> &mdash; the internal representation from Boltz-2
+      <li><strong>tabular core</strong> — the 2,103 dimensions of descriptors and pred log2fc, passed through unchanged</li>
+      <li><strong>frozen embed</strong> — an encoder pretrained on log2fc, frozen; its embedding goes in instead</li>
+      <li><strong>Boltz trunk</strong> — the internal representation from Boltz-2
         <ul><li>the only family with no log2fc in it</li></ul>
       </li>
     </ul>
@@ -448,10 +446,8 @@
     </p>
     <p>
       The ensemble still earns its place, not because it blends independent views but because it works as a
-      <strong>buffer</strong>. Drop the low-weight members and one family's share climbs to 0.94, while the
-      public LB got 0.006 worse. What the small members do is stop a strong but highly correlated member (top500 above all) from taking over the prediction.
-      That is also why progress stalled. New models either got rejected for being too correlated or made things worse when we forced them in, turn after turn,
-      and we shifted our footing to working on calibration and the gate.
+      <strong>buffer</strong>. Drop the low-weight members and one family's share climbs to 0.94, while the public LB gets 0.006 worse. What the small members do is stop a strong but highly correlated member (top500 above all) from taking over the prediction.
+      That is also why progress stalled. New models either got rejected as too correlated or made things worse when we forced them in, round after round, so we moved our focus to calibration and the gate.
     </p>
   </section>
   <section id="members">
@@ -490,11 +486,11 @@
     <div class="aside">
       <p>
         Those 300 dimensions are an <strong>implementation mistake</strong>. The plan was to use CheMeleon's own
-        2,048 dimensions, but the Claude Code run that built the features saved the pretrained 2,048-dim vector
+        2,048 dimensions, but the Claude Code run that built the features saved the pretrained 2,048-dimension vector
         after pushing it through an untrained 2048&rarr;300 projection.
       </p>
       <p>
-        Checking the 2,048-dim version after the challenge, <strong>getting it right would not have improved the submission</strong>.
+        We checked the 2,048-dimension version after the challenge: <strong>getting it right would not have improved the submission</strong>.
         On its own, OOF improves from 0.5118 to 0.4983 while Test moves the wrong way, 0.5099 to 0.5132;
         mixed into the full stack it is worse there too. See
         <a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a> for details.
@@ -566,15 +562,14 @@
     <h4>Why both?</h4>
     <p>
       On their own the two perform almost identically (OOF 0.396 against 0.397). The problem is that the benefit of the selection looks confined to OOF.
-      Comparing them under matched conditions after the challenge, top-500 beats full out-of-fold, 0.3968 against 0.4056, but
+      Comparing them under matched conditions after the challenge, top500 beats full out-of-fold, 0.3968 against 0.4056, but
       <strong>the order flips on Test, 0.4327 against 0.4281</strong>
       (<a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a>).
       The natural reading is that the per-fold selection is itself what helps OOF.
     </p>
     <p>
       We did not understand that at the time, but keeping both and letting Caruana split the weight almost evenly (0.309 for top500, 0.288 for full) turned out to be insurance against exactly this gap.
-      A swap that leaned harder on top-500 (id56) looked best out-of-fold and still pushed the
-      public LB from 0.4071 to 0.4135.
+      A swap that leaned harder on top500 (id56) looked best out-of-fold and still made the public LB worse, 0.4071 → 0.4135.
     </p>
     <div class="aside">
       <p>
@@ -608,7 +603,7 @@
     <h4>ChemProp</h4>
     <p>
       <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a> is the prototype for this recipe and the strongest member of the embedding family.
-      It also counts twice over. The same log2fc-predicting ChemProp produces the tabular core's
+      It also does double duty. The same log2fc-predicting ChemProp produces the tabular core's
       <strong>pred log2fc</strong> columns, and the 256-dimension frozen embedding taken from that D-MPNN is
       this member. The same signal goes in two ways, once as a sharp prediction and once as a spread-out representation.
     </p>
@@ -619,14 +614,14 @@
     </p>
     <p>
       What sharpened pred log2fc was <strong>seed averaging</strong>: pretrain with several seeds and average the predictions.
-      Going from 5 to 10 seeds improved the downstream result (top-500 OOF MAE 0.399 to 0.397), and 15 seeds tapered off, so we stopped there.
+      Going from 5 to 10 seeds improved the downstream result (top500 OOF MAE 0.399 to 0.397), and the gain tapered off at 15 seeds, so we stopped there.
     </p>
     <div class="aside">
       <p>
         The OOF numbers in <a href="#adapting">Table&nbsp;4</a> oversold the frozen recipe's margin.
         ChemProp trained directly on pEC50 is weak out-of-fold at about 0.53, yet on
         Test it reaches about 0.48, much closer to the frozen embedding member's 0.44.
-        The winner does not change, but OOF exaggerated by how much.
+        The winner does not change, but OOF exaggerated the size of the gap.
       </p>
     </div>
 
@@ -654,19 +649,18 @@
       Alone they are weak (0.474, 0.484) and their weights are tiny (0.017, 0.002).
     </p>
     <p>
-      They stay because they are a <strong>buffer</strong>. Shedding about 0.02 of weight amplifies into about 0.1 more
+      They stay because they are a <strong>buffer</strong>. Removing about 0.02 of weight is amplified into about 0.1 more
       on the core, and as <a href="#ensemble">Section 4</a> shows, the LB gets worse. A small weight does not mean safe to drop.
     </p>
 
     <h3>5.3 Boltz trunk (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
-      What these two use is Boltz-2's <strong>trunk</strong>, meaning its internal learned
-      <strong>representation</strong>. They never touch the predicted structure.
+      These two use Boltz-2's <strong>trunk</strong> — its internal learned <strong>representation</strong> — and never touch the predicted structure.
     </p>
     <p>
       The original plan was to
       <a href="https://github.com/jwohlwend/boltz">co-fold</a> PXR (UniProt O75469, 434 residues) with each ligand and
-      read activity off the pose or the affinity score. That disappointed, and it survives only as
+      read activity off the pose or the affinity score. That did not pan out; it survives only as
       weak columns inside the tabular core (Table&nbsp;7). So we looked at using it as a representation instead.
     </p>
     <p>
@@ -674,8 +668,8 @@
       and hand that to TabPFN (Figure&nbsp;7). The two members differ only in what range feeds <code>z</code>.
     </p>
     <ul>
-      <li><strong>Boltz-pocket</strong> — a fixed 13-residue core pocket by ligand atoms</li>
-      <li><strong>Boltz-allpairs</strong> — all 434 residues by ligand atoms</li>
+      <li><strong>Boltz-pocket</strong> — a fixed 13-residue core pocket crossed with the ligand atoms</li>
+      <li><strong>Boltz-allpairs</strong> — all 434 residues crossed with the ligand atoms</li>
     </ul>
     <figure class="chart-figure">
       <img class="figure-img" src="assets/img/boltz-pooling.svg" alt="Boltz trunk pooling" />
@@ -685,8 +679,8 @@
       We tried more than 20 poolings, and <strong>what carried the signal was <code>z</code>, the pair representation</strong> (Figure&nbsp;8).
       The 128-dimension <code>z</code> alone reaches 0.490, close on the heels of 0.486 for the full vector, while <code>s</code> only gets to 0.507 with 768 dimensions.
       The relationship between residues and ligand atoms matters more than the shape of the ligand by itself,
-      which fits Boltz-2's own affinity module being designed around pairs.
-      Which residues you pool over, on the other hand, barely matters: pocket and allpairs land within 0.001 MAE of each other, both about 0.486.
+      which fits the fact that Boltz-2's own affinity module is designed around pairs.
+      Which residues you pool over barely matters: pocket and allpairs land within 0.001 MAE of each other, both about 0.486.
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
@@ -698,7 +692,7 @@
     </p>
     <p>
       Step back, and these two are the <strong>only members of the nine that carry no log2fc</strong>.
-      Reaching about 0.486 without the signal every other member rests on strikes me as genuinely impressive,
+      Reaching about 0.486 without the signal every other member rests on is genuinely impressive,
       the more so next to the direct MoLFormer-XL fine-tune, which stalled at 0.529.
     </p>
     <p>
@@ -760,7 +754,7 @@
     <p>
       The compression in the predictions really does open up. Against a true standard deviation of 0.996, the raw predictions
       sit at 0.703 and the calibrated ones at 0.767. The habit of calling potent compounds too weak and weak compounds too
-      potent is pulled back by whatever the affine fit is worth.
+      potent is pulled back by as much as an affine fit can manage.
     </p>
   </section>
 
@@ -773,7 +767,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase1-run" class="chart" style="height:360px"></div>
-      <figcaption>Figure 10: The last 11 submissions of Phase 1 (public LB, AS1, 253 compounds). Both axes are zoomed to the range the scores actually occupy, so the wobble looks large, but the spread is 0.0064 in MAE and 0.0077 in Spearman. The dashed line is the anchor's level, and anything sitting on it is not a result. The hollow id60 is the same file as id55.</figcaption>
+      <figcaption>Figure 10: The last 11 submissions of Phase 1 (public LB, AS1, 253 compounds). Both axes are zoomed to the range the scores actually occupy, so the wobble looks large, but the spread is 0.0064 in MAE and 0.0077 in Spearman. The dashed line is the anchor's level, ; anything sitting on it changed nothing. The hollow id60 is the same file as id55.</figcaption>
     </figure>
     <p>
       The final submission, <strong>id55</strong>, takes the calibrated ensemble (id51) and nudges
@@ -801,7 +795,7 @@
       the identical file as id60 and closed out Phase 1. That is our final entry.
     </p>
     <p>
-      The one thing nothing we added fixed is the <strong>tail</strong>. The pEC50 ≥ 6 band comes out
+      Nothing we added fixed the <strong>tail</strong>. The pEC50 ≥ 6 band comes out
       systematically low, with a bias of about −0.8 over that interval. It shrinks toward the mean by
       nearly a full log unit, and a global calibration does not reach that far.
       We tried a lift and descriptor gates (log2fc, ring count, family gap), but
@@ -837,7 +831,7 @@
           <li>Getting the magnitude wrong cost more than the ranking gained</li>
         </ul>
       </li>
-      <li><strong>Leaving the low-activity side alone</strong> — the view being that getting it wrong there would be expensive
+      <li><strong>Leaving the low-activity side alone</strong> — we judged that getting it wrong there would be expensive
         <ul><li>It turned out to be the right call</li></ul>
       </li>
     </ul>
@@ -875,7 +869,7 @@
         </ul>
       </li>
       <li><strong>TabPFN as readout</strong> — however differently the features are built,
-        all 9 members are read out by TabPFN
+        all nine members are read out by TabPFN
         <ul><li>Fixing the readout let us compare representations against each other directly</li></ul>
       </li>
       <li><strong>Calibration</strong> — correcting the output afterwards did more than adding members
@@ -895,13 +889,12 @@
       On a personal note, this was my first competition, and 4th of 95 is better than I expected going in.
       Two things stand out looking back. One is how heavily I leaned on AI coding agents and ChatGPT
       throughout, for literature search, for code, and as a sounding board, and how much I got out of
-      that workflow; I want to write about it properly in a separate post. The other is that all of
-      this ran on one home gaming PC, and on my own. Reaching Tier 1 out of 95 teams from that setup
+      that workflow; I want to write about it properly in a separate post. The other is that all of this ran on a single home gaming PC, and that I did it alone. Reaching Tier 1 out of 95 teams from that setup
       surprised me, and I am a little proud of it.
     </p>
     <p>
       Finally, thanks to the <a href="https://openadmet.org/">OpenADMET</a> team for running the PXR Induction Challenge.
-      The task was designed to be worth working on, and the guidance and support throughout were thoughtful from start to finish.
+      The task was designed to be worth working on, and the guidance and support were thoughtful from start to finish.
       Releasing the data and the unblinded labels afterwards is what made the post-hoc checks and the
       answer-checking in this report possible. Thank you.
     </p>
