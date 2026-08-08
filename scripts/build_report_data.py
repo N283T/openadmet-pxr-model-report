@@ -107,6 +107,15 @@ GAIN_TOP_N = 12
 CALIB_EFFECT_CSV = REPO_ROOT.joinpath(
     "data", "ensemble_calibration", "ens_current_raw_calibrated_test_20260807.csv"
 )
+CALIB_METRICS_CSV = REPO_ROOT.joinpath(
+    "data", "ensemble_calibration", "ens_current_raw_vs_calibrated_metrics_20260807.csv"
+)
+# Scope key in the metrics file, how the report names it, and the split it covers.
+CALIB_SCOPES = [
+    ("full_test", "AS1 + AS2", None),
+    ("phase1_as1", "AS1", "AS1"),
+    ("phase2_as2", "AS2", "AS2"),
+]
 # True-pEC50 bands the per-band MAE is reported over.
 CALIB_BANDS = [(None, 3), (3, 4), (4, 5), (5, 6), (6, None)]
 
@@ -642,24 +651,23 @@ def build_calibration_effect() -> None:
     if round(spearman("raw"), 6) != round(spearman("calibrated"), 6):
         raise SystemExit("raw and calibrated disagree on Spearman; not a monotone fit")
 
+    metrics = pd.read_csv(CALIB_METRICS_CSV).set_index(["scope", "prediction"])
     scopes = []
-    for name, sub in (
-        ("full", d),
-        ("AS1", d[d["split"] == "AS1"]),
-        ("AS2", d[d["split"] == "AS2"]),
-    ):
-        scopes.append(
-            {
-                "scope": name,
-                "n": int(len(sub)),
-                "rawMae": round(float((sub["raw"] - sub["test"]).abs().mean()), 4),
-                "calMae": round(
-                    float((sub["calibrated"] - sub["test"]).abs().mean()), 4
-                ),
-                "rawBias": round(float((sub["raw"] - sub["test"]).mean()), 4),
-                "calBias": round(float((sub["calibrated"] - sub["test"]).mean()), 4),
-            }
-        )
+    for key, label, split in CALIB_SCOPES:
+        sub = d if split is None else d[d["split"] == split]
+        row = {"scope": label, "n": int(metrics.loc[(key, "raw"), "n"])}
+        for column, name in (
+            ("MAE", "Mae"),
+            ("RAE", "Rae"),
+            ("R2", "R2"),
+            ("Spearman_R", "Spearman"),
+        ):
+            for which in ("raw", "calibrated"):
+                prefix = "raw" if which == "raw" else "cal"
+                row[prefix + name] = round(float(metrics.loc[(key, which), column]), 4)
+        for which, prefix in (("raw", "raw"), ("calibrated", "cal")):
+            row[prefix + "Bias"] = round(float((sub[which] - sub["test"]).mean()), 4)
+        scopes.append(row)
 
     bands = []
     for low, high in CALIB_BANDS:

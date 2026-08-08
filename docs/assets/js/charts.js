@@ -118,6 +118,30 @@
     };
   }
 
+  // The metrics table beside that chart, from the same JSON.
+  function renderCalibMetrics() {
+    var body = document.querySelector("[data-calib-metrics]");
+    if (!body) return;
+    var cols = [
+      ["MAE", "Mae", 4, false], ["RAE", "Rae", 4, false],
+      ["R\u00b2", "R2", 4, true], ["Spearman", "Spearman", 4, true],
+      ["bias", "Bias", 3, null],
+    ];
+    getJSON("calibration_effect.json").then(function (d) {
+      body.innerHTML = d.scopes.map(function (s) {
+        var cells = cols.map(function (c) {
+          var raw = s["raw" + c[1]], cal = s["cal" + c[1]];
+          var same = raw === cal;
+          var arrow = same ? " =" : " \u2192 ";
+          return '<td class="num">' + raw.toFixed(c[2]) + arrow +
+            (same ? "" : "<b>" + cal.toFixed(c[2]) + "</b>") + "</td>";
+        }).join("");
+        return "<tr><th>" + s.scope + "</th>" +
+          '<td class="num">' + s.n + "</td>" + cells + "</tr>";
+      }).join("");
+    }).catch(function (e) { console.error(e); });
+  }
+
   // Calibration on one run: what it changed, per true-pEC50 band. Negative is
   // better, so improvement points one way and the cost points the other.
   function optCalibEffect(d, p) {
@@ -566,6 +590,7 @@
     });
     renderFeatureScatter(p);
     renderMemberTable();
+    renderCalibMetrics();
   }
 
   function setupTheme() {
