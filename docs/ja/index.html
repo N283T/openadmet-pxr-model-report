@@ -623,22 +623,19 @@
     </div>
 
     <h4>Foundation encoders: KERMT &amp; MoLFormer</h4>
+    <p>同じレシピを、より大きな事前学習済み backbone に適用したものです。</p>
+    <ul>
+      <li><strong><a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a></strong> — graph transformer。
+        log2fc で継続事前学習して 3,200 次元の embedding を得ます。embedding 系では 2 番手（0.448、重み 0.111）。</li>
+      <li><strong><a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer</a></strong> — SMILES transformer
+        （DeepChem MoLFormer-c3）。log2fc に対して LoRA で事前学習し、凍結した 768 次元の [CLS] ベクトルを使います
+        （0.475、重み 0.040）。</li>
+    </ul>
     <p>
-      同じレシピを、より大きな事前学習済み backbone 2 つに適用したものです。
-      <strong><a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a></strong> は GROVER 系の graph transformer（NVIDIA と Merck 由来、約 1,100 万件の
-      ZINC/ChEMBL 分子で事前学習）で、これを log2fc で継続事前学習して 3,200 次元の embedding を得ます。
-      embedding 系では 2 番手です（0.448、重み 0.111）。
-      <strong><a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer</a></strong> は SMILES transformer（DeepChem MoLFormer-c3）で、
-      log2fc に対して LoRA で事前学習し、凍結した 768 次元の [CLS] ベクトルを使います（0.475、重み 0.040）。
-      どちらも tabular core と約 0.92 の相関で予測しますが（同じ log2fc 信号なので当然です）、
-      backbone が違う分だけ誤差の出方がずれ、その差で重みを獲得しています。
-      すべての backbone が基準を満たしたわけではありません。<strong>ChemBERTa</strong>
-      （5M / 10M のマルチタスク回帰版）は同じ frozen レシピに通しても OOF で 0.53 前後にとどまり、
-      Caruana の add-value 判定を通らず（MAE の改善なし、重みも無視できる大きさ）、外しました。
-      より惜しかったのが <strong><a href="https://github.com/deepmodeling/Uni-Mol">UniMol-v2</a></strong> です。
-      3D 配座の基盤モデルに同じ log2fc の frozen 事前学習を施したところ、OOF で約 0.484 という
-      残ったメンバーに迫る水準に達しましたが、Caruana が保持するだけの付加価値は得られませんでした。
-      一方で MoLFormer-XL を pEC50 に直接 fine-tune する路線は 0.529 と弱く、ここでも ChemProp と同じ教訓が繰り返されました。
+      同じレシピを通しても採用に至らなかった backbone もあります。<strong>ChemBERTa</strong> は OOF 0.53 前後、
+      <strong><a href="https://github.com/deepmodeling/Uni-Mol">UniMol-v2</a></strong> は約 0.484 と残ったメンバーに迫る水準まで来ましたが、
+      どちらも Caruana の add-value 判定を通りませんでした。MoLFormer-XL を pEC50 に直接 fine-tune する路線も
+      0.529 と弱く、ここでも ChemProp と同じ結果です。
     </p>
 
     <h4>Extra GNNs: GatedGCN &amp; AttentiveFP</h4>
