@@ -63,6 +63,7 @@
   <a class="sn-link" href="#ensemble" data-sn="ensemble"><span class="sn-dot"></span><span>Ensemble</span></a>
   <a class="sn-link" href="#members" data-sn="members"><span class="sn-dot"></span><span>Members</span></a>
   <a class="sn-link" href="#calibration" data-sn="calibration"><span class="sn-dot"></span><span>Calibration</span></a>
+  <a class="sn-link" href="#gates" data-sn="gates"><span class="sn-dot"></span><span>Gates</span></a>
   <a class="sn-link" href="#phase2" data-sn="phase2"><span class="sn-dot"></span><span>Phase 1 → 2</span></a>
   <a class="sn-link" href="#conclusion" data-sn="conclusion"><span class="sn-dot"></span><span>Conclusion</span></a>
   <a class="sn-link" href="#links" data-sn="links"><span class="sn-dot"></span><span>Links</span></a>
@@ -702,7 +703,7 @@
   </section>
 
   <section id="calibration">
-    <h2>6. Calibration and the final tail gates</h2>
+    <h2>6. Calibration</h2>
     <p>
       発端は診断でした。Spearman・Kendall・R² は上位なのに、<strong>MAE と RAE だけが悪い</strong>。
       どの化合物が強いかの<strong>並びは合っているのに、pEC50 のスケールと中心がずれている</strong>状態です。
@@ -750,7 +751,10 @@
     </div>
     <p class="metrics-key">帯域別の MAE。5–6 と 6 以上で稼ぎ、3–5 で返しています。チャレンジの目的（強い誘導剤を当てる）とは向きが合っていますが、全域で改善するわけではありません。</p>
 
-    <h3>The Phase 1 run</h3>
+  </section>
+
+  <section id="gates">
+    <h2>7. Gates</h2>
     <p>
       public LB の履歴では、素の Caruana ブレンド <strong>0.4414</strong>（id13）から
       importance 版 calibration の初回 <strong>0.4154</strong>（id19）、
@@ -809,7 +813,7 @@
   </section>
 
   <section id="phase2">
-    <h2>7. Phase 1 → Phase 2</h2>
+    <h2>8. Phase 1 → Phase 2</h2>
     <p>
       anchor に戻って Phase 1 を終えたことは、当時は及び腰に見えました。
       public LBでは 8 位前後で、明らかに良い public スコアを出しているチームが複数あり、
@@ -879,7 +883,7 @@
   </section>
 
   <section id="conclusion">
-    <h2>8. Conclusion</h2>
+    <h2>9. Conclusion</h2>
     <p>
       実際に勝負を決めたのはモデルではなく、フレーミングでした。
       <strong>multi-fidelity transfer learning</strong>（Buterez et al. 2024 に基づく）にたどり着けたことが、
