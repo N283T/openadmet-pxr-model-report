@@ -120,7 +120,9 @@
 
   // Calibration on one run: raw and calibrated predictions against the truth.
   function optCalibEffect(d, p) {
-    var lo = 1.5, hi = 8.5;
+    // The data spans 1.75 to 6.79 on the truth axis and 2.50 to 6.07 on the
+    // prediction axis, so this clips nothing.
+    var lo = 1.5, hi = 7;
     var raw = d.points.map(function (x) { return [x[0], x[1]]; });
     var cal = d.points.map(function (x) { return [x[0], x[2]]; });
     var full = d.scopes.filter(function (s) { return s.scope === "full"; })[0];
