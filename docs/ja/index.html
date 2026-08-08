@@ -598,39 +598,27 @@
 
     <h4>ChemProp</h4>
     <p>
-      <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a> はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
-      しかもこのモデルは二重に効いています。同じ「log2fc を予測する ChemProp」が
-      tabular core の <strong>pred log2fc</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
-      その D-MPNN から取り出した 256 次元の frozen embedding が、この独立したメンバーになっているからです。
-      同じ log2fc 信号を、鋭い prediction としてと、広がりのある representation としての 2 通りで注入していることになります。
-    </p>
-    <p>log2fc の事前学習は、小さなマルチタスク構成です。</p>
-    <ul>
-      <li>濃度ごとに 1 つずつ、<strong>2 つの回帰ヘッド</strong>（8.25 µM と 33 µM の log2fc）。</li>
-      <li>13,136 化合物すべてで学習し、欠測している目的変数はマスクします。</li>
-      <li>ハイパーパラメータは <a href="https://optuna.org/">Optuna</a> で探索しますが、
-        最適化対象は log2fc の損失そのものではなく、下流の pEC50 OOF MAE です。</li>
-    </ul>
-    <p>
-      pred log2fc を鋭くする上で主に効いたのは <strong>seed averaging</strong> でした。
-      ChemProp を複数シードで事前学習し、予測 log2fc を平均して分散を落とします。
-      5 シードから 10 シードにすると下流が改善し（top-500 の OOF MAE が 0.399 → 0.397）、
-      15 シードでは頭打ちになったので、seed ensemble はそこで止めました。
-      pred log2fc が pEC50 とあれほど強く相関しているのは、この処理のおかげです。
+      <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a> はこのレシピの原型で、embedding 系では最強のメンバーです。
+      しかも二重に効いています。同じ「log2fc を予測する ChemProp」が tabular core の
+      <strong>pred log2fc</strong> 列を生み、その D-MPNN から取り出した 256 次元の frozen embedding が
+      このメンバーになっているからです。同じ信号を、鋭い prediction と広がりのある representation の
+      2 通りで入れていることになります。
     </p>
     <p>
-      encoder を fine-tune せずに凍結し、その embedding を TabPFN で読む、というのが
-      Buterez et&nbsp;al. から持ってきたレシピです（Strategy の章）。直接の代替案はどれも OOF で劣りました。
-      pEC50 スクラッチ 0.530、全体 fine-tune 0.507、head のみ fine-tune 0.456 に対し、frozen embedding は 0.437 です。
-      これによって、frozen embedding のレシピが以降すべてのメンバーの雛形になりました。
+      事前学習は、濃度ごとの回帰ヘッドを 2 つ持つマルチタスクです。13,136 化合物すべてを使い、
+      欠測はマスクします。ハイパーパラメータは <a href="https://optuna.org/">Optuna</a> で探索しますが、
+      目的関数は log2fc の損失ではなく下流の pEC50 OOF MAE です。
+    </p>
+    <p>
+      pred log2fc を鋭くしたのは <strong>seed averaging</strong> でした。複数シードで事前学習して予測を平均し、
+      5 → 10 シードで下流が改善（top-500 の OOF MAE 0.399 → 0.397）、15 シードで頭打ちになったので止めています。
     </p>
     <div class="aside">
       <p>
-        ひとつ書き添えておくべき奇妙な点があります。この OOF の数字は、frozen レシピの優位を過大に見せていました。
-        ChemProp を pEC50 で直接学習した場合、OOF では約 0.53 と弱いのに、
-        ブラインド解除後の Test（AS1 + AS2）では約 0.48 に達し、同じ Test での frozen embedding メンバー（0.44）にかなり近づきます。
-        frozen レシピが勝ったこと自体は変わりませんが、その差は OOF の順位付けが誇張していたわけです。
-        OOF と Test が食い違った、もう 1 つの小さな例です。
+        なお <a href="#adapting">Table 2</a> の OOF は、frozen レシピの優位を過大に見せていました。
+        pEC50 で直接学習した ChemProp は OOF では約 0.53 と弱いのに、
+        Test では約 0.48 と、frozen embedding メンバーの 0.44 にかなり近づきます。
+        勝敗は変わりませんが、差は OOF が誇張していたわけです。
       </p>
     </div>
 
