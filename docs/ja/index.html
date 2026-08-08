@@ -274,7 +274,7 @@
       40 がそちら側でした。
     </p>
 
-    <h4>Adapting it</h4>
+    <h4 id="adapting">Adapting it</h4>
     <p>
       ここからが今回の話です。配布データは、論文が想定している設定にそのまま乗りました。
     </p>
@@ -590,15 +590,10 @@
 
     <h3>5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
     <p>
-      5 つのメンバーは 1 つのレシピを共有しています。補助信号である log2fc（8.25 と 33 µM の 2 ヘッド）で
-      13,136 化合物に対して encoder を事前学習し、<strong>凍結</strong>して、
-      化合物ごとに固定長ベクトルを 1 本取り出し、それだけを TabPFN に渡す、というものです。
-      encoder を pEC50 で fine-tune することはありません。ChemProp で最初に確かめられた教訓は、
-      log2fc で事前学習した frozen embedding を TabPFN で読むほうが、
-      pEC50 で encoder をスクラッチ学習するよりも、head を fine-tune するよりも良い、というものでした。
-      （Encoder: <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a>、
-      <a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a>、
-      <a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer-c3</a>）
+      この 5 つは、戦略 <span class="strat-ref coral">4</span> を backbone を替えて横展開したものです。
+      log2fc で事前学習した encoder を凍結し、取り出した固定長ベクトルを TabPFN に渡す
+      （<a href="#adapting">Adapting it</a>）。encoder を pEC50 で fine-tune しないほうが良かったことは、
+      同じ節の Table 2 のとおりです。
     </p>
     <div class="table-scroll">
       <table class="metric-table">
@@ -615,7 +610,7 @@
 
     <h4>ChemProp</h4>
     <p>
-      ChemProp はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
+      <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a> はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
       しかもこのモデルは二重に効いています。同じ「log2fc を予測する ChemProp」が
       tabular core の <strong>pred log2fc</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
       その 256 次元の frozen embedding が、この独立したメンバーになっているからです。
@@ -654,10 +649,10 @@
     <h4>Foundation encoders: KERMT &amp; MoLFormer</h4>
     <p>
       同じレシピを、より大きな事前学習済み backbone 2 つに適用したものです。
-      <strong>KERMT</strong> は GROVER 系の graph transformer（NVIDIA と Merck 由来、約 1,100 万件の
+      <strong><a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a></strong> は GROVER 系の graph transformer（NVIDIA と Merck 由来、約 1,100 万件の
       ZINC/ChEMBL 分子で事前学習）で、これを log2fc で継続事前学習して 3,200 次元の embedding を得ます。
       embedding 系では 2 番手です（0.448、重み 0.111）。
-      <strong>MoLFormer</strong> は SMILES transformer（DeepChem MoLFormer-c3）で、
+      <strong><a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer</a></strong> は SMILES transformer（DeepChem MoLFormer-c3）で、
       log2fc に対して LoRA で事前学習し、凍結した 768 次元の [CLS] ベクトルを使います（0.475、重み 0.040）。
       どちらも tabular core と約 0.92 の相関で予測しますが（同じ log2fc 信号なので当然です）、
       backbone が違う分だけ誤差の出方がずれ、その差で重みを獲得しています。
