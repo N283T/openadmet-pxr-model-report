@@ -89,26 +89,32 @@ MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
 DEFAULT_TRAIN_PARQUET = ("data", "default_train.parquet")
 SINGLECONC_TRAIN_PARQUET = ("data", "single_concentration_train.parquet")
+# The crosswalk between compound_id and Molecule Name; the descriptor tables
+# key on one and the label tables on the other.
+TRAIN_ACTIVITY_DB_PARQUET = ("data", "train_activity_db.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
 CONC_33 = 3.30e-5  # 33 uM
 # Representative features for the correlation heatmap.
 # (full label, short column header, master/pred column, family).
 # Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
 # by |correlation| within each family.
+#
+# The observed log2fc is split per concentration rather than carried as one
+# max-over-both column, so that "observed log2fc" means the same thing here as
+# in the scatter panels. TPSA, fCsp3 and HBA came out at |r| <= 0.07 and were
+# dropped to buy the extra column its width.
 FEATURE_CORR = [
     ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred", "log2fc"),
     ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred", "log2fc"),
-    ("Observed log2fc (max)", "obs log2fc", "single_max_log2_fc", "log2fc"),
+    ("Observed log2fc (8.25 µM)", "obs 8.25µM", "obs_log2fc_8p25", "log2fc"),
+    ("Observed log2fc (33 µM)", "obs 33µM", "obs_log2fc_33", "log2fc"),
     ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred", "boltz"),
     ("Boltz-2 confidence", "Boltz conf.", "b2_confidence", "boltz"),
     ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm", "boltz"),
     ("logP", "logP", "logp", "desc"),
-    ("TPSA", "TPSA", "tpsa", "desc"),
     ("Mol. weight", "MW", "amw", "desc"),
-    ("Fraction Csp3", "fCsp3", "fractioncsp3", "desc"),
     ("Aromatic rings", "arom. rings", "num_aromatic_rings", "desc"),
     ("H-bond donors", "HBD", "hbd", "desc"),
-    ("H-bond acceptors", "HBA", "hba", "desc"),
     ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds", "desc"),
 ]
 FEATURE_CORR_FAMILY_ORDER = {"log2fc": 0, "boltz": 1, "desc": 2}
@@ -593,6 +599,18 @@ def build_feature_corr(src: Path) -> None:
     m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
     m = m.merge(pred, left_on="compound_id", right_index=True, how="left")
+    # Observed log2fc, one column per concentration. The single-concentration
+    # table keys on Molecule Name and the master on compound_id, so the join
+    # goes through the activity db, which carries both. Matching on SMILES
+    # instead silently drops a few hundred training compounds: the two tables do
+    # not always write a compound the same way.
+    sc = pd.read_parquet(src.joinpath(*SINGLECONC_TRAIN_PARQUET))
+    crosswalk = pd.read_parquet(src.joinpath(*TRAIN_ACTIVITY_DB_PARQUET))
+    name_by_id = crosswalk.set_index("compound_id")["molecule_name"]
+    for col, conc in (("obs_log2fc_8p25", CONC_8P25), ("obs_log2fc_33", CONC_33)):
+        at = sc[(sc["concentration_M"] - conc).abs() <= conc * 0.02]
+        per_compound = at.groupby("Molecule Name")["log2_fc_estimate"].mean()
+        m[col] = m["compound_id"].map(name_by_id).map(per_compound)
     m = m[m["in_train"].fillna(False)]
     y = pd.to_numeric(m["train_pec50"], errors="coerce")
     feats = []

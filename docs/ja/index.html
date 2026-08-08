@@ -216,7 +216,7 @@
             <tr><th>Dataset</th><th>Compounds</th><th class="c">SMILES</th><th class="c">pEC50</th><th class="c">Emax</th><th class="c">counter assay</th><th class="c aux">log2fc 8.25 µM</th><th class="c aux">log2fc 33 µM</th></tr>
           </thead>
           <tbody>
-            <tr><th>Train</th><td class="num">4,140</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="part">2,860</span></td><td class="c aux"><span class="part">2,374</span></td><td class="c aux"><span class="part">2,321</span></td></tr>
+            <tr><th>Train</th><td class="num">4,140</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="part">2,860</span></td><td class="c aux"><span class="part">2,722</span></td><td class="c aux"><span class="part">2,659</span></td></tr>
             <tr><th>Test</th><td class="num">513</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c aux"><span class="no">✗</span></td><td class="c aux"><span class="no">✗</span></td></tr>
             <tr><th>AUX data</th><td class="num">10,875</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="part">2,359</span></td><td class="c aux"><span class="part">10,747</span></td><td class="c aux"><span class="part">9,523</span></td></tr>
           </tbody>
@@ -318,13 +318,12 @@
       凍結して下流を単純にするほど良くなりました。枠組みは論文のまま、下流だけ差し替えたことになります。
     </p>
 
-    <h3>Predicted log2fc (pred): the strongest feature</h3>
+    <h3>Predicted log2fc: the strongest feature</h3>
     <p>
-      論文にならって、単一濃度 log2fc を予測する <strong>ChemProp</strong> モデルを学習し、
-      その予測値を特徴量として使いました。これを本レポートでは <strong>pred</strong> と呼びます。
-      アッセイが 2 濃度で測られているので、pred も 2 列（8.25&nbsp;µM と 33&nbsp;µM）になります。
-      ChemProp 予測器の作り方は後述の <a href="#members">ChemProp のメンバー説明</a>で扱います。
-      ここでは、pred が最も強い入力になったという事実だけ押さえてください。
+      戦略 <span class="strat-ref coral">2</span> の中身です。単一濃度 log2fc を予測する
+      <strong>ChemProp</strong> モデルを学習し、その予測値 2 列（8.25&nbsp;µM と 33&nbsp;µM）を
+      特徴量に足しました。本レポートではこれを <strong>pred log2fc</strong> と呼びます。
+      予測器の作り方は後述の <a href="#members">ChemProp のメンバー説明</a>で扱います。
     </p>
     <p>
       Figure&nbsp;1 は、4 種類の log2fc を学習セットの pEC50 に対して並べたものです。
@@ -333,7 +332,7 @@
       アッセイを生で使うのではなく予測することで、被覆率の穴を埋めつつ信号を滑らかにできるわけです。
     </p>
     <p>
-      それだけではありません。pred は構造だけから計算できるので、<strong>すべての</strong>化合物に対して存在します。
+      それだけではありません。pred log2fc は構造だけから計算できるので、<strong>すべての</strong>化合物に対して存在します。
       log2fc の実測値を持たない（そもそも測定ラベルを一切持たない）ブラインドのテストセットも含めてです。
       実測値はテスト時にはそもそも手に入らないので、そこで特徴量として使えるのは predicted の形だけです。
       これは地味ですが重要な点で、アッセイ由来の信号を、実際に採点される化合物にまで届かせているのはこの性質です。
@@ -345,21 +344,14 @@
         <div id="chart-feat-2" class="chart chart-mini" style="height:280px"></div>
         <div id="chart-feat-3" class="chart chart-mini" style="height:280px"></div>
       </div>
-      <figcaption>Figure 1: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed と predicted、それぞれ 8.25 と 33 µM。各パネルに Pearson r を表示しています。</figcaption>
+      <figcaption>Figure 1: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed と predicted、それぞれ 8.25 と 33 µM で、各パネルに Pearson r を表示しています。observed 側はアッセイが実際に走った化合物しかないので、学習 4,140 件に対して 2,722 件と 2,659 件です。</figcaption>
     </figure>
-    <p>
-      とはいえ pred だけで成り立っているわけでもありません。Figure&nbsp;2 は代表的な特徴量を
-      pEC50 との単相関で並べたものです。pred が最上位に来て、その後ろに生の observed log2fc、
-      Boltz-2 の affinity スコア（log10 IC50 なので符号は逆向き）、logP、そして
-      個々には弱い一般的な物理化学記述子が続きます。モデルの中ではこれら弱い特徴量も役に立ちますが、
-      単独の予測子としてではなく、pred の周りを固める文脈としてです。
-    </p>
     <figure class="chart-figure">
       <div id="chart-featcorr" class="chart" style="height:210px"></div>
-      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。上段が Pearson r、下段が Spearman r です。緑が正、赤が負で、値をセル内に表示しています。2 本の pred 列が先頭に立ち、続いて observed log2fc と Boltz-2 の affinity スコア、その後ろに個々には弱い物理化学記述子が並びます。</figcaption>
+      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。上段が Pearson r、下段が Spearman r で、緑が正、赤が負、値はセル内に表示しています。2 本の pred log2fc 列が先頭に立ち、続いて observed log2fc と Boltz-2 の affinity スコア（log10 IC50 なので符号は逆向き）、その後ろに個々には弱い物理化学記述子が並びます。列によって母数が違う点に注意してください。observed log2fc は 2,722 件と 2,659 件、Boltz-2 系は前処理に失敗した 2 化合物を除く 4,138 件で、残りは学習 4,140 件すべてです。</figcaption>
     </figure>
 
-    <h3>How far does pred alone get?</h3>
+    <h3>How far does pred log2fc alone get?</h3>
     <p>
       信号の大きさを測るために、あえて単純なモデルをいくつか学習 pEC50 で学習し、
       ブラインドが解除されたテスト（AS1 + AS2）で採点しました。ここで一番示唆的なのは、
@@ -388,7 +380,7 @@
       （Spearman 0.72〜0.78 対 0.68）。いずれも Boltz-2 の affinity スコア（0.75）は明確に上回ります。
       アッセイ由来の信号 1 本を予測しただけで、汎用記述子モデル 1 つ分の仕事をこなしているわけです。
       もちろん Phase 1 の提出モデル全体（MAE ≈ 0.41）はこれらより大きく先にいますが、これは参照点であって
-      作った順番ではありません。この比較はコンペ後に、pred 単独で信号のどれだけを説明できるかを測る目的だけで走らせたものです。
+      作った順番ではありません。この比較はコンペ後に、pred log2fc 単独で信号のどれだけを説明できるかを測る目的だけで走らせたものです。
       いずれも簡易なホールドアウト検証（<code>scripts/ablation_baselines.py</code>）であり、本番モデルではありません。
     </p>
   </section>
@@ -492,10 +484,10 @@
         <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
         <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
         <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
-        <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred columns from Strategy (8.25 and 33 µM)</td></tr>
+        <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
       </tbody>
     </table>
-    <p class="metrics-key">この 2 本の predicted log2fc 列は、Strategy の章で扱った pred と同じものです。この 2 メンバーが単独モデルとして最強である理由でもあります。</p>
+    <p class="metrics-key">この 2 本の predicted log2fc 列は、Strategy の章で扱った pred log2fc と同じものです。この 2 メンバーが単独モデルとして最強である理由でもあります。</p>
 
     <h4>CheMeleon</h4>
     <p>
@@ -529,14 +521,14 @@
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
       gain の<strong>約 4 分の 3</strong> は 2 本の predicted log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（Figure 7）。
-      要するにこの選択器がやっているのは「pred の 2 列を残し、あとは記述子で空間を埋める」ことです。
+      要するにこの選択器がやっているのは「pred log2fc の 2 列を残し、あとは記述子で空間を埋める」ことです。
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
       <figcaption>Figure 7: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
     </figure>
     <p>
-      個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
+      個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred log2fc の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
       それ以降は単独で 0.4% に届く特徴量すらありません。裾は CheMeleon の各次元と、
       <code>SLogP</code>・<code>qed</code>・pose-Jazzy の水和項といった解釈しやすい記述子の混成です。
     </p>
@@ -565,7 +557,7 @@
       <strong>tabular-full と tabular-top500 の両方</strong>を残しているのには理由があります。
       tabular-top500 は鋭く圧縮された視点（out-of-fold では最強の単独モデル）、
       tabular-full は同じ 2,103 特徴量に対する広く頑健な視点です。
-      top500 は pred / log2fc の軸に強く依存しているため単独運用は危険で、だからアンサンブルは両方を抱え、
+      top500 は pred log2fc の軸に強く依存しているため単独運用は危険で、だからアンサンブルは両方を抱え、
       Caruana は重みをほぼ均等に割りました（top500 が 0.309、full が 0.288）。
       この慎重さは正解でした。実際、攻めた top-500 の入れ替えを行ったとき、out-of-fold では最良に見えたのに
       public MAE は 0.407 から 0.413 へ悪化しています。
@@ -624,7 +616,7 @@
     <p>
       ChemProp はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
       しかもこのモデルは二重に効いています。同じ「log2fc を予測する ChemProp」が
-      tabular core の <strong>pred</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
+      tabular core の <strong>pred log2fc</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
       その 256 次元の frozen embedding が、この独立したメンバーになっているからです。
       同じ log2fc 信号を、鋭い prediction としてと、広がりのある representation としての 2 通りで注入していることになります。
     </p>
@@ -636,11 +628,11 @@
         最適化対象は log2fc の損失そのものではなく、下流の pEC50 out-of-fold MAE です。</li>
     </ul>
     <p>
-      pred を鋭くする上で主に効いたのは <strong>seed averaging</strong> でした。
+      pred log2fc を鋭くする上で主に効いたのは <strong>seed averaging</strong> でした。
       ChemProp を複数シードで事前学習し、予測 log2fc を平均して分散を落とします。
       5 シードから 10 シードにすると下流が改善し（top-500 の OOF MAE が 0.399 → 0.397）、
       15 シードでは頭打ちになったので、seed ensemble はそこで止めました。
-      pred が pEC50 とあれほど強く相関しているのは、この処理のおかげです。
+      pred log2fc が pEC50 とあれほど強く相関しているのは、この処理のおかげです。
     </p>
     <p>
       encoder を fine-tune せずに凍結し、その embedding を TabPFN で読む、というのが
