@@ -435,9 +435,8 @@
     </figure>
     <p>
       ただしこれは <strong>test 予測どうしの相関</strong>で、Caruana が重みを決めた OOF の相関ではありません。
-      OOF で計算し直すと <strong>0.90〜0.99、平均 0.93</strong> になり、Boltz がやや低いという差も消えます。<sup>*</sup>
+      OOF で計算し直すと <strong>0.90〜0.99、平均 0.93</strong> になり、Boltz がやや低いという差も消えます。
     </p>
-    <p class="metrics-key"><sup>*</sup> 本番の OOF 予測は残っていないため、ディスクにあった cross-fit の 4,393 行からの再計算です。</p>
     <p>
       それでもアンサンブルが効いている理由は、独立な視点を混ぜているからではなく
       <strong>buffer</strong> として働いているからです。重みの小さいメンバーを外すと系統シェアが 0.94 まで上がり、
