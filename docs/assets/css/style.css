@@ -491,6 +491,9 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 }
 /* Secondary badge: sits next to a coral one without competing with it. */
 .badge.soft { color: var(--muted); background: transparent; border: 1px solid var(--line); }
+/* Marks an analysis run after the challenge closed, on labels nobody had at the
+   time. It is not evidence of how the model was built. */
+.badge.post { background: var(--color-blue); }
 /* Overall standing for a scoring round, pushed to the end of its h3. */
 .phase-rank {
   margin-left: auto; font-family: var(--font-display); font-size: .72rem; font-weight: 600;
