@@ -277,6 +277,17 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 /* Partial coverage: the count of rows that carry the column, not all of them. */
 .roster-table .part { color: var(--muted); font-variant-numeric: tabular-nums; }
 .roster-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* The log2fc columns are the signal the whole approach leans on, so they read as
+   one coral-tinted group rather than as two more columns that happen to exist. */
+.roster-table td.aux { background: color-mix(in srgb, var(--color-coral) 15%, transparent); }
+.roster-table thead th.aux {
+  background: color-mix(in srgb, var(--color-coral) 24%, transparent);
+  color: #b35f47;
+}
+.roster-table td.aux .part { color: var(--ink); font-weight: 700; }
+:root[data-theme="dark"] .roster-table thead th.aux {
+  background: color-mix(in srgb, var(--color-coral) 30%, #3b4263); color: #f4b7a3;
+}
 
 /* Boltz pooled-vector composition strip (mimics the 1024-d block diagram) */
 .vblocks { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 6px; }
