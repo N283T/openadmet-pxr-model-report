@@ -238,9 +238,26 @@
 
     <h4>What the paper compares</h4>
     <p>
-      扱っているのは <strong>multi-fidelity</strong> な状況です。安くて大量でノイズの多い一次スクリーニング
-      (<strong>low-fidelity</strong>, LF) と、その一部だけが進む用量反応 (<strong>high-fidelity</strong>, HF)
-      があり、予測したいのは HF のほう。この <strong>LF をどう使うか</strong>を 6 通り比較しています。
+      この論文が扱っているのは <strong>multi-fidelity</strong> な状況、つまり創薬スクリーニングの階層です。
+    </p>
+    <div class="cascade">
+      <div class="cascade__tier">
+        <span class="cascade__tag">low-fidelity</span>
+        <span class="cascade__what">一次スクリーニング（単一濃度）</span>
+        <span class="cascade__note">安い・大量・noisy</span>
+      </div>
+      <div class="cascade__arrow">
+        <span class="cascade__mark" aria-hidden="true">→</span>
+        <span class="cascade__note">一部だけが進む<br>件数の差は 500 倍以上</span>
+      </div>
+      <div class="cascade__tier is-hf">
+        <span class="cascade__tag">high-fidelity</span>
+        <span class="cascade__what">用量反応（pXC50）</span>
+        <span class="cascade__note">高い・少数・これが予測したい値</span>
+      </div>
+    </div>
+    <p class="cascade__ask">
+      論文の問いは、この<strong>安い側を、高い側の予測にどう活かすか</strong>です。その方法を 6 通り比較しています。
     </p>
     <ol class="strat-grid">
       <li class="strat"><span class="strat__n">1</span><span class="strat__body">生の LF ラベルを特徴量に足す</span><span class="strat__count">10</span></li>
@@ -252,15 +269,23 @@
     </ol>
     <p class="metrics-key">右端の数字は、51 ケース中でその戦略が最良だった回数です。</p>
     <p>
-      生ラベルを足すだけで MAE が 10〜40% 下がり、embedding はそれをさらに最大 10% 上回る、というのが結論です。
-      ただし効くのは adaptive readout があるときだけで、表現を使った 41 勝のうち 40 がそちら側でした。
+      論文の結論は、生ラベルを足すだけで MAE が 10〜40% 下がり、embedding はそれをさらに最大 10% 上回る、
+      というものです。ただし効くのは adaptive readout があるときだけで、表現を使った 41 勝のうち
+      40 がそちら側でした。
     </p>
 
     <h4>Adapting it</h4>
     <p>
-      ここからが今回の話です。配布データはこの設定にそのまま乗りました。HF が学習の pEC50 4,140 件、
-      LF が単一濃度の log2fc 10,875 化合物です。論文と違うのは主に 2 点でした。
+      ここからが今回の話です。配布データは、論文が想定している設定にそのまま乗りました。
     </p>
+    <table class="spec-table">
+      <thead><tr><th>Fidelity</th><th>今回の対応物</th><th>件数</th></tr></thead>
+      <tbody>
+        <tr><th>high-fidelity</th><td>学習の pEC50</td><td class="val">4,140 件</td></tr>
+        <tr><th>low-fidelity</th><td>単一濃度の log2fc</td><td class="val">10,875 化合物</td></tr>
+      </tbody>
+    </table>
+    <p>論文と違うのは主に 2 点でした。</p>
     <ul>
       <li><strong>生ラベルが使えない</strong> — test に実測がないので、<span class="strat-ref">1</span>と<span class="strat-ref">3</span>は最初から選べません。</li>
       <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上、今回は 10,875 化合物です。</li>
@@ -273,23 +298,24 @@
       <li class="strat is-picked"><span class="strat__n">4</span><span class="strat__body">log2fc で事前学習した encoder の frozen embedding を渡す</span></li>
     </ol>
     <p>
-      そのうえで、論文には出てこない <strong>TabPFN</strong> を下流に置きました。
-      同じ ChemProp (D-MPNN) で揃えた比較がこれです。
+      そのうえで、論文には出てこない <strong>TabPFN</strong> を下流に置きました。Table 2 は、
+      encoder を同じ ChemProp (D-MPNN) に揃えて下流だけを入れ替えた比較です。
     </p>
-    <div class="table-scroll">
-      <table class="metric-table">
-        <thead><tr><th>Downstream</th><th>OOF MAE</th><th>Spearman</th></tr></thead>
-        <tbody>
-          <tr class="hi"><th><span class="strat-ref coral">4</span>の embedding を TabPFN で読む</th><td>0.437</td><td>0.807</td></tr>
-          <tr><th><span class="strat-ref">6</span>adaptive readout を学習（論文の一押し）</th><td>0.482</td><td>0.758</td></tr>
-          <tr><th><span class="strat-ref">5</span>凍結せず直接 fine-tune</th><td>0.507</td><td>0.755</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <figure class="chart-figure">
+      <div class="table-scroll">
+        <table class="metric-table">
+          <thead><tr><th>Downstream</th><th>OOF MAE</th><th>Spearman</th></tr></thead>
+          <tbody>
+            <tr class="hi"><th><span class="strat-ref coral">4</span>の embedding を TabPFN で読む</th><td>0.437</td><td>0.807</td></tr>
+            <tr><th><span class="strat-ref">6</span>adaptive readout を学習（論文の一押し）</th><td>0.482</td><td>0.758</td></tr>
+            <tr><th><span class="strat-ref">5</span>凍結せず直接 fine-tune</th><td>0.507</td><td>0.755</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption>Table 2: 同じ log2fc 事前学習済み ChemProp に対して、下流だけを変えたときの out-of-fold 成績。</figcaption>
+    </figure>
     <p>
       凍結して下流を単純にするほど良くなりました。枠組みは論文のまま、下流だけ差し替えたことになります。
-      補助的な log2fc を、放置するでも擬似ラベルとして誤用するでもなく、pEC50 のために働かせる筋道が
-      ここで決まりました。
     </p>
 
     <h3>Predicted log2fc (pred): the strongest feature</h3>
