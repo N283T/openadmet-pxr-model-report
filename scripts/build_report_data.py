@@ -165,21 +165,19 @@ LB_SUBMISSIONS_SQL = "SELECT id, lb_mae, lb_spearman FROM lb_submissions"
 #
 # The observed log2fc is split per concentration rather than carried as one
 # max-over-both column, so that "observed log2fc" means the same thing here as
-# in the scatter panels. TPSA, fCsp3 and HBA came out at |r| <= 0.07 and were
-# dropped to buy the extra column its width.
+# in the scatter panels. The columns that came out near zero are dropped rather
+# than drawn: TPSA, fCsp3 and HBA at |r| <= 0.07, then Boltz-2 confidence, HBD
+# and rotatable bonds, which were crowding the strip without saying anything.
 FEATURE_CORR = [
     ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred", "log2fc"),
     ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred", "log2fc"),
     ("Observed log2fc (8.25 µM)", "obs 8.25µM", "obs_8p25", "log2fc"),
     ("Observed log2fc (33 µM)", "obs 33µM", "obs_33", "log2fc"),
     ("Boltz-2 affinity", "Boltz aff.", "affinity_pred_value", "boltz"),
-    ("Boltz-2 confidence", "Boltz conf.", "confidence_score", "boltz"),
     ("Boltz-2 ipTM", "Boltz ipTM", "iptm", "boltz"),
     ("logP", "logP", "logp", "desc"),
     ("Mol. weight", "MW", "amw", "desc"),
     ("Aromatic rings", "arom. rings", "num_aromatic_rings", "desc"),
-    ("H-bond donors", "HBD", "hbd", "desc"),
-    ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds", "desc"),
 ]
 FEATURE_CORR_FAMILY_ORDER = {"log2fc": 0, "boltz": 1, "desc": 2}
 # The columns the section is arguing for; the chart boxes them.

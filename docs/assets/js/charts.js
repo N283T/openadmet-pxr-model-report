@@ -131,12 +131,17 @@
     var feats = d.features, rows = d.rows;
     // The picked columns keep a coral outline; visualMap still owns the fill.
     var pickStyle = { borderColor: p.coral, borderWidth: 2, borderRadius: 4 };
-    var data = [];
+    // Two things keep the outline whole: the unpicked cells space themselves with
+    // a transparent border rather than a background-coloured one, and the picked
+    // cells paint last, since within a series the later item goes on top.
+    var data = [], picked = [];
     feats.forEach(function (f, xi) {
+      var into = f.pick ? picked : data;
       var style = f.pick ? { itemStyle: pickStyle } : null;
-      data.push(Object.assign({ value: [xi, 0, f.pearson] }, style));
-      data.push(Object.assign({ value: [xi, 1, f.spearman] }, style));
+      into.push(Object.assign({ value: [xi, 0, f.pearson] }, style));
+      into.push(Object.assign({ value: [xi, 1, f.spearman] }, style));
     });
+    data = data.concat(picked);
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
       grid: { left: 80, right: 12, top: 10, bottom: 82 },
@@ -171,7 +176,7 @@
       },
       series: [{
         type: "heatmap", data: data,
-        itemStyle: { borderColor: p.bg, borderWidth: 2, borderRadius: 4 },
+        itemStyle: { borderColor: "transparent", borderWidth: 2, borderRadius: 4 },
         label: {
           show: true, fontFamily: p.font, fontWeight: 700, color: "#2b333a",
           formatter: function (o) { return (o.data.value || o.data)[2].toFixed(2); },

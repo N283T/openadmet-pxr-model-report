@@ -334,15 +334,15 @@
       </div>
       <figcaption>Figure 1: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed 側はアッセイが実際に走った化合物にしかないので、学習 4,140 件に対して 2,374 件と 2,321 件です。</figcaption>
     </figure>
-    <figure class="chart-figure">
-      <div id="chart-featcorr" class="chart" style="height:210px"></div>
-      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。Boltz-2 の affinity は log10 IC50 なので符号が逆向きです。母数は列ごとに違い、observed log2fc が 2,374 件と 2,321 件、Boltz-2 系が 4,139 件（1 化合物は予測なし）、ほかは学習 4,140 件すべてです。</figcaption>
-    </figure>
     <p>
       Figure&nbsp;1 の下段が pred log2fc です。上段の observed より pEC50 との連動が強く
       （r 0.75 / 0.80 対 0.72 / 0.50）、しかも observed はアッセイが走った化合物にしかありません。
       予測に置き換えることで、被覆率の穴を埋めながら信号も滑らかになります。
     </p>
+    <figure class="chart-figure">
+      <div id="chart-featcorr" class="chart" style="height:210px"></div>
+      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。Boltz-2 の affinity は log10 IC50 なので符号が逆向きです。母数は列ごとに違い、observed log2fc が 2,374 件と 2,321 件、Boltz-2 系が 4,139 件（1 化合物は予測なし）、ほかは学習 4,140 件すべてです。</figcaption>
+    </figure>
     <p>
       Figure&nbsp;2 で他の特徴量と並べても、pred log2fc の 2 列が先頭です。
       記述子はどれも単独では弱く、モデルの中では pred log2fc の周りを固める文脈として働きます。
