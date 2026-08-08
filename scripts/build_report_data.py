@@ -102,6 +102,14 @@ GAIN_FAMILY_LABEL = {
 GAIN_TOP_N = 12
 
 # Per-compound master table + predicted log2fc + raw provided train files.
+# Raw vs calibrated on the unblinded test, vendored in this repo because it was
+# reproduced outside the working repo (see data/ensemble_calibration/README.md).
+CALIB_EFFECT_CSV = REPO_ROOT.joinpath(
+    "data", "ensemble_calibration", "ens_current_raw_calibrated_test_20260807.csv"
+)
+# True-pEC50 bands the per-band MAE is reported over.
+CALIB_BANDS = [(None, 3), (3, 4), (4, 5), (5, 6), (6, None)]
+
 MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
@@ -619,6 +627,92 @@ def train_frame(dsn: str) -> pd.DataFrame:
     return frame.set_index("compound_id")
 
 
+def build_calibration_effect() -> None:
+    """Calibration measured on one run: the same ensemble, raw and calibrated."""
+    d = pd.read_csv(CALIB_EFFECT_CSV)
+
+    def mae(pred):
+        return float((d[pred] - d["test"]).abs().mean())
+
+    def spearman(pred):
+        return float(d[pred].rank().corr(d["test"].rank()))
+
+    # A positive-slope affine cannot reorder anything; if it did, the file is not
+    # what this section claims it is.
+    if round(spearman("raw"), 6) != round(spearman("calibrated"), 6):
+        raise SystemExit("raw and calibrated disagree on Spearman; not a monotone fit")
+
+    scopes = []
+    for name, sub in (
+        ("full", d),
+        ("AS1", d[d["split"] == "AS1"]),
+        ("AS2", d[d["split"] == "AS2"]),
+    ):
+        scopes.append(
+            {
+                "scope": name,
+                "n": int(len(sub)),
+                "rawMae": round(float((sub["raw"] - sub["test"]).abs().mean()), 4),
+                "calMae": round(
+                    float((sub["calibrated"] - sub["test"]).abs().mean()), 4
+                ),
+                "rawBias": round(float((sub["raw"] - sub["test"]).mean()), 4),
+                "calBias": round(float((sub["calibrated"] - sub["test"]).mean()), 4),
+            }
+        )
+
+    bands = []
+    for low, high in CALIB_BANDS:
+        sub = d
+        if low is not None:
+            sub = sub[sub["test"] >= low]
+        if high is not None:
+            sub = sub[sub["test"] < high]
+        if not len(sub):
+            continue
+        raw = float((sub["raw"] - sub["test"]).abs().mean())
+        cal = float((sub["calibrated"] - sub["test"]).abs().mean())
+        bands.append(
+            {
+                "label": (
+                    f"< {high}"
+                    if low is None
+                    else f"\u2265 {low}"
+                    if high is None
+                    else f"{low}-{high}"
+                ),
+                "low": low,
+                "high": high,
+                "n": int(len(sub)),
+                "rawMae": round(raw, 3),
+                "calMae": round(cal, 3),
+                "delta": round(cal - raw, 3),
+            }
+        )
+
+    _write(
+        "calibration_effect.json",
+        {
+            "spearman": round(spearman("raw"), 4),
+            "spread": {
+                "true": round(float(d["test"].std()), 3),
+                "raw": round(float(d["raw"].std()), 3),
+                "calibrated": round(float(d["calibrated"].std()), 3),
+            },
+            "scopes": scopes,
+            "bands": bands,
+            "points": [
+                [
+                    round(float(r.test), 2),
+                    round(float(r.raw), 2),
+                    round(float(r.calibrated), 2),
+                ]
+                for r in d.itertuples()
+            ],
+        },
+    )
+
+
 def build_coverage(dsn: str) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
     counts = query(dsn, COVERAGE_SQL).set_index("grp")
@@ -717,6 +811,7 @@ def main() -> None:
     logger.info("database: %s", dsn)
     build_ensemble_members(src, dsn)
     build_coverage(dsn)
+    build_calibration_effect()
     build_topk_sweep(src)
     build_lgbm_gain(src)
     build_member_corr(src)

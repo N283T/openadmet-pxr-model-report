@@ -704,11 +704,57 @@
   <section id="calibration">
     <h2>6. Calibration and the final tail gates</h2>
     <p>
-      アンサンブルを組み終えた時点で残っていたレバーは 2 つ、出力の calibration と、
-      特定の失敗モードに対する tail gate 群でした。正直にまとめると、明確な勝ちが 1 つ、あとは横ばいです。
-      アンサンブル予測に対する単純なアフィン calibration は public LBで実際に効き、
-      素の Caruana ブレンドを約 <strong>0.441</strong> から <strong>0.4154</strong> まで下げました。
-      さらに seed 拡張したメンバーを取り込んだことで <strong>0.4078</strong> まで到達しています。
+      発端は診断でした。Spearman・Kendall・R² は上位なのに、<strong>MAE と RAE だけが悪い</strong>。
+      どの化合物が強いかの<strong>並びは合っているのに、pEC50 のスケールと中心がずれている</strong>状態です。
+      メンバーを足すのではなく、出力を後から一次式で補正することにしました。
+    </p>
+    <ul>
+      <li><strong>重みを作る</strong> — Morgan fingerprint で Train / Test を判別する分類器を作り、
+        密度比 P(test|x) / (1 − P(test|x)) を化合物ごとの重みにします。[1/3, 3] にクリップするのが必須で、
+        分類器が強すぎると少数の Test 似の化合物に引っ張られます。</li>
+      <li><strong>直線を引く</strong> — その重みで、OOF 予測 4,140 件と正解ラベルから一次式をフィットします
+        （5-fold nested CV で検証）。傾きが正なので並び順は壊れず、スケールと中心だけが動きます。</li>
+      <li><strong>Test に当てる</strong> — 同じ一次式を Test 予測にそのまま適用します。
+        使ったのは Test 化合物の<strong>構造だけ</strong>で、正解ラベルは一切見ていません。</li>
+    </ul>
+
+    <h3>How much did it buy? <span class="badge post">post-challenge</span></h3>
+    <p>
+      提出履歴の中では、calibration の効果とメンバー改善が混ざって見えます。そこで最終アンサンブル重みで
+      raw と calibrated を<strong>同じ 1 回の実行から</strong>出し直しました（unblinded test 513 件）。
+    </p>
+    <figure class="chart-figure">
+      <div id="chart-calib-effect" class="chart" style="height:380px"></div>
+      <figcaption>Figure 9: 補正前後の予測を正解 pEC50 に対して並べたもの。破線は y = x です。raw は正解より幅が狭く（標準偏差は正解 0.996 に対して 0.703）、強い化合物を低めに、弱い化合物を高めに出しています。補正はこの潰れを広げます（0.767）。</figcaption>
+    </figure>
+    <p>
+      MAE は <strong>0.4209 → 0.4077</strong>、bias は −0.056 → +0.002。
+      <strong>Spearman は 0.8370 のまま 1 つも動きません</strong>。単調変換なので当然ですが、
+      「順位は合っている」という診断に対する処方として筋が通っていることの確認でもあります。
+      AS1 が 0.4191 → 0.4076、AS2 が 0.4226 → 0.4078 と、どちらの分割でも同じ向きに効いています。
+    </p>
+    <p>
+      ただし全域で良くなるわけではありません。効いているのは主に高活性側です。
+    </p>
+    <div class="table-scroll">
+      <table class="roster-table">
+        <thead><tr><th>true pEC50</th><th class="num">n</th><th class="num">raw</th><th class="num">calibrated</th><th class="num">Δ</th></tr></thead>
+        <tbody>
+          <tr><th>&lt; 3</th><td class="num">37</td><td class="num">1.283</td><td class="num">1.251</td><td class="num">−0.031</td></tr>
+          <tr><th>3–4</th><td class="num">63</td><td class="num">0.477</td><td class="num">0.507</td><td class="num">+0.030</td></tr>
+          <tr><th>4–5</th><td class="num">158</td><td class="num">0.299</td><td class="num">0.323</td><td class="num">+0.024</td></tr>
+          <tr><th>5–6</th><td class="num">224</td><td class="num">0.296</td><td class="num">0.263</td><td class="num">−0.033</td></tr>
+          <tr><th>≥ 6</th><td class="num">31</td><td class="num">0.800</td><td class="num">0.674</td><td class="num">−0.126</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="metrics-key">帯域別の MAE。5–6 と 6 以上で稼ぎ、3–5 で返しています。チャレンジの目的（強い誘導剤を当てる）とは向きが合っていますが、全域で改善するわけではありません。</p>
+
+    <h3>The Phase 1 run</h3>
+    <p>
+      public LB の履歴では、素の Caruana ブレンド <strong>0.4414</strong>（id13）から
+      importance 版 calibration の初回 <strong>0.4154</strong>（id19）、
+      seed 拡張メンバーを含めた <strong>0.4078</strong>（id31）へと下がっています。
       それ以降、id51 から id55 にかけての tail gate 群は、どちらに転んでも MAE 0.004 未満の動きしかなく、
       calibration の効果に比べればノイズです。<strong>id55</strong> がわずかな差で Phase 1 の anchor になりました。
       その後もいくつか試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
@@ -717,20 +763,8 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public LB MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 10: Phase 1 の calibration と gate の各マイルストーンにおける public LB MAE（軸は 0.40 から）。コーラルの id55 が anchor です。</figcaption>
     </figure>
-    <p>
-      ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
-      素の予測 pEC50 から補正後の pEC50 への 1 次元の写像を、
-      4,140 件の OOF 予測と真のラベルの対で当てはめます。傾き正のアフィン当てはめ（isotonic 版も併用）で、
-      calibrator 自体が過学習しないよう 5-fold のネスト CV で検証しました。
-      実際に採用した <code>calibrated_importance</code> は、これに共変量シフト補正を加えています。
-      Train の各化合物を密度比 P(test|x) / (1 - P(test|x))（[1/3, 3] にクリップ）で重み付けし、
-      Test に似た Train の点を重く見るようにしたものです。
-      平たく言えば、予測レンジの圧縮をゆるやかにほどき、テスト分布側へ傾けています。
-      この 1 手が、アンサンブル後で唯一明確な改善でした。単独では 0.4414 から 0.4154 まで、
-      素のブレンドから seed 拡張メンバーが到達した 0.4078 までの道のりの、およそ 4 分の 3 にあたります。
-    </p>
     <p>
       ここから先はコンペの手さばきであって、研究ではありません。id51 から id55 の調整は、
       ほとんど public LBを見ながらの作業でした。メンバー入れ替えや gate を試し、提出し、
@@ -792,7 +826,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 10: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 11: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
     <table class="metric-table">
       <thead>
