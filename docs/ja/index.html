@@ -7,23 +7,23 @@
   <link rel="icon" type="image/png" href="../assets/img/favicon-32.png" sizes="32x32" />
   <link rel="icon" type="image/png" href="../assets/img/favicon-16.png" sizes="16x16" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
-  <title>OpenADMET PXR Challenge — Track 1 Activity モデルレポート</title>
+  <title>OpenADMET PXR Challenge — Track 1 Activity Model Report (JA)</title>
   <meta name="description" content="OpenADMET PXR Blind Challenge Track 1 (Activity) で 4 位となった提出のテクニカルレポート（日本語版）。インタラクティブなチャート付き。" />
   <link rel="canonical" href="https://n283t.github.io/openadmet-pxr-model-report/ja/" />
   <link rel="alternate" hreflang="en" href="https://n283t.github.io/openadmet-pxr-model-report/" />
   <link rel="alternate" hreflang="ja" href="https://n283t.github.io/openadmet-pxr-model-report/ja/" />
   <!-- Open Graph / Twitter cards -->
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="OpenADMET PXR Challenge モデルレポート" />
-  <meta property="og:title" content="OpenADMET PXR Challenge — Track 1 Activity モデルレポート" />
+  <meta property="og:site_name" content="OpenADMET PXR Challenge model report" />
+  <meta property="og:title" content="OpenADMET PXR Challenge — Track 1 Activity Model Report (JA)" />
   <meta property="og:description" content="95 チーム中 4 位の PXR 活性モデルはどう作られたか：マルチフィデリティ転移学習、TabPFN の Caruana アンサンブル、そして効いたもの・効かなかったものの率直な記録。" />
   <meta property="og:url" content="https://n283t.github.io/openadmet-pxr-model-report/ja/" />
   <meta property="og:image" content="https://n283t.github.io/openadmet-pxr-model-report/assets/img/pxr_og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="OpenADMET PXR Challenge モデルレポート" />
+  <meta property="og:image:alt" content="OpenADMET PXR Challenge model report" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="OpenADMET PXR Challenge — Track 1 Activity モデルレポート" />
+  <meta name="twitter:title" content="OpenADMET PXR Challenge — Track 1 Activity Model Report (JA)" />
   <meta name="twitter:description" content="95 チーム中 4 位の PXR 活性モデルはどう作られたか：マルチフィデリティ転移学習、TabPFN の Caruana アンサンブル、そして効いたもの・効かなかったものの率直な記録。" />
   <meta name="twitter:image" content="https://n283t.github.io/openadmet-pxr-model-report/assets/img/pxr_og.png" />
   <script>
@@ -56,71 +56,71 @@
 </header>
 
 <nav class="section-nav" aria-label="目次">
-  <a class="sn-link" href="#tldr" data-sn="tldr"><span class="sn-dot"></span><span>要約</span></a>
-  <a class="sn-link" href="#data" data-sn="data"><span class="sn-dot"></span><span>課題</span></a>
-  <a class="sn-link" href="#results" data-sn="results"><span class="sn-dot"></span><span>結果</span></a>
-  <a class="sn-link" href="#strategy" data-sn="strategy"><span class="sn-dot"></span><span>戦略</span></a>
-  <a class="sn-link" href="#ensemble" data-sn="ensemble"><span class="sn-dot"></span><span>アンサンブル</span></a>
-  <a class="sn-link" href="#members" data-sn="members"><span class="sn-dot"></span><span>メンバー</span></a>
-  <a class="sn-link" href="#calibration" data-sn="calibration"><span class="sn-dot"></span><span>校正</span></a>
+  <a class="sn-link" href="#tldr" data-sn="tldr"><span class="sn-dot"></span><span>TL;DR</span></a>
+  <a class="sn-link" href="#data" data-sn="data"><span class="sn-dot"></span><span>Challenge</span></a>
+  <a class="sn-link" href="#results" data-sn="results"><span class="sn-dot"></span><span>Results</span></a>
+  <a class="sn-link" href="#strategy" data-sn="strategy"><span class="sn-dot"></span><span>Strategy</span></a>
+  <a class="sn-link" href="#ensemble" data-sn="ensemble"><span class="sn-dot"></span><span>Ensemble</span></a>
+  <a class="sn-link" href="#members" data-sn="members"><span class="sn-dot"></span><span>Members</span></a>
+  <a class="sn-link" href="#calibration" data-sn="calibration"><span class="sn-dot"></span><span>Calibration</span></a>
   <a class="sn-link" href="#phase2" data-sn="phase2"><span class="sn-dot"></span><span>Phase 1 → 2</span></a>
-  <a class="sn-link" href="#conclusion" data-sn="conclusion"><span class="sn-dot"></span><span>まとめ</span></a>
-  <a class="sn-link" href="#links" data-sn="links"><span class="sn-dot"></span><span>リンク</span></a>
+  <a class="sn-link" href="#conclusion" data-sn="conclusion"><span class="sn-dot"></span><span>Conclusion</span></a>
+  <a class="sn-link" href="#links" data-sn="links"><span class="sn-dot"></span><span>Links</span></a>
 </nav>
 
 <main id="top" class="wrap">
 
   <section class="hero">
     <p class="eyebrow">OpenADMET PXR Blind Challenge · 2026-04-01 → 07-01</p>
-    <h1>ブラインドされた 513 化合物の PXR 活性化 (pEC50) を予測する</h1>
+    <h1>Predicting PXR activation (pEC50) for 513 blinded compounds</h1>
     <p class="lede">
       Track&nbsp;1 (Activity) に提出したモデルの、コンペ終了後のテクニカルレポートです。
-      結論だけならすぐ下の要約で足ります。以降の章では、このモデルをどう組み立て、
+      結論だけならすぐ下の TL;DR で足ります。以降の章では、このモデルをどう組み立て、
       どこで間違えたのかを順に追っていきます。
     </p>
     <div class="result-cards">
       <div class="result-card">
         <span class="rc-label">Phase 1</span>
-        <span class="rc-rank">4 位</span>
+        <span class="rc-rank">Rank 4</span>
         <span class="rc-metric">MAE 0.4059</span>
       </div>
       <div class="result-card">
         <span class="rc-label">Phase 2</span>
-        <span class="rc-rank">4 位</span>
+        <span class="rc-rank">Rank 4</span>
         <span class="rc-metric">MAE 0.4113</span>
       </div>
       <div class="result-card muted">
-        <span class="rc-label">参加者</span>
-        <span class="rc-rank">95 中</span>
+        <span class="rc-label">Field</span>
+        <span class="rc-rank">of 95</span>
         <span class="rc-metric">Tier 1</span>
       </div>
     </div>
     <p class="hero-links">
-      <a class="btn" href="https://github.com/N283T/openadmet-pxr-model-report/blob/main/MODEL_REPORT.md">Markdown 版レポート（英語）↗</a>
-      <a class="btn ghost" href="#results">結果を見る ↓</a>
+      <a class="btn" href="https://github.com/N283T/openadmet-pxr-model-report/blob/main/MODEL_REPORT.md">Read the Markdown report ↗</a>
+      <a class="btn ghost" href="#results">Jump to results ↓</a>
     </p>
   </section>
 
   <section id="tldr">
-    <h2>0. 要約</h2>
+    <h2>0. TL;DR</h2>
     <ul>
       <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。構造情報だけからヒト PXR の活性化 (pEC50) を予測するタスクで、MAE は Phase 1 が <strong>0.4059</strong>、Phase 2 が <strong>0.4113</strong> でした。</li>
-      <li>勝負を決めたのは <a href="#strategy"><strong>マルチフィデリティ転移学習</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った安価な <code>log2fc</code> の読み出しがさりげなく含まれており、<strong>その log2fc を予測した値が単独で最強の特徴量</strong>になりました。記述子を大量に積んだスタック 1 つ分の仕事を、この 1 本でこなしてしまいます。</li>
-      <li>その信号を中心に、凍結埋め込みとテーブルデータのモデルを <strong>TabPFN</strong> で読み出す <a href="#ensemble"><strong>9 メンバーの Caruana アンサンブル</strong></a>を組みました。<a href="#members">Boltz-2</a> が席を得たのは、予測構造や親和性スコアが効いたからではなく（どちらもノイズが多すぎました）、学習済みの表現として役に立ったからです。</li>
-      <li>アンサンブルから先で明確に効いたのは、アフィン<a href="#calibration"><strong>キャリブレーション</strong></a> 1 つだけでした。Phase 1 終盤のテールゲートと <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
+      <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った安価な <code>log2fc</code> の読み出しがさりげなく含まれており、<strong>その log2fc を予測した値が単独で最強の特徴量</strong>になりました。記述子を大量に積んだスタック 1 つ分の仕事を、この 1 本でこなしてしまいます。</li>
+      <li>その信号を中心に、frozen embedding と tabular のモデルを <strong>TabPFN</strong> で読み出す <a href="#ensemble"><strong>9 メンバーの Caruana ensemble</strong></a> を組みました。<a href="#members">Boltz-2</a> が席を得たのは、予測構造や affinity スコアが効いたからではなく（どちらもノイズが多すぎました）、学習済みの representation として役に立ったからです。</li>
+      <li>アンサンブルから先で明確に効いたのは、アフィン <a href="#calibration"><strong>calibration</strong></a> 1 つだけでした。Phase 1 終盤の tail gate と <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
     </ul>
   </section>
 
   <section id="data">
-    <h2>1. 課題</h2>
+    <h2>1. The challenge</h2>
     <p>
       これは OpenADMET PXR Induction Challenge の
       <strong>Track&nbsp;1 (Activity)</strong> に対するモデルレポートです。
       チャレンジの背景・生物学的な文脈・ルール・スケジュールについては、公式のページを参照してください。
     </p>
     <div class="official-links">
-      <a class="btn ghost" href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">公式アナウンス ↗</a>
-      <a class="btn ghost" href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face のチャレンジページ ↗</a>
+      <a class="btn ghost" href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Official announcement ↗</a>
+      <a class="btn ghost" href="https://huggingface.co/spaces/openadmet/pxr-challenge">Challenge on Hugging Face ↗</a>
     </div>
     <p class="note">
       このレポートはモデリングの手法と結果に絞っています。探索的データ解析やチャレンジ自体の詳しい説明は範囲外とし、ここでは扱いません。
@@ -128,21 +128,21 @@
     <p>タスクの概要は次のとおりです。</p>
     <table class="spec-table">
       <thead>
-        <tr><th>項目</th><th>値</th><th>備考</th></tr>
+        <tr><th>Item</th><th>Value</th><th>Notes</th></tr>
       </thead>
       <tbody>
-        <tr><th>目的変数</th><td class="val">pEC50</td><td>大きいほど強い PXR 誘導剤</td></tr>
-        <tr><th>評価指標</th><td class="val">MAE</td><td>回帰タスク</td></tr>
-        <tr><th>学習データ</th><td class="val">4,140</td><td>ラベル付き化合物</td></tr>
-        <tr><th>Analog Set 1</th><td class="val">253</td><td>Phase 2 開始時にラベル公開</td></tr>
-        <tr><th>Analog Set 2</th><td class="val">260</td><td>最後までブラインド</td></tr>
-        <tr><th>テスト合計</th><td class="val">513</td><td>AS1 + AS2</td></tr>
+        <tr><th>Target</th><td class="val">pEC50</td><td>higher is a stronger PXR inducer</td></tr>
+        <tr><th>Metric</th><td class="val">MAE</td><td>regression task</td></tr>
+        <tr><th>Training set</th><td class="val">4,140</td><td>labeled compounds</td></tr>
+        <tr><th>Analog Set 1</th><td class="val">253</td><td>unblinded at the start of Phase 2</td></tr>
+        <tr><th>Analog Set 2</th><td class="val">260</td><td>blinded throughout</td></tr>
+        <tr><th>Test total</th><td class="val">513</td><td>AS1 + AS2</td></tr>
       </tbody>
     </table>
   </section>
 
   <section id="results">
-    <h2>2. 結果</h2>
+    <h2>2. Results</h2>
     <p>
       最終結果の要点だけをまとめます。フェーズごとの詳細な分析はここでは扱いません。
       この提出は採点対象 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアに入りました。
@@ -152,23 +152,23 @@
       <h3>Phase 1</h3>
       <p class="phase-eval">評価対象は AS1 + AS2（ブラインドされた 513 化合物すべて）、参加 338 チーム。</p>
       <div class="stat-strip">
-        <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4059</span><span class="stat-r">順位 <b>4</b></span></div>
-        <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5359</span><span class="stat-r">順位 <b>4</b></span></div>
-        <div class="stat"><span class="stat-l">R²</span><span class="stat-v">0.6496</span><span class="stat-r">順位 <b>2</b></span></div>
-        <div class="stat"><span class="stat-l">Spearman ρ</span><span class="stat-v">0.8343</span><span class="stat-r">順位 <b>3</b></span></div>
-        <div class="stat"><span class="stat-l">Kendall τ</span><span class="stat-v">0.6459</span><span class="stat-r">順位 <b>4</b></span></div>
+        <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4059</span><span class="stat-r">rank <b>4</b></span></div>
+        <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5359</span><span class="stat-r">rank <b>4</b></span></div>
+        <div class="stat"><span class="stat-l">R²</span><span class="stat-v">0.6496</span><span class="stat-r">rank <b>2</b></span></div>
+        <div class="stat"><span class="stat-l">Spearman ρ</span><span class="stat-v">0.8343</span><span class="stat-r">rank <b>3</b></span></div>
+        <div class="stat"><span class="stat-l">Kendall τ</span><span class="stat-v">0.6459</span><span class="stat-r">rank <b>4</b></span></div>
       </div>
     </div>
 
     <div class="phase-block">
-      <h3>Phase 2 <span class="badge">最終順位</span></h3>
+      <h3>Phase 2 <span class="badge">final standing</span></h3>
       <p class="phase-eval">評価対象はブラインドのままの Analog Set 2（260 化合物）、参加 95 チーム。</p>
       <div class="stat-strip">
-        <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4113</span><span class="stat-r">順位 <b>4</b></span></div>
-        <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5703</span><span class="stat-r">順位 <b>4</b></span></div>
-        <div class="stat"><span class="stat-l">R²</span><span class="stat-v">0.6008</span><span class="stat-r">順位 <b>2</b></span></div>
-        <div class="stat"><span class="stat-l">Spearman ρ</span><span class="stat-v">0.8161</span><span class="stat-r">順位 <b>11</b></span></div>
-        <div class="stat"><span class="stat-l">Kendall τ</span><span class="stat-v">0.6225</span><span class="stat-r">順位 <b>17</b></span></div>
+        <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4113</span><span class="stat-r">rank <b>4</b></span></div>
+        <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5703</span><span class="stat-r">rank <b>4</b></span></div>
+        <div class="stat"><span class="stat-l">R²</span><span class="stat-v">0.6008</span><span class="stat-r">rank <b>2</b></span></div>
+        <div class="stat"><span class="stat-l">Spearman ρ</span><span class="stat-v">0.8161</span><span class="stat-r">rank <b>11</b></span></div>
+        <div class="stat"><span class="stat-l">Kendall τ</span><span class="stat-v">0.6225</span><span class="stat-r">rank <b>17</b></span></div>
       </div>
     </div>
 
@@ -177,14 +177,14 @@
   </section>
 
   <section id="strategy">
-    <h2>3. 戦略</h2>
+    <h2>3. Strategy</h2>
     <p>
       戦略の土台にしたのは Buterez et&nbsp;al. の
       <a href="https://www.nature.com/articles/s41467-024-45566-8"><em>"Transfer learning with graph neural networks for improved molecular property prediction in the multi-fidelity setting"</em>（Nature Communications, 2024）</a>
       です。振り返ると、この論文にたどり着けたことが、この順位に届いた最大の理由のひとつでした。
     </p>
 
-    <h3>補助データの存在</h3>
+    <h3>The auxiliary data</h3>
     <p>
       最初は pEC50 の学習ラベルだけから特徴量とモデルを作っていました。しかし
       pEC50 のラベルは <strong>4,140</strong> 件しかなく、精度はすぐ頭打ちになります。
@@ -196,8 +196,8 @@
     </p>
     <p>
       このデータセットは実質的に多段のアッセイ・ファネルで、測定ラベルごとに到達している化合物が違います。
-      用量反応からは <strong>pEC50</strong> と <strong>Emax</strong>（最大効果）が得られ、
-      PXR-null の<strong>カウンターアッセイ</strong>が選択性の読み出しを加え、
+      用量反応からは <strong>pEC50</strong> と <strong>Emax</strong>（efficacy）が得られ、
+      PXR-null の <strong>counter assay</strong> が選択性の読み出しを加え、
       単一濃度スクリーニングは、完全な用量反応曲線まで進む化合物よりずっと多くの化合物について
       <strong>log2fc</strong> を提供します。この単一濃度スクリーニングは
       <strong>2 つの濃度</strong>（8.25&nbsp;µM と 33&nbsp;µM）で log2fc を報告するので、
@@ -210,27 +210,27 @@
       <figcaption>図 1: 化合物グループ別の測定ラベル被覆率。セルの濃さはそのグループのうち当該ラベルを持つ割合、セル内の数字は件数です。ブラインドのテストセットは測定ラベルを一切持ちません（構造のみ）。log2fc は 2 濃度（8.25 と 33 µM）で測定されています。</figcaption>
     </figure>
 
-    <h3>Buterez et al. に行き着くまで</h3>
+    <h3>Finding Buterez et al.</h3>
     <p>
       頭打ちを破るために、状況（pEC50 が乏しいこと、補助アッセイが潤沢にあること、擬似ラベル化が失敗していること）を
       そのまま書き出したリサーチ用プロンプトを Claude Code に作らせ、補助信号を活かす方法を尋ねました。
       そのプロンプトを ChatGPT Deep Research にかけて出てきたのが Buterez et&nbsp;al. です。
     </p>
     <p>
-      この論文が扱うのは<strong>マルチフィデリティ</strong>な状況、つまり高フィデリティな測定が少数しかない一方で、
-      安価な低フィデリティ測定が大量にある場合です。そこではグラフニューラルネットワークによる転移学習が
-      高フィデリティ側の予測を押し上げること、そして低フィデリティ信号は
-      <em>追加のラベル</em>として使うより <em>表現</em> あるいは <em>予測値</em> として使うほうが良いことが示されています。
+      この論文が扱うのは <strong>multi-fidelity</strong> な状況、つまり高 fidelity な測定が少数しかない一方で、
+      安価な低 fidelity 測定が大量にある場合です。そこではグラフニューラルネットワークによる転移学習が
+      高 fidelity 側の予測を押し上げること、そして低 fidelity 信号は
+      <em>追加のラベル</em>として使うより <em>representation</em> あるいは <em>prediction</em> として使うほうが良いことが示されています。
       これを Track&nbsp;1 に対応づけると次のようになります。
     </p>
     <table class="spec-table">
-      <thead><tr><th>マルチフィデリティの概念</th><th>本課題での対応物</th></tr></thead>
+      <thead><tr><th>Multi-fidelity concept</th><th>Our PXR correspondence</th></tr></thead>
       <tbody>
-        <tr><th>高フィデリティの目的変数</th><td>Track 1 の pEC50（4,140 ラベル）</td></tr>
-        <tr><th>低フィデリティの測定値</th><td>8.25 と 33 µM における単一濃度 log2fc</td></tr>
-        <tr><th>低フィデリティモデルの出力</th><td>予測 log2fc を特徴量に追加（主軸）</td></tr>
-        <tr><th>低フィデリティの表現</th><td>log2fc で事前学習したエンコーダの凍結埋め込み（多様性の軸）</td></tr>
-        <tr><th>下流の高フィデリティモデル</th><td>TabPFN（凍結表現に対するメンバーごとの読み出し器）</td></tr>
+        <tr><th>High-fidelity target</th><td>Track 1 pEC50 (4,140 labels)</td></tr>
+        <tr><th>Low-fidelity measurement</th><td>single-concentration log2fc at 8.25 and 33 µM</td></tr>
+        <tr><th>Low-fidelity model output</th><td>predicted log2fc, appended to the features (main axis)</td></tr>
+        <tr><th>Low-fidelity representation</th><td>frozen embedding of an encoder pretrained on log2fc (diversity axis)</td></tr>
+        <tr><th>Downstream high-fidelity model</th><td>TabPFN, as a per-member readout on the frozen representation</td></tr>
       </tbody>
     </table>
     <p>
@@ -238,7 +238,7 @@
       pEC50 のために筋の通った形で働かせる方法が手に入ったわけです。
     </p>
 
-    <h3>予測 log2fc（pred）—— 最強の特徴量</h3>
+    <h3>Predicted log2fc (pred): the strongest feature</h3>
     <p>
       論文にならって、単一濃度 log2fc を予測する <strong>ChemProp</strong> モデルを学習し、
       その予測値を特徴量として使いました。これを本レポートでは <strong>pred</strong> と呼びます。
@@ -248,14 +248,14 @@
     </p>
     <p>
       図&nbsp;2 は、4 種類の log2fc を学習セットの pEC50 に対して並べたものです。
-      予測列のほうが pEC50 との連動が強く（Pearson r ≈ 0.75 と 0.80、学習化合物 4,140 件すべてに対して）、
-      生の実測値（r ≈ 0.72 と 0.50、しかもアッセイが実際に走った 2,722 件と 2,659 件に限られる）を上回ります。
+      predicted 側のほうが pEC50 との連動が強く（Pearson r ≈ 0.75 と 0.80、学習化合物 4,140 件すべてに対して）、
+      生の observed 値（r ≈ 0.72 と 0.50、しかもアッセイが実際に走った 2,722 件と 2,659 件に限られる）を上回ります。
       アッセイを生で使うのではなく予測することで、被覆率の穴を埋めつつ信号を滑らかにできるわけです。
     </p>
     <p>
       それだけではありません。pred は構造だけから計算できるので、<strong>すべての</strong>化合物に対して存在します。
       log2fc の実測値を持たない（そもそも測定ラベルを一切持たない）ブラインドのテストセットも含めてです。
-      実測値はテスト時にはそもそも手に入らないので、そこで特徴量として使えるのは予測された形だけです。
+      実測値はテスト時にはそもそも手に入らないので、そこで特徴量として使えるのは predicted の形だけです。
       これは地味ですが重要な点で、アッセイ由来の信号を、実際に採点される化合物にまで届かせているのはこの性質です。
     </p>
     <figure class="chart-figure">
@@ -265,21 +265,21 @@
         <div id="chart-feat-2" class="chart chart-mini" style="height:280px"></div>
         <div id="chart-feat-3" class="chart chart-mini" style="height:280px"></div>
       </div>
-      <figcaption>図 2: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。実測と予測、それぞれ 8.25 と 33 µM。各パネルに Pearson r を表示しています。</figcaption>
+      <figcaption>図 2: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed と predicted、それぞれ 8.25 と 33 µM。各パネルに Pearson r を表示しています。</figcaption>
     </figure>
     <p>
       とはいえ pred だけで成り立っているわけでもありません。図&nbsp;3 は代表的な特徴量を
-      pEC50 との単相関で並べたものです。pred が最上位に来て、その後ろに生の実測 log2fc、
-      Boltz-2 の親和性スコア（log10 IC50 なので符号は逆向き）、logP、そして
+      pEC50 との単相関で並べたものです。pred が最上位に来て、その後ろに生の observed log2fc、
+      Boltz-2 の affinity スコア（log10 IC50 なので符号は逆向き）、logP、そして
       個々には弱い一般的な物理化学記述子が続きます。モデルの中ではこれら弱い特徴量も役に立ちますが、
       単独の予測子としてではなく、pred の周りを固める文脈としてです。
     </p>
     <figure class="chart-figure">
       <div id="chart-featcorr" class="chart" style="height:210px"></div>
-      <figcaption>図 3: 代表的な特徴量と学習 pEC50 の相関。上段が Pearson r、下段が Spearman r です。緑が正、赤が負で、値をセル内に表示しています。2 本の pred 列が先頭に立ち、続いて実測 log2fc と Boltz-2 の親和性スコア、その後ろに個々には弱い物理化学記述子が並びます。</figcaption>
+      <figcaption>図 3: 代表的な特徴量と学習 pEC50 の相関。上段が Pearson r、下段が Spearman r です。緑が正、赤が負で、値をセル内に表示しています。2 本の pred 列が先頭に立ち、続いて observed log2fc と Boltz-2 の affinity スコア、その後ろに個々には弱い物理化学記述子が並びます。</figcaption>
     </figure>
 
-    <h3>pred だけでどこまで行けるか</h3>
+    <h3>How far does pred alone get?</h3>
     <p>
       信号の大きさを測るために、あえて単純なモデルをいくつか学習 pEC50 で学習し、
       ブラインドが解除されたテスト（AS1 + AS2）で採点しました。ここで一番示唆的なのは、
@@ -289,23 +289,23 @@
     <div class="table-scroll">
       <table class="metric-table">
         <thead>
-          <tr><th>特徴量</th><th>モデル</th><th>次元</th><th>MAE</th><th>Spearman</th></tr>
+          <tr><th>Feature</th><th>Model</th><th>Dims</th><th>MAE</th><th>Spearman</th></tr>
         </thead>
         <tbody>
-          <tr class="hi"><th>pred 8.25 µM</th><td>線形</td><td>1</td><td>0.609</td><td>0.782</td></tr>
-          <tr class="hi"><th>pred 33 µM</th><td>線形</td><td>1</td><td>0.571</td><td>0.746</td></tr>
-          <tr class="hi"><th>pred log2fc（両方）</th><td>線形</td><td>2</td><td>0.572</td><td>0.725</td></tr>
-          <tr><th>Boltz-2 親和性</th><td>線形</td><td>1</td><td>0.747</td><td>0.602</td></tr>
-          <tr><th>RDKit</th><td>LightGBM（無調整）</td><td>217</td><td>0.570</td><td>0.677</td></tr>
-          <tr class="ref"><th>Phase 1 提出</th><td>アンサンブル</td><td>約 2,100</td><td>0.406</td><td>0.834</td></tr>
+          <tr class="hi"><th>pred 8.25 µM</th><td>linear</td><td>1</td><td>0.609</td><td>0.782</td></tr>
+          <tr class="hi"><th>pred 33 µM</th><td>linear</td><td>1</td><td>0.571</td><td>0.746</td></tr>
+          <tr class="hi"><th>pred log2fc (both)</th><td>linear</td><td>2</td><td>0.572</td><td>0.725</td></tr>
+          <tr><th>Boltz-2 affinity</th><td>linear</td><td>1</td><td>0.747</td><td>0.602</td></tr>
+          <tr><th>RDKit</th><td>LightGBM (untuned)</td><td>217</td><td>0.570</td><td>0.677</td></tr>
+          <tr class="ref"><th>Phase 1 submission</th><td>ensemble</td><td>~2,100</td><td>0.406</td><td>0.834</td></tr>
         </tbody>
       </table>
     </div>
     <p class="metrics-key">いずれの行も学習 pEC50 で学習し、ブラインド解除後のテスト（AS1 + AS2、513 化合物）で採点した結果です。</p>
     <p>
-      予測 log2fc は 1 列だけでも MAE 0.57〜0.61 に届き、2 列を素の線形回帰に通しただけで
+      predicted log2fc は 1 列だけでも MAE 0.57〜0.61 に届き、2 列を素の線形回帰に通しただけで
       <strong>217 次元の無調整 LightGBM に並びます</strong>（0.570）。順位相関ではむしろ上です
-      （Spearman 0.72〜0.78 対 0.68）。いずれも Boltz-2 の親和性スコア（0.75）は明確に上回ります。
+      （Spearman 0.72〜0.78 対 0.68）。いずれも Boltz-2 の affinity スコア（0.75）は明確に上回ります。
       アッセイ由来の信号 1 本を予測しただけで、汎用記述子モデル 1 つ分の仕事をこなしているわけです。
       もちろん Phase 1 の提出モデル全体（MAE ≈ 0.41）はこれらより大きく先にいますが、これは参照点であって
       作った順番ではありません。この比較はコンペ後に、pred 単独で信号のどれだけを説明できるかを測る目的だけで走らせたものです。
@@ -314,35 +314,35 @@
   </section>
 
   <section id="ensemble">
-    <h2>4. アンサンブル</h2>
+    <h2>4. The ensemble</h2>
     <p>
       最終的なシステムは単一モデルではなく、9 つのメンバーからなるアンサンブルです。
       各メンバーは分子を特徴量に変換する方法が異なりますが、1 点だけ共通しています。
       すべてのメンバーが、学習済み MLP の代わりに
-      <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a> を読み出しヘッドとして使う</strong>という点です。
-      つまり違うのはエンコーダや特徴量スタックであって、その上に載る回帰器ではありません。
-      エンコーダの多くは凍結されており、前章の戦略どおり、補助信号である log2fc で事前学習されています。
+      <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a> を readout head として使う</strong>という点です。
+      つまり違うのは encoder や特徴量スタックであって、その上に載る回帰器ではありません。
+      encoder の多くは凍結されており、前章の戦略どおり、補助信号である log2fc で事前学習されています。
     </p>
     <p>9 つのメンバーと、以降で使う短い別名は次のとおりです。</p>
     <div class="table-scroll">
       <table class="roster-table">
         <thead>
-          <tr><th>別名</th><th>エンコーダ / 特徴量</th><th>系統</th><th>log2fc</th></tr>
+          <tr><th>Alias</th><th>Encoder / features</th><th>Family</th><th>log2fc</th></tr>
         </thead>
         <tbody>
-          <tr><th>tabular-full</th><td>CheMeleon + 2D + Boltz + pred（フル、2103 次元）</td><td><span class="fam-tabular">テーブル系コア</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>tabular-top500</th><td>同じ特徴量スタックを LightGBM gain で上位 500 に絞る</td><td><span class="fam-tabular">テーブル系コア</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>ChemProp</th><td>ChemProp D-MPNN、log2fc 事前学習の埋め込み</td><td><span class="fam-embed">凍結埋め込み</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>KERMT</th><td>KERMT グラフトランスフォーマー、log2fc 事前学習の埋め込み</td><td><span class="fam-embed">凍結埋め込み</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>Boltz-pocket</th><td>Boltz-2 トランク、コアポケットでプーリング</td><td><span class="fam-structural">Boltz 構造系</span></td><td class="c"><span class="no">✗</span></td></tr>
-          <tr><th>MoLFormer</th><td>MoLFormer-c3、log2fc 事前学習の埋め込み</td><td><span class="fam-embed">凍結埋め込み</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>Boltz-allpairs</th><td>Boltz-2 トランク、全タンパク質-リガンド対でプーリング</td><td><span class="fam-structural">Boltz 構造系</span></td><td class="c"><span class="no">✗</span></td></tr>
-          <tr><th>GatedGCN</th><td>GatedGCN、log2fc 事前学習の埋め込み</td><td><span class="fam-embed">凍結埋め込み</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>AttentiveFP</th><td>AttentiveFP、log2fc 事前学習の埋め込み</td><td><span class="fam-embed">凍結埋め込み</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>tabular-full</th><td>CheMeleon + 2D + Boltz + pred (full, 2103d)</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>tabular-top500</th><td>same feature stack, LightGBM-gain top-500</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>ChemProp</th><td>ChemProp D-MPNN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>KERMT</th><td>KERMT graph-transformer, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>Boltz-pocket</th><td>Boltz-2 trunk, pooled over the core pocket</td><td><span class="fam-structural">Boltz structural</span></td><td class="c"><span class="no">✗</span></td></tr>
+          <tr><th>MoLFormer</th><td>MoLFormer-c3, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>Boltz-allpairs</th><td>Boltz-2 trunk, pooled over all protein-ligand pairs</td><td><span class="fam-structural">Boltz structural</span></td><td class="c"><span class="no">✗</span></td></tr>
+          <tr><th>GatedGCN</th><td>GatedGCN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
+          <tr><th>AttentiveFP</th><td>AttentiveFP, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
         </tbody>
       </table>
     </div>
-    <p class="metrics-key">どのメンバーも表現の読み出しには TabPFN を使います。log2fc 信号を持たないのは Boltz-2 トランク由来の 2 メンバーだけで、これらは純粋に予測構造から作られています。</p>
+    <p class="metrics-key">どのメンバーも representation の読み出しには TabPFN を使います。log2fc 信号を持たないのは Boltz-2 trunk 由来の 2 メンバーだけで、これらは純粋に予測構造から作られています。</p>
     <p>
       メンバーの比較には、<strong>UMAP クラスタ分割</strong>による out-of-fold (OOF) 予測を使いました
       （化学的なクラスタを fold をまたいで分割しないので、検証側の化合物が学習行の近傍にならないようにしています）。
@@ -351,88 +351,88 @@
       ここでの分割は公正な比較のための道具であって、それ自体が結果ではありません。
     </p>
     <p>
-      メンバーの統合には <strong>Caruana の前向き選択</strong>
+      メンバーの統合には <strong>Caruana forward selection</strong>
       (<a href="https://dl.acm.org/doi/10.1145/1015330.1015432">Caruana et&nbsp;al., ICML 2004</a>) を使いました。
       OOF 誤差を最も減らすメンバーを繰り返し追加していく貪欲法です。
-      重みはバギングした選択回数から決まるので、単一のメンバーが支配的になることはなく、
+      重みは bagging した選択回数から決まるので、単一のメンバーが支配的になることはなく、
       強いが相関の高い系統にアンサンブルが偏りすぎるのを防げます。
     </p>
     <figure class="chart-figure">
       <div id="chart-weights" class="chart" style="height:340px"></div>
-      <figcaption>図 4: 本番 9 メンバーの Caruana 重み。色は系統（青 = テーブル系コア、ティール = 凍結埋め込み、コーラル = Boltz-2 構造系）です。CheMeleon + 2D + Boltz + pred のテーブル系 2 メンバーで重みの約 60% を占め、残りをその他が分け合います。ホバーすると各メンバーの役割と単独 OOF MAE が出ます。</figcaption>
+      <figcaption>図 4: 本番 9 メンバーの Caruana 重み。色は系統（青 = tabular core、ティール = frozen embedding、コーラル = Boltz-2 structural）です。CheMeleon + 2D + Boltz + pred の tabular 2 メンバーで重みの約 60% を占め、残りをその他が分け合います。ホバーすると各メンバーの役割と単独 OOF MAE が出ます。</figcaption>
     </figure>
     <p>
-      では、これらのメンバーは実際どれくらい独立なのでしょうか。図 5 は<em>テスト</em>予測どうしの相関で、
+      では、これらのメンバーは実際どれくらい独立なのでしょうか。図 5 は <em>test</em> 予測どうしの相関で、
       答えは「あまり独立ではない」です。<strong>すべてが強く相関しており</strong>（r は 0.81〜0.98、平均 0.88）、
-      テーブル系コア 2 つはほぼ重複（0.98）、Boltz-2 の 2 つも同様（0.97）で、
+      tabular core 2 つはほぼ重複（0.98）、Boltz-2 の 2 つも同様（0.97）で、
       化学系のメンバーはどれも他と 0.85 を超えています。つまりこのアンサンブルは、独立な視点を混ぜるものというより
-      <strong>緩衝材</strong>です。強いが相関の高いメンバー（とくに top500）が予測を支配してしまうのを防いでいます。
+      <strong>buffer</strong> です。強いが相関の高いメンバー（とくに top500）が予測を支配してしまうのを防いでいます。
     </p>
     <figure class="chart-figure">
       <div id="chart-membercorr" class="chart" style="height:440px"></div>
-      <figcaption>図 5: メンバーのテスト予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。ほぼ重複しているブロック（テーブル系コア 2 つ、Boltz-2 トランク 2 つ）と、Boltz 対化学系の相関がやや低い角が目を引きます。これはテスト側で行った事後確認であり、Caruana の選択器が見ていた out-of-fold 側ではありません。</figcaption>
+      <figcaption>図 5: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。ほぼ重複しているブロック（tabular core 2 つ、Boltz-2 trunk 2 つ）と、Boltz 対化学系の相関がやや低い角が目を引きます。これは test 側で行った事後確認であり、Caruana の選択器が見ていた out-of-fold 側ではありません。</figcaption>
     </figure>
     <p>
-      このテスト側で見ると、Boltz-2 の構造系 2 メンバーが最も非相関に見えます（化学系メンバーに対して 0.81〜0.88）。
+      この test 側で見ると、Boltz-2 の structural 2 メンバーが最も decorrelated に見えます（化学系メンバーに対して 0.81〜0.88）。
       単独では弱いのに重みを得ているのはこのためだ、と読みたくなるところです。ところが、それは検証に耐えませんでした。
-      重みを決めたのは <strong>out-of-fold</strong> 誤差に対する Caruana 選択であり、
+      重みを決めたのは <strong>out-of-fold</strong> 誤差に対する Caruana selection であり、
       同じ相関を OOF 側で計算し直すと差はほぼ消えます。9 メンバーは
       <strong>0.90〜0.99、平均 0.93</strong> に収まり、Boltz は top500 に対して 0.90、
       tabular-full に対して 0.94 まで上がり、Boltz 同士は 0.99 になります。
       選択器が実際に見ていた側では、Boltz は他のメンバーより有意に独立とは言えません。
-      上で述べた緩衝材としての読み方は変わりませんが、「最も非相関なメンバー」という物語のほうは、テスト側だけに現れた見かけです。
+      上で述べた buffer としての読み方は変わりませんが、「最も decorrelated なメンバー」という物語のほうは、test 側だけに現れた見かけです。
       （重みを決めた本番の OOF 予測は保存されていないため、ここではディスクに残っていた cross-fit の OOF 予測 4,393 行を使っています。
       決定的な再実行ではなく、開発中の生成物である点にご注意ください。）
     </p>
   </section>
 
   <section id="members">
-    <h2>5. 各メンバー</h2>
+    <h2>5. The members</h2>
     <p>
       9 つのメンバーは 3 つのグループに分かれます。この章では、先ほどの別名を使って系統ごとに中身を開けていきます。
       まずは各メンバー単独の性能から。学習セットに対する out-of-fold と、ブラインド解除後のテスト（AS1 + AS2）の比較です。
-      テーブル系のペアが先頭で、2 本の棒の差が汎化の物語にあたります。多くのメンバーではテスト側の棒がわずかに悪い程度です。
+      tabular のペアが先頭で、2 本の棒の差が汎化の物語にあたります。多くのメンバーではテスト側の棒がわずかに悪い程度です。
     </p>
     <figure class="chart-figure">
       <div id="chart-member-mae" class="chart" style="height:460px"></div>
-      <figcaption>図 6: メンバー別の平均絶対誤差（良い順）。棒はテスト MAE（AS1 + AS2）と学習 out-of-fold MAE です。</figcaption>
+      <figcaption>図 6: メンバー別の平均絶対誤差（良い順）。棒は test MAE（AS1 + AS2）と学習 out-of-fold MAE です。</figcaption>
     </figure>
 
-    <h3>5.1 テーブル系コア（tabular-full, tabular-top500）</h3>
+    <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
     <p>
       重みが最も大きい 2 メンバーは、1 つの特徴量スタックを共有しています。
-      補完的なブロックを連結した、<strong>約 2,103 次元のテーブル行列</strong>です。
+      補完的なブロックを連結した、<strong>約 2,103 次元の tabular 行列</strong>です。
     </p>
     <table class="spec-table">
-      <thead><tr><th>ブロック</th><th>次元</th><th>内容</th></tr></thead>
+      <thead><tr><th>Block</th><th>Dims</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><th><a href="https://mordred-descriptor.github.io/documentation/master/">Mordred</a></th><td class="val">1,515</td><td>2D 分子記述子</td></tr>
-        <tr><th><a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a></th><td class="val">300</td><td>ChemProp-MPNN の基盤フィンガープリント</td></tr>
-        <tr><th><a href="https://rdkit.org/docs/index.html">RDKit</a></th><td class="val">217</td><td>標準的な RDKit 記述子</td></tr>
-        <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>ポケット単位に再集約した pLDDT / PAE / PDE</td></tr>
-        <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>ポーズ・信頼度・親和性のスカラー値</td></tr>
-        <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>Boltz のポーズ上での水素結合 / 水和</td></tr>
-        <tr><th>予測 log2fc</th><td class="val">2</td><td>戦略の章で出てきた pred 列（8.25 と 33 µM）</td></tr>
+        <tr><th><a href="https://mordred-descriptor.github.io/documentation/master/">Mordred</a></th><td class="val">1,515</td><td>2D molecular descriptors</td></tr>
+        <tr><th><a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a></th><td class="val">300</td><td>ChemProp-MPNN foundation fingerprint</td></tr>
+        <tr><th><a href="https://rdkit.org/docs/index.html">RDKit</a></th><td class="val">217</td><td>standard RDKit descriptors</td></tr>
+        <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
+        <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
+        <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
+        <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred columns from Strategy (8.25 and 33 µM)</td></tr>
       </tbody>
     </table>
-    <p class="metrics-key">この 2 本の予測 log2fc 列は、戦略の章で扱った pred と同じものです。この 2 メンバーが単独モデルとして最強である理由でもあります。</p>
+    <p class="metrics-key">この 2 本の predicted log2fc 列は、Strategy の章で扱った pred と同じものです。この 2 メンバーが単独モデルとして最強である理由でもあります。</p>
 
     <h4>CheMeleon</h4>
     <p>
       <strong>CheMeleon</strong> は単独では強くありません（CheMeleon だけを TabPFN で読むと MAE は約 0.512）。
-      それでもスタックに加えると明確に効き、同じテーブル系コアの MAE が 0.443 から 0.421 まで改善しました。
+      それでもスタックに加えると明確に効き、同じ tabular core の MAE が 0.443 から 0.421 まで改善しました。
       手作りの 2D 記述子では拾いきれない、学習済みの分子グラフ由来の事前知識を補っているのだと思います。
     </p>
-    <h4>Boltz-2 由来の特徴量</h4>
+    <h4>Boltz-2 features</h4>
     <p>
       <strong>Boltz-2</strong> ブロックは 2 階層あります。<strong>tier-0</strong> は Boltz 自身のスカラー出力、
-      すなわち親和性の値、結合確率、各種の信頼度スコア（pTM、ipTM、ligand-ipTM、複合体 pLDDT）です。
+      すなわち affinity の値、結合確率、各種の信頼度スコア（pTM、ipTM、ligand-ipTM、複合体 pLDDT）です。
       <strong>tier-1</strong> は、Boltz が出すトークン単位の生の信頼度テンソル（pLDDT、PAE、PDE）を
       ポケット単位の統計量へ再集約したもので、たとえば <code>pde_pocket_ligand_min</code> は
-      構造由来の特徴量の中でも有用なほうでした。これら Boltz テーブル特徴量の詳細は、
+      構造由来の特徴量の中でも有用なほうでした。これら Boltz tabular 特徴量の詳細は、
       別途付録としてまとめるかもしれません。
     </p>
-    <h4>上位 500 の選択</h4>
+    <h4>top-500 selection</h4>
     <p>
       <strong>tabular-full</strong> は 2,103 特徴量をそのまま TabPFN に渡します。
       <strong>tabular-top500</strong> は、fold ごとに LightGBM gain で
@@ -448,12 +448,12 @@
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
-      gain の<strong>約 4 分の 3</strong> は 2 本の予測 log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（図 8）。
+      gain の<strong>約 4 分の 3</strong> は 2 本の predicted log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（図 8）。
       要するにこの選択器がやっているのは「pred の 2 列を残し、あとは記述子で空間を埋める」ことです。
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>図 8: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。予測 log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
+      <figcaption>図 8: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
     </figure>
     <p>
       個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
@@ -462,10 +462,10 @@
     </p>
     <div class="table-scroll">
       <table class="metric-table">
-        <thead><tr><th>特徴量</th><th class="bk">ファミリー</th><th>gain シェア</th></tr></thead>
+        <thead><tr><th>Feature</th><th class="bk">Family</th><th>Gain share</th></tr></thead>
         <tbody>
-          <tr class="hi"><th>log2fc_8p25_pred</th><td class="bk">予測 log2fc</td><td>51.6%</td></tr>
-          <tr class="hi"><th>log2fc_33_pred</th><td class="bk">予測 log2fc</td><td>22.1%</td></tr>
+          <tr class="hi"><th>log2fc_8p25_pred</th><td class="bk">predicted log2fc</td><td>51.6%</td></tr>
+          <tr class="hi"><th>log2fc_33_pred</th><td class="bk">predicted log2fc</td><td>22.1%</td></tr>
           <tr><th>chemeleon_067</th><td class="bk">CheMeleon</td><td>0.30%</td></tr>
           <tr><th>chemeleon_006</th><td class="bk">CheMeleon</td><td>0.23%</td></tr>
           <tr><th>chemeleon_175</th><td class="bk">CheMeleon</td><td>0.20%</td></tr>
@@ -480,7 +480,7 @@
       </table>
     </div>
     <p class="metrics-key">fold ごとの LightGBM gain による個別特徴量の上位（全 gain に占める割合）。これは gain ベースの選択であり、SHAP による寄与度分解ではありません。</p>
-    <h4>なぜ両方残すのか</h4>
+    <h4>Why both?</h4>
     <p>
       <strong>tabular-full と tabular-top500 の両方</strong>を残しているのには理由があります。
       tabular-top500 は鋭く圧縮された視点（out-of-fold では最強の単独モデル）、
@@ -499,54 +499,54 @@
         それが AS2 で破綻する、という失敗の形にあります。
         以下の行は公開された AS2 ラベルに対する事後のメンバー重み検討
         (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) であり、
-        Phase 2 の実際の提出そのものではありません（提出のほうはテールゲートの分だけ数値が高くなっています。
+        Phase 2 の実際の提出そのものではありません（提出のほうは tail gate の分だけ数値が高くなっています。
         <a href="#phase2">7 章</a>参照）。
       </p>
       <div class="table-scroll">
         <table class="metric-table">
-          <thead><tr><th>重み付け</th><th>top500 の重み</th><th>AS2 MAE</th></tr></thead>
+          <thead><tr><th>Weighting</th><th>top500 weight</th><th>AS2 MAE</th></tr></thead>
           <tbody>
-            <tr><th>実際に使った重み</th><td>0.31</td><td>0.405</td></tr>
-            <tr><th>top500 の重みをゼロに</th><td>0.00</td><td>0.402</td></tr>
-            <tr><th>AS2 で最適化（オラクル）</th><td>0.33</td><td>0.399</td></tr>
-            <tr><th>out-of-fold で最適化</th><td>0.84</td><td>0.422</td></tr>
+            <tr><th>Our weights (as used)</th><td>0.31</td><td>0.405</td></tr>
+            <tr><th>Zero the top500 weight</th><td>0.00</td><td>0.402</td></tr>
+            <tr><th>Optimized on AS2 (oracle)</th><td>0.33</td><td>0.399</td></tr>
+            <tr><th>Optimized on out-of-fold</th><td>0.84</td><td>0.422</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <h3>5.2 凍結埋め込み（ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP）</h3>
+    <h3>5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
     <p>
       5 つのメンバーは 1 つのレシピを共有しています。補助信号である log2fc（8.25 と 33 µM の 2 ヘッド）で
-      13,136 化合物に対してエンコーダを事前学習し、<strong>凍結</strong>して、
+      13,136 化合物に対して encoder を事前学習し、<strong>凍結</strong>して、
       化合物ごとに固定長ベクトルを 1 本取り出し、それだけを TabPFN に渡す、というものです。
-      エンコーダを pEC50 で fine-tune することはありません。ChemProp で最初に確かめられた教訓は、
-      log2fc で事前学習した凍結埋め込みを TabPFN で読むほうが、
-      pEC50 でエンコーダをスクラッチ学習するよりも、ヘッドを fine-tune するよりも良い、というものでした。
-      （エンコーダ: <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a>、
+      encoder を pEC50 で fine-tune することはありません。ChemProp で最初に確かめられた教訓は、
+      log2fc で事前学習した frozen embedding を TabPFN で読むほうが、
+      pEC50 で encoder をスクラッチ学習するよりも、head を fine-tune するよりも良い、というものでした。
+      （Encoder: <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a>、
       <a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a>、
       <a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer-c3</a>）
     </p>
     <div class="table-scroll">
       <table class="metric-table">
-        <thead><tr><th>メンバー</th><th class="bk">バックボーン</th><th>埋め込み次元</th><th>OOF MAE</th><th>重み</th></tr></thead>
+        <thead><tr><th>Member</th><th class="bk">Backbone</th><th>Embed dims</th><th>OOF MAE</th><th>Weight</th></tr></thead>
         <tbody>
           <tr><th>ChemProp</th><td class="bk">D-MPNN</td><td>256</td><td>0.437</td><td>0.151</td></tr>
-          <tr><th>KERMT</th><td class="bk">グラフトランスフォーマー</td><td>3,200</td><td>0.448</td><td>0.111</td></tr>
-          <tr><th>MoLFormer</th><td class="bk">SMILES トランスフォーマー</td><td>768</td><td>0.475</td><td>0.040</td></tr>
-          <tr><th>GatedGCN</th><td class="bk">ゲート付き GNN</td><td>512</td><td>0.474</td><td>0.018</td></tr>
-          <tr><th>AttentiveFP</th><td class="bk">グラフアテンション</td><td>512</td><td>0.484</td><td>0.002</td></tr>
+          <tr><th>KERMT</th><td class="bk">graph transformer</td><td>3,200</td><td>0.448</td><td>0.111</td></tr>
+          <tr><th>MoLFormer</th><td class="bk">SMILES transformer</td><td>768</td><td>0.475</td><td>0.040</td></tr>
+          <tr><th>GatedGCN</th><td class="bk">gated GNN</td><td>512</td><td>0.474</td><td>0.018</td></tr>
+          <tr><th>AttentiveFP</th><td class="bk">graph attention</td><td>512</td><td>0.484</td><td>0.002</td></tr>
         </tbody>
       </table>
     </div>
 
     <h4>ChemProp</h4>
     <p>
-      ChemProp はこのレシピの原型であり、埋め込み系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
+      ChemProp はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
       しかもこのモデルは二重に効いています。同じ「log2fc を予測する ChemProp」が
-      テーブル系コアの <strong>pred</strong> 列を生み出しており（<a href="#strategy">戦略</a>と 5.1）、
-      その 256 次元の凍結埋め込みが、この独立したメンバーになっているからです。
-      同じ log2fc 信号を、鋭い予測値としてと、広がりのある表現としての 2 通りで注入していることになります。
+      tabular core の <strong>pred</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
+      その 256 次元の frozen embedding が、この独立したメンバーになっているからです。
+      同じ log2fc 信号を、鋭い prediction としてと、広がりのある representation としての 2 通りで注入していることになります。
     </p>
     <p>log2fc の事前学習は、小さなマルチタスク構成です。</p>
     <ul>
@@ -556,84 +556,84 @@
         最適化対象は log2fc の損失そのものではなく、下流の pEC50 out-of-fold MAE です。</li>
     </ul>
     <p>
-      pred を鋭くする上で主に効いたのは <strong>シード平均</strong>でした。
+      pred を鋭くする上で主に効いたのは <strong>seed averaging</strong> でした。
       ChemProp を複数シードで事前学習し、予測 log2fc を平均して分散を落とします。
       5 シードから 10 シードにすると下流が改善し（top-500 の OOF MAE が 0.399 → 0.397）、
-      15 シードでは頭打ちになったので、シードアンサンブルはそこで止めました。
+      15 シードでは頭打ちになったので、seed ensemble はそこで止めました。
       pred が pEC50 とあれほど強く相関しているのは、この処理のおかげです。
     </p>
     <p>
-      エンコーダを fine-tune せずに凍結し、その埋め込みを TabPFN で読む、というのが
-      Buterez et&nbsp;al. から持ってきたレシピです（戦略の章）。直接の代替案はどれも out-of-fold で劣りました。
-      pEC50 スクラッチ 0.530、全体 fine-tune 0.507、ヘッドのみ fine-tune 0.456 に対し、凍結埋め込みは 0.437 です。
-      これによって、凍結埋め込みのレシピが以降すべてのメンバーの雛形になりました。
+      encoder を fine-tune せずに凍結し、その embedding を TabPFN で読む、というのが
+      Buterez et&nbsp;al. から持ってきたレシピです（Strategy の章）。直接の代替案はどれも out-of-fold で劣りました。
+      pEC50 スクラッチ 0.530、全体 fine-tune 0.507、head のみ fine-tune 0.456 に対し、frozen embedding は 0.437 です。
+      これによって、frozen embedding のレシピが以降すべてのメンバーの雛形になりました。
     </p>
     <div class="aside">
       <p>
-        ひとつ書き添えておくべき奇妙な点があります。この out-of-fold の数字は、凍結レシピの優位を過大に見せていました。
+        ひとつ書き添えておくべき奇妙な点があります。この out-of-fold の数字は、frozen レシピの優位を過大に見せていました。
         ChemProp を pEC50 で直接学習した場合、out-of-fold では約 0.53 と弱いのに、
-        ブラインド解除後のテスト（AS1 + AS2）では約 0.48 に達し、同じテストでの凍結埋め込みメンバー（0.44）にかなり近づきます。
-        凍結レシピが勝ったこと自体は変わりませんが、その差は out-of-fold の順位付けが誇張していたわけです。
+        ブラインド解除後のテスト（AS1 + AS2）では約 0.48 に達し、同じテストでの frozen embedding メンバー（0.44）にかなり近づきます。
+        frozen レシピが勝ったこと自体は変わりませんが、その差は out-of-fold の順位付けが誇張していたわけです。
         OOF とブラインドテストが食い違った、もう 1 つの小さな例です。
       </p>
     </div>
 
-    <h4>基盤エンコーダ: KERMT と MoLFormer</h4>
+    <h4>Foundation encoders: KERMT &amp; MoLFormer</h4>
     <p>
-      同じレシピを、より大きな事前学習済みバックボーン 2 つに適用したものです。
-      <strong>KERMT</strong> は GROVER 系のグラフトランスフォーマー（NVIDIA と Merck 由来、約 1,100 万件の
-      ZINC/ChEMBL 分子で事前学習）で、これを log2fc で継続事前学習して 3,200 次元の埋め込みを得ます。
-      埋め込み系では 2 番手です（0.448、重み 0.111）。
-      <strong>MoLFormer</strong> は SMILES トランスフォーマー（DeepChem MoLFormer-c3）で、
+      同じレシピを、より大きな事前学習済み backbone 2 つに適用したものです。
+      <strong>KERMT</strong> は GROVER 系の graph transformer（NVIDIA と Merck 由来、約 1,100 万件の
+      ZINC/ChEMBL 分子で事前学習）で、これを log2fc で継続事前学習して 3,200 次元の embedding を得ます。
+      embedding 系では 2 番手です（0.448、重み 0.111）。
+      <strong>MoLFormer</strong> は SMILES transformer（DeepChem MoLFormer-c3）で、
       log2fc に対して LoRA で事前学習し、凍結した 768 次元の [CLS] ベクトルを使います（0.475、重み 0.040）。
-      どちらもテーブル系コアと約 0.92 の相関で予測しますが（同じ log2fc 信号なので当然です）、
-      バックボーンが違う分だけ誤差の出方がずれ、その差で重みを獲得しています。
-      すべてのバックボーンが基準を満たしたわけではありません。<strong>ChemBERTa</strong>
-      （5M / 10M のマルチタスク回帰版）は同じ凍結レシピに通しても out-of-fold で 0.53 前後にとどまり、
-      Caruana の付加価値判定を通らず（MAE の改善なし、重みも無視できる大きさ）、外しました。
+      どちらも tabular core と約 0.92 の相関で予測しますが（同じ log2fc 信号なので当然です）、
+      backbone が違う分だけ誤差の出方がずれ、その差で重みを獲得しています。
+      すべての backbone が基準を満たしたわけではありません。<strong>ChemBERTa</strong>
+      （5M / 10M のマルチタスク回帰版）は同じ frozen レシピに通しても out-of-fold で 0.53 前後にとどまり、
+      Caruana の add-value 判定を通らず（MAE の改善なし、重みも無視できる大きさ）、外しました。
       より惜しかったのが <strong><a href="https://github.com/deepmodeling/Uni-Mol">UniMol-v2</a></strong> です。
-      3D 配座の基盤モデルに同じ log2fc 凍結事前学習を施したところ、out-of-fold で約 0.484 という
+      3D 配座の基盤モデルに同じ log2fc の frozen 事前学習を施したところ、out-of-fold で約 0.484 という
       残ったメンバーに迫る水準に達しましたが、Caruana が保持するだけの付加価値は得られませんでした。
       一方で MoLFormer-XL を pEC50 に直接 fine-tune する路線は 0.529 と弱く、ここでも ChemProp と同じ教訓が繰り返されました。
     </p>
 
-    <h4>追加の GNN: GatedGCN と AttentiveFP</h4>
+    <h4>Extra GNNs: GatedGCN &amp; AttentiveFP</h4>
     <p>
-      さらに 2 つの GNN バックボーン（ゲート付きメッセージパッシングとグラフアテンション）を、
-      同じ凍結レシピ・512 次元の埋め込みで使っています。GNN の変種はいくつも試しており、
+      さらに 2 つの GNN backbone（ゲート付きメッセージパッシングと graph attention）を、
+      同じ frozen レシピ・512 次元の embedding で使っています。GNN の変種はいくつも試しており、
       この 2 つは単に成績が良かったものというだけで、特定のアーキテクチャに深い意味はありません。
       単独では弱く（0.474、0.484）、重みもごく小さい（0.018、0.002）です。
       本当の役割は、このアンサンブル全体が目的としているもの、すなわち
-      Caruana が top500 / cheme-log2fc のコアにすべてを寄せ直してしまうのを防ぐ<strong>緩衝材</strong>です。
+      Caruana が top500 / cheme-log2fc のコアにすべてを寄せ直してしまうのを防ぐ <strong>buffer</strong> です。
       外すと out-of-fold は良くなりますが、系統シェアが 0.94 近くまで上がり、
       その過集中がリーダーボードでは悪化を招きました。約 0.02 のメンバー重みを削ったことが、
       コア側では約 0.1 の増加に増幅され、MAE で約 0.006 のコストになったのです。
       重みが小さいことは、外して安全であることを意味しませんでした。
     </p>
 
-    <h3>5.3 Boltz-2 構造系（Boltz-pocket, Boltz-allpairs）</h3>
+    <h3>5.3 Boltz-2 structural (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
-      まず、名前が誤解を招くので明確にしておきます。「構造系」と呼んでいますが、
+      まず、名前が誤解を招くので明確にしておきます。structural と呼んでいますが、
       この 2 つは Boltz-2 の予測した 3D ポーズを一切使いません。Boltz の内部の学習済み
-      <strong>表現</strong>を読み出して TabPFN に渡しているだけです。ここでの「Boltz」は
+      <strong>representation</strong> を読み出して TabPFN に渡しているだけです。ここでの「Boltz」は
       特徴量の出どころを指すラベルであって、ドッキングや構造スコアではありません。
-      構造予測器の上に建っている表現モデル、と読んでください。
+      構造予測器の上に建っている representation モデル、と読んでください。
     </p>
     <p>
       この 2 メンバーには、アンサンブルの中で最も込み入った経緯があります。
-      当初の計画は <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> の予測構造と親和性ヘッドを
+      当初の計画は <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> の予測構造と affinity head を
       そのまま使うことでした。PXR（UniProt O75469、434 残基）を各リガンドと co-fold し、
-      ポーズか親和性スコアから活性を読む、という筋書きです。正直に言えば、どちらも単独では使い物になりませんでした。
-      ポーズも親和性スカラーも、PXR の活性を担うにはノイズが多すぎたのです
-      （この親和性スカラーは、テーブル系コアの中の弱い 1 列としてのみ生き残っています。
-      <a href="#strategy">戦略</a>の章を参照）。
+      ポーズか affinity スコアから活性を読む、という筋書きです。正直に言えば、どちらも単独では使い物になりませんでした。
+      ポーズも affinity スカラーも、PXR の活性を担うにはノイズが多すぎたのです
+      （この affinity スカラーは、tabular core の中の弱い 1 列としてのみ生き残っています。
+      <a href="#strategy">Strategy</a> の章を参照）。
       とはいえ全化合物の co-fold にはすでに約 4 日分の計算を費やしており、
       しかも実行時に <code>--write_embeddings</code> を付けていたので、
-      トランクの表現がディスク上に残っていました。捨てるくらいならということで、
-      「Boltz は構造予測器としてより<strong>表現</strong>として有用なのではないか」という問いに変わったわけです。
+      trunk の representation がディスク上に残っていました。捨てるくらいならということで、
+      「Boltz は構造予測器としてより <strong>representation</strong> として有用なのではないか」という問いに変わったわけです。
     </p>
     <p>
-      そこでポーズや親和性ヘッドの代わりに、Boltz 内部の<strong>トランク表現</strong>
+      そこでポーズや affinity head の代わりに、Boltz 内部の <strong>trunk representation</strong>
       （トークン単位の single テンソル <code>s</code> と、トークン対のテンソル <code>z</code>）を取り出し、
       化合物あたり <strong>1,024 次元</strong>の固定長ベクトルにプーリングして TabPFN に渡します。
       このベクトルは 4 ブロックからなります。
@@ -657,135 +657,135 @@
           <div class="vblock-seg vb-zmax" style="flex:128">z_xp_max<small>128d</small></div>
         </div>
       </div>
-      <p class="vblocks-note"><code>s</code> ブロック（768 次元）は共通で、変わるのは <code>z</code> のプーリングマスクだけです。</p>
+      <p class="vblocks-note">Same <code>s</code> blocks (768d); only the <code>z</code> pooling mask changes.</p>
     </div>
     <ul>
-      <li><strong>s（single）</strong> はトークン単位の要約です。<code>s_prot_mean</code> は Boltz の single ベクトルを PXR の 434 残基トークンにわたって平均し、<code>s_lig_mean</code> はリガンドの原子トークンにわたって平均します。タンパク質側とリガンド側をそれぞれ単独で記述したものです。</li>
-      <li><strong>z（pair）</strong> は残基 × 原子の相互作用ブロックです。<code>z_mean</code> と <code>z_max</code> がトランクのタンパク質-リガンド対セルをプーリングします。ポケットとリガンドの相互作用が宿るのはここで、信号の大半もここにあります。</li>
-      <li><strong>pocket と allpairs</strong> は <code>s</code> ブロックが同一で、<code>z</code> に入れる対セルの範囲だけが違います。固定 13 残基のコアポケット（<code>z_if</code>）か、434 残基すべて（<code>z_xp</code>）か、いずれもリガンド原子との対です。実際には誤差はほとんど動きませんでした。</li>
+      <li><strong>s (single)</strong> はトークン単位の要約です。<code>s_prot_mean</code> は Boltz の single ベクトルを PXR の 434 残基トークンにわたって平均し、<code>s_lig_mean</code> はリガンドの原子トークンにわたって平均します。タンパク質側とリガンド側をそれぞれ単独で記述したものです。</li>
+      <li><strong>z (pair)</strong> は残基 × 原子の相互作用ブロックです。<code>z_mean</code> と <code>z_max</code> が trunk のタンパク質-リガンド対セルをプーリングします。ポケットとリガンドの相互作用が宿るのはここで、信号の大半もここにあります。</li>
+      <li><strong>pocket と allpairs</strong> は <code>s</code> ブロックが同一で、<code>z</code> に入れる対セルの範囲だけが違います。固定 13 残基の core pocket（<code>z_if</code>）か、434 残基すべて（<code>z_xp</code>）か、いずれもリガンド原子との対です。実際には誤差はほとんど動きませんでした。</li>
     </ul>
     <p>
       どうプーリングするかは、それ自体が小さな探索でした。どのトークンを、どのテンソルで縮約するかを 20 通り以上試しています。
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>図 9: Boltz トランクを 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>図 9: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
-      13 残基のコアポケットと 434 残基すべてで、MAE の差は 0.001 以内に収まります。
-      一方で、pair テンソルをどう縮約するかは大きく効きます。<code>z</code> の平均プーリングは問題ありませんが、
-      <code>z</code> の max プーリングだけにすると 0.576 まで崩れます。
-      信号の大半を担っているのは <em>pair</em> 表現であり（z だけで約 0.489、single ベクトルはより弱い）、
-      これは Boltz-2 自身の親和性モジュールがタンパク質-リガンド対を重視していることとも符合します。
+      13 残基の core pocket と 434 残基すべてで、MAE の差は 0.001 以内に収まります。
+      一方で、pair テンソルをどう縮約するかは大きく効きます。<code>z</code> の mean pooling は問題ありませんが、
+      <code>z</code> の max pooling だけにすると 0.576 まで崩れます。
+      信号の大半を担っているのは <em>pair</em> representation であり（z だけで約 0.489、single ベクトルはより弱い）、
+      これは Boltz-2 自身の affinity モジュールがタンパク質-リガンド対を重視していることとも符合します。
       PXR 活性にはリガンドの形だけでなく、ポケットとリガンドの相互作用が必要だということです。
-      埋め込みを親和性ヘッド風の構造に通したり、Boltz 本来の親和性モジュールのように distogram を混ぜたりしても、
+      embedding を affinity head 風の構造に通したり、Boltz 本来の affinity モジュールのように distogram を混ぜたりしても、
       特段の効果はありませんでした。最終的にアンサンブルに残ったプーリングは 2 つ、
-      <strong>Boltz-pocket</strong>（13 残基のコア）と <strong>Boltz-allpairs</strong>（434 残基すべて）で、
+      <strong>Boltz-pocket</strong>（13 残基の core）と <strong>Boltz-allpairs</strong>（434 残基すべて）で、
       いずれも単独で約 0.486 です。
     </p>
     <p>
-      トランクの各次元には解釈可能な名前がないので、非線形な読み出し器が効きます。
+      trunk の各次元には解釈可能な名前がないので、非線形な readout が効きます。
       同じベクトルに対して TabPFN（0.486）が LightGBM と MLP（0.512、0.538）を上回りました。
       重みはそれぞれ小さいものの（0.046、0.035）、2D 記述子と log2fc で組み上がったアンサンブルに、
-      2 つ合わせて確かに異質な構造の軸を加えています。これらを外したり、
+      2 つ合わせて確かに異質な structural の軸を加えています。これらを外したり、
       再プーリングした変種に差し替えたりすると out-of-fold は良く見えるのにリーダーボードでは悪化しました。
-      追加 GNN のときと同じ逆方向の増幅です。そのため、構造側の予備戦力として残しています。
+      追加 GNN のときと同じ逆方向の増幅です。そのため、structural な予備戦力として残しています。
     </p>
     <p>
       一歩引くと、この 2 つはあることを示唆しています。まず、<strong>log2fc をまったく持たない</strong>唯一のメンバーです。
-      テスト予測で見ると、アンサンブルの中で最も非相関にも見えます（他メンバーとの一致は平均で約 0.85 と、
+      test 予測で見ると、アンサンブルの中で最も decorrelated にも見えます（他メンバーとの一致は平均で約 0.85 と、
       約 0.88 の集団より低い。ただし独立とは到底言えません）。もっとも 4 章で述べたとおり、この順序は
       out-of-fold では成り立たず、そちらでは約 0.92 と集団の中ほどに収まります。
       他のすべてのメンバーを支えている log2fc 信号を一切持たずに、
       <strong>co-fold した構造だけから約 0.486</strong> に達しているという事実は、
-      Boltz の表現が単独でも実質的な信号を持っていることを示しています。
+      Boltz の representation が単独でも実質的な信号を持っていることを示しています。
       MoLFormer-XL を直接 fine-tune した言語モデル路線が 0.529 止まりだったことと並べれば、
       構造由来のモデルとしては十分に立派な成績であり、Boltz が単体でどれだけできるかの傍証にもなります。
       ただし、上の ChemProp の補足と同じ注意が要ります。誇張は禁物です。
       ブラインド解除後の AS1 + AS2 では、スクラッチ学習の ChemProp が約 0.484 に達しており、
       構造が唯一の勝ち筋というわけではありません。それでも、これはこれで良いネガティブスペースの発見です。
-      少なくともこの標的では、Boltz-2 は予測構造や親和性として使うより、学習済み表現として読むほうが価値がありました。
+      少なくともこの標的では、Boltz-2 は予測構造や affinity として使うより、学習済みの representation として読むほうが価値がありました。
     </p>
   </section>
 
   <section id="calibration">
-    <h2>6. キャリブレーションと終盤のテールゲート</h2>
+    <h2>6. Calibration and the final tail gates</h2>
     <p>
-      アンサンブルを組み終えた時点で残っていたレバーは 2 つ、出力のキャリブレーションと、
-      特定の失敗モードに対するテールゲート群でした。正直にまとめると、明確な勝ちが 1 つ、あとは横ばいです。
-      アンサンブル予測に対する単純なアフィンキャリブレーションは public リーダーボードで実際に効き、
+      アンサンブルを組み終えた時点で残っていたレバーは 2 つ、出力の calibration と、
+      特定の失敗モードに対する tail gate 群でした。正直にまとめると、明確な勝ちが 1 つ、あとは横ばいです。
+      アンサンブル予測に対する単純なアフィン calibration は public リーダーボードで実際に効き、
       素の Caruana ブレンドを約 <strong>0.441</strong> から <strong>0.4154</strong> まで下げました。
-      さらにシード拡張したメンバーを取り込んだことで <strong>0.4078</strong> まで到達しています。
-      それ以降、id51 から id55 にかけてのテールゲート群は、どちらに転んでも MAE 0.004 未満の動きしかなく、
-      キャリブレーションの効果に比べればノイズです。<strong>id55</strong> がわずかな差で Phase 1 のアンカーになりました。
-      その後もいくつか試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent ゲート id57、
-      combo ゲートと高活性ゲートのランク版 id58・id59）が、どれも id55 を超えられず、
+      さらに seed 拡張したメンバーを取り込んだことで <strong>0.4078</strong> まで到達しています。
+      それ以降、id51 から id55 にかけての tail gate 群は、どちらに転んでも MAE 0.004 未満の動きしかなく、
+      calibration の効果に比べればノイズです。<strong>id55</strong> がわずかな差で Phase 1 の anchor になりました。
+      その後もいくつか試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
+      combo gate と高活性 gate のランク版 id58・id59）が、どれも id55 を超えられず、
       結局まったく同じモデルを id60 として再提出して Phase 1 を終えました。これが最終エントリです。
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>図 10: Phase 1 のキャリブレーションとゲートの各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げはキャリブレーションによる 1 段で、シード拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 がアンカーです。</figcaption>
+      <figcaption>図 10: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
     </figure>
     <p>
-      ここでいうキャリブレーションとは、アンサンブル自身の出力に対する事後回帰のことです。
+      ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
       素の予測 pEC50 から補正後の pEC50 への 1 次元の写像を、
       4,140 件の out-of-fold 予測と真のラベルの対で当てはめます。傾き正のアフィン当てはめ（isotonic 版も併用）で、
-      キャリブレータ自体が過学習しないよう 5-fold のネスト CV で検証しました。
+      calibrator 自体が過学習しないよう 5-fold のネスト CV で検証しました。
       実際に採用した <code>calibrated_importance</code> は、これに共変量シフト補正を加えています。
       各学習化合物を密度比 P(test|x) / (1 - P(test|x))（[1/3, 3] にクリップ）で重み付けし、
       ブラインドテストに似た学習点を重く見るようにしたものです。
       平たく言えば、予測レンジの圧縮をゆるやかにほどき、テスト分布側へ傾けています。
       この 1 手が、アンサンブル後で唯一明確な改善でした。単独では 0.4414 から 0.4154 まで、
-      素のブレンドからシード拡張メンバーが到達した 0.4078 までの道のりの、およそ 4 分の 3 にあたります。
+      素のブレンドから seed 拡張メンバーが到達した 0.4078 までの道のりの、およそ 4 分の 3 にあたります。
     </p>
     <p>
       ここから先はコンペの手さばきであって、研究ではありません。id51 から id55 の調整は、
-      ほとんど public リーダーボードを見ながらの作業でした。メンバー入れ替えやゲートを試し、提出し、
-      スコアが下がれば採用する、という具合です。最終アンカーは短いレシピに展開できます。
-      2 つの編集ではなく、id51 の上に載った 1 つのゲート付きブレンドです。
+      ほとんど public リーダーボードを見ながらの作業でした。メンバー入れ替えや gate を試し、提出し、
+      スコアが下がれば採用する、という具合です。最終 anchor は短いレシピに展開できます。
+      2 つの編集ではなく、id51 の上に載った 1 つの gated blend です。
     </p>
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
     <p>
       「top500 の入れ替え」と「potent-46 の持ち上げ」は同じ 1 項です。
-      2 つのアンサンブルの差分を、ゲートが開くところにだけ適用しています。
-      ゲート抜きでメンバーだけを入れ替えた提出は存在しませんし、個々のつまみの値に科学的な面白さもありません。
+      2 つのアンサンブルの差分を、gate が開くところにだけ適用しています。
+      gate 抜きでメンバーだけを入れ替えた提出は存在しませんし、個々のつまみの値に科学的な面白さもありません。
       この期間の全体は下表のとおりで、見てのとおり横ばいです。
     </p>
     <table class="metric-table">
       <thead>
-        <tr><th>id</th><th>変更点</th><th>public LB MAE</th></tr>
+        <tr><th>id</th><th>Change</th><th>Public-LB MAE</th></tr>
       </thead>
       <tbody>
-        <tr><th>id50</th><td>内部非相関ブレンド</td><td>0.4092</td></tr>
-        <tr><th>id51</th><td>id50 に対するメタ軸アンカー</td><td>0.4073</td></tr>
-        <tr><th>id52</th><td>Boltz トランクの再プーリング版に差し替え</td><td>0.4087</td></tr>
-        <tr><th>id53</th><td>トランクのコアのみ版</td><td>0.4106</td></tr>
-        <tr><th>id54</th><td>id51 + potent ゲート</td><td>0.4096</td></tr>
-        <tr class="hi"><th>id55</th><td>id51 + ゲート付き top500 ブレンド、ソフト potent-46 ゲート（アンカー）</td><td>0.4071</td></tr>
-        <tr><th>id56</th><td>Optuna で調整したメンバー入れ替え</td><td>0.4135</td></tr>
-        <tr><th>id57</th><td>緩めた potent ゲート (g50)</td><td>0.4074</td></tr>
-        <tr><th>id58</th><td>combo ゲートのランク版</td><td>0.4075</td></tr>
-        <tr><th>id59</th><td>高活性リフトのランク版</td><td>0.4077</td></tr>
-        <tr class="hi"><th>id60</th><td>id55 を無変更で再提出、Phase 1 の最終エントリ</td><td>0.4071</td></tr>
+        <tr><th>id50</th><td>internal-decorrelation blend</td><td>0.4092</td></tr>
+        <tr><th>id51</th><td>meta-axis anchor over id50</td><td>0.4073</td></tr>
+        <tr><th>id52</th><td>re-pooled Boltz trunk swap</td><td>0.4087</td></tr>
+        <tr><th>id53</th><td>trunk core-only variant</td><td>0.4106</td></tr>
+        <tr><th>id54</th><td>id51 + potent gate</td><td>0.4096</td></tr>
+        <tr class="hi"><th>id55</th><td>id51 + gated top500 blend, soft potent-46 gate (anchor)</td><td>0.4071</td></tr>
+        <tr><th>id56</th><td>Optuna-tuned member swap</td><td>0.4135</td></tr>
+        <tr><th>id57</th><td>softer potent gate (g50)</td><td>0.4074</td></tr>
+        <tr><th>id58</th><td>combo gate rank</td><td>0.4075</td></tr>
+        <tr><th>id59</th><td>high-activity lift rank</td><td>0.4077</td></tr>
+        <tr class="hi"><th>id60</th><td>id55 resubmitted unchanged, final Phase 1 entry</td><td>0.4071</td></tr>
       </tbody>
     </table>
     <p class="metrics-key">Phase 1 期間中の public LB MAE（AS1、253 化合物）。id60 が id55 と同じスコアなのは、同一ファイルだからです。上の順位表に出てくる 0.4059 は、のちの AS1 + AS2（513 化合物）に対する暫定採点であり、評価対象が異なります。Spearman が、このモデルがライブ板で保っていた約 0.845 ではなく 0.8343 と読めるのも同じ理由です。</p>
     <p>
-      どれをもってしても直らなかったのが<strong>テール</strong>です。最も強力な化合物（pEC50 ≥ 6）は
+      どれをもってしても直らなかったのが <strong>tail</strong> です。最も強力な化合物（pEC50 ≥ 6）は
       系統的に過小予測されます。モデルはそれらを平均方向へ 1 log 単位近く縮めてしまい
-      （その区間でのバイアスは約 -0.8）、大域的なキャリブレーションでは届きません。
-      分かりやすい手当て（強力化合物の持ち上げ、log2fc・環数・ファミリーギャップによる記述子ゲート）は試しましたが、
+      （その区間でのバイアスは約 -0.8）、大域的な calibration では届きません。
+      分かりやすい手当て（強力化合物の持ち上げ、log2fc・環数・ファミリーギャップによる記述子 gate）は試しましたが、
       public リーダーボード上ではどれもノイズと区別がつきませんでした。
-      テールは、Phase 1 で本当に未解決のまま残った唯一の箇所です。
+      tail は、Phase 1 で本当に未解決のまま残った唯一の箇所です。
     </p>
   </section>
 
   <section id="phase2">
     <h2>7. Phase 1 → Phase 2</h2>
     <p>
-      アンカーに戻って Phase 1 を終えたことは、当時は及び腰に見えました。
+      anchor に戻って Phase 1 を終えたことは、当時は及び腰に見えました。
       public リーダーボードでは 8 位前後で、明らかに良い public スコアを出しているチームが複数あり、
       おそらくまだ調整を続けていたはずです。しかしその板こそ、追いかけないと決めたばかりのノイズの多い代理指標でした。
       そしてブラインドの最終テストでは、その自制が報われて <strong>95 中 4 位</strong>です。
@@ -795,38 +795,38 @@
       Phase 2 では、同じ勘を働かせようにも安全に押せる場所がほとんどありませんでした。
       Phase 2 の Activity は完全にブラインドで、舵にできる public リーダーボードがなく、
       いま分かっている AS2 のラベルで見ると、我々が加えた変更はすべて予測を悪い方向へ動かしていました。
-      Phase 1 のアンカー（id55、id60 として再提出）は AS2 で 0.4075。
+      Phase 1 の anchor（id55、id60 として再提出）は AS2 で 0.4075。
       Phase 2 の変更はそこから一つずつ離れていき、提出した id63 では 0.4123 まで悪化しています。
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>図 11: 真の AS2 MAE（解答ラベル）。Phase 1 のアンカーから Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>図 11: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
     <table class="metric-table">
       <thead>
-        <tr><th>id</th><th>追加した要素</th><th>AS2 MAE</th><th>Δ vs id60</th></tr>
+        <tr><th>id</th><th>What it added</th><th>AS2 MAE</th><th>Δ vs id60</th></tr>
       </thead>
       <tbody>
-        <tr class="hi"><th>id60 (=id55)</th><td>Phase 1 のアンカー</td><td>0.4075</td><td>基準</td></tr>
-        <tr><th>id61</th><td>AS1 ラベル + top500 の AS1 追加学習モデルとのブレンド（α 0.40）</td><td>0.4121</td><td>+0.0046</td></tr>
-        <tr><th>id62</th><td>+ ChEMBL pairrank の高活性ゲート</td><td>0.4115</td><td>+0.0040</td></tr>
-        <tr class="hi"><th>id63</th><td>+ pairrank/ChemProp の複合ゲート、α 0.45（最終）</td><td>0.4123</td><td>+0.0048</td></tr>
+        <tr class="hi"><th>id60 (=id55)</th><td>Phase 1 anchor</td><td>0.4075</td><td>baseline</td></tr>
+        <tr><th>id61</th><td>AS1 labels + top500 AS1-aug blend (α 0.40)</td><td>0.4121</td><td>+0.0046</td></tr>
+        <tr><th>id62</th><td>+ ChEMBL pairrank high-activity gate</td><td>0.4115</td><td>+0.0040</td></tr>
+        <tr class="hi"><th>id63</th><td>+ composite pairrank/ChemProp gate, α 0.45 (final)</td><td>0.4123</td><td>+0.0048</td></tr>
       </tbody>
     </table>
-    <p class="metrics-key">ブラインド解除後のラベルで測った AS2 MAE。Phase 2 には照合できる public リーダーボードがありませんでした。アンカーから離れる操作は、どれも誤差を増やしています。</p>
+    <p class="metrics-key">ブラインド解除後のラベルで測った AS2 MAE。Phase 2 には照合できる public リーダーボードがありませんでした。anchor から離れる操作は、どれも誤差を増やしています。</p>
     <p>何が悪かったのか、おおむね順番に並べると次のとおりです。</p>
     <ul>
       <li><strong>公開された AS1 ラベルで再学習し、top500 の AS1 追加学習モデルをブレンドしたこと。</strong> AS2 の予測を新しいモデル側へ引っ張りましたが、ほとんどのメンバーでは AS1 再学習が AS2 をほとんど改善しておらず、結果としてブレンドは主に誤差を持ち込みました。</li>
-      <li><strong>テールを捕まえるためのゲートモデル群。</strong> 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> / 公開 PXR 活性データから、pairrank のランキングモデルと分類モデルを作りました。ペアワイズのランキングで学習する Boltz-2 の親和性ヘッドに着想を得たものです。高活性化合物の検出自体はうまくいきました（AUC 約 0.88）が、難しいのはそこではありませんでした。<em>どの</em>化合物を動かすべきかが分かっても、<em>どれだけ</em>動かすべきかは分かりません。そして幅を外したコストは、ランキングで稼いだ分より大きかったのです。</li>
-      <li><strong>低活性側のテールに手を出さなかったこと —— これだけは正解でした。</strong> 低い側へのシフトは、外した化合物に当たったときの誤差が大きくなります。だから一度も適用しませんでした。解答が公開されて、その自制が正しかったと確認できました。</li>
+      <li><strong>tail を捕まえるための gate モデル群。</strong> 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> / 公開 PXR 活性データから、pairrank のランキングモデルと分類モデルを作りました。ペアワイズのランキングで学習する Boltz-2 の affinity head に着想を得たものです。高活性化合物の検出自体はうまくいきました（AUC 約 0.88）が、難しいのはそこではありませんでした。<em>どの</em>化合物を動かすべきかが分かっても、<em>どれだけ</em>動かすべきかは分かりません。そして幅を外したコストは、ランキングで稼いだ分より大きかったのです。</li>
+      <li><strong>低活性側の tail に手を出さなかったこと —— これだけは正解でした。</strong> 低い側へのシフトは、外した化合物に当たったときの誤差が大きくなります。だから一度も適用しませんでした。解答が公開されて、その自制が正しかったと確認できました。</li>
     </ul>
     <p>
       これらをまとめたものが、提出した候補 id63 です。
-      <code>id63 = AS1 の行を公開ラベルで埋める。AS2 は id55/id60 のアンカーを AS1 追加学習の top500 モデル側へ 0.45 でブレンドし、ChEMBL pairrank の高活性ゲート (+0.15) と pairrank/ChemProp の複合ゲート (+0.15) を加え、低活性側のシフトは行わない</code>。
+      <code>id63 = AS1 rows filled with released labels; AS2 = the id55/id60 anchor blended 0.45 toward an AS1-augmented top500 model, plus a ChEMBL pairrank high-activity gate (+0.15) and a composite pairrank/ChemProp gate (+0.15), with no low-side shift</code>。
       結果として、AS2 に対するこれらの操作はすべて逆方向でした。
     </p>
     <p>
-      身も蓋もなく言えば、Phase 1 のアンカー以降、AS2 に対してできたことはすべて事態を悪くしました。
+      身も蓋もなく言えば、Phase 1 の anchor 以降、AS2 に対してできたことはすべて事態を悪くしました。
       始める前は逆だと思っていたにもかかわらず、です。公開された AS1 ラベルを取り込むのは
       悪くなりようがないと感じたので、ブレンド比をわざわざ 0.40 から 0.45 へ上げてすらいます。
       <em>何もしない</em>のが正解だった、というのは当時の我々に判断できることではありませんでした。
@@ -835,8 +835,8 @@
       そしてこれは両刃です。提出しなかった候補
       <code>id55shape_t10top500_t40_soft_g35</code> は、真の AS2 ラベルで <strong>0.4056</strong> に達しており、
       優勝スコアの 0.4061 をわずかに下回ります。つまり後から見れば、これを出していれば 1 位でした。
-      値を動かしすぎており、自前の事前チェックを通らなかったため、これは見送っています。
-      逆の極端として、保守的な id60 のアンカー（0.4075）をそのまま維持するだけでも、実際に提出したものより良かったはずです。
+      値を動かしすぎており、自前の preflight チェックを通らなかったため、これは見送っています。
+      逆の極端として、保守的な id60 の anchor（0.4075）をそのまま維持するだけでも、実際に提出したものより良かったはずです。
       少しだけ足す、が 3 択のうち最悪でした。そして提出時点では、勝ち筋の賭けと負け筋の賭けを見分ける方法はありませんでした。
       ブラインドのコンペで難しいのは、そこです。
     </p>
@@ -844,8 +844,8 @@
       <p>
         コンペ後に走らせた完全な解答照合
         (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) は、この点をさらに際立たせます。
-        リーダーボードを一度も見ずに組んだ機械的なアンカー残差スタッカーですら、テスト全体で
-        約 <strong>0.405</strong> に着地し、importance キャリブレーション版アンサンブル（0.407）も、
+        リーダーボードを一度も見ずに組んだ機械的な anchor-residual stacker ですら、テスト全体で
+        約 <strong>0.405</strong> に着地し、importance calibration 版アンサンブル（0.407）も、
         Phase 2 で実際に提出したものも上回りました。ある地点から先では、上乗せした仕掛けは
         得るものより失うもののほうが大きかったわけです。やらないという規律のほうが、二重の意味で優れたモデルでした。
       </p>
@@ -853,19 +853,19 @@
   </section>
 
   <section id="conclusion">
-    <h2>8. まとめ</h2>
+    <h2>8. Conclusion</h2>
     <p>
       実際に勝負を決めたのはモデルではなく、フレーミングでした。
-      <strong>マルチフィデリティ転移学習</strong>（Buterez et al. 2024 に基づく）にたどり着けたことが、
+      <strong>multi-fidelity transfer learning</strong>（Buterez et al. 2024 に基づく）にたどり着けたことが、
       この提出が機能した理由そのものです。チャレンジのデータには、単一濃度の安価な log2fc 読み出しが
-      さりげなく含まれており、それを予測できるように学習することで、低フィデリティの信号が
+      さりげなく含まれており、それを予測できるように学習することで、低 fidelity の信号が
       手持ちで最強の特徴量に変わりました。持ち帰る価値のある教訓をいくつか挙げます。
     </p>
     <ul>
       <li><strong>安価な活性データは過小評価されている。</strong> 低コストの単一濃度アッセイを pEC50 モデルの背骨に変えるという発想は、実際のスクリーニング現場にこそ効くはずです。そこではノイズの多いハイスループット測定が潤沢にあり、ゴールドスタンダードのラベルは希少だからです。</li>
-      <li><strong>生の信号を使うこと。</strong> データにもともと含まれるアッセイから直接作った予測 log2fc 列は、単独で見ればどの設計記述子よりも、どの基盤モデル埋め込みよりも強力でした。直接関係する測定値が存在するなら、汎用特徴量に手を伸ばす前に、まずそれをモデル化するべきです。</li>
-      <li><strong>TabPFN は読み出しヘッドとして実力以上に働く</strong>。しかも唯一というわけでもなく、同じベクトルに対して LightGBM も、本レポートにはほとんど登場しなかった KAN 読み出しも強力でした。</li>
-      <li><strong>予測構造と親和性は期待外れだった。</strong> Boltz-2 のポーズと親和性ヘッドは、そのまま使うにはノイズが多すぎ、表現として読んで初めて元が取れました。実際の活性予測において、既製の親和性モデルは最も弱い環でした。構造ベースの仕事をするときに覚えておく価値のある注意点だと思います。</li>
+      <li><strong>生の信号を使うこと。</strong> データにもともと含まれるアッセイから直接作った predicted log2fc 列は、単独で見ればどの設計記述子よりも、どの基盤モデルの embedding よりも強力でした。直接関係する測定値が存在するなら、汎用特徴量に手を伸ばす前に、まずそれをモデル化するべきです。</li>
+      <li><strong>TabPFN は readout head として実力以上に働く</strong>。しかも唯一というわけでもなく、同じベクトルに対して LightGBM も、本レポートにはほとんど登場しなかった KAN readout も強力でした。</li>
+      <li><strong>予測構造と affinity は期待外れだった。</strong> Boltz-2 のポーズと affinity head は、そのまま使うにはノイズが多すぎ、representation として読んで初めて元が取れました。実際の活性予測において、既製の affinity モデルは最も弱い環でした。構造ベースの仕事をするときに覚えておく価値のある注意点だと思います。</li>
     </ul>
     <p>
       個人的な話をすると、これは私にとって初めてのコンペで、95 中 4 位は始める前に期待していた以上の結果でした。
@@ -883,7 +883,7 @@
   </section>
 
   <section id="links">
-    <h2>再現性とリンク</h2>
+    <h2>Reproducibility and links</h2>
     <ul>
       <li>作業リポジトリ（コード、特徴量パイプライン、日々のログ）: <a href="https://github.com/N283T/pxr-iduction-challenge">N283T/pxr-iduction-challenge</a></li>
       <li>Phase 1 の研究ログ（日次、一部日本語）: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
@@ -902,7 +902,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>OpenADMET PXR Challenge · Track 1 Activity · 95 中 4 位 · Report by N283T</p>
+    <p>OpenADMET PXR Challenge · Track 1 Activity · Rank 4 / 95 · Report by N283T</p>
   </div>
 </footer>
 

@@ -34,16 +34,16 @@ scripts/build_font_subsets.py  regenerates the Japanese woff2 subsets
 Everything is vendored under `docs/assets/vendor/fonts/`; the pages never call a
 CDN or a webfont service. The Latin subsets were committed by hand. The Japanese
 subsets for [`docs/ja/`](docs/ja/) are built from the upstream Google Fonts
-releases (both OFL, license texts included next to the files):
+release of Zen Maru Gothic (OFL, license text included next to the files):
 
 ```bash
 ./scripts/build_font_subsets.py --src /path/to/source-fonts
 ```
 
-Zen Maru Gothic (body) carries JIS X 0208 level 1 on top of the characters the
-pages actually use, so ordinary edits to the Japanese prose need no rebuild.
-Klee One (headings only) carries just the pages' own characters — rerun the
-script after adding a heading with new kanji.
+They carry JIS X 0208 level 1 on top of the characters the pages actually use, so
+ordinary edits to the Japanese prose need no rebuild. Only the body face is
+vendored: headings, tables and cards are English on both pages, so no Japanese
+character reaches `--font-display`.
 
 ## Regenerating chart data
 

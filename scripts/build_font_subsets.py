@@ -10,15 +10,18 @@
 
 The report site is self-contained: no CDN, no webfont service. The Latin subsets
 were vendored by hand; this script produces the Japanese ones for the translated
-page, keeping the same families the personal site uses (Zen Maru Gothic for body
-text, Klee One for headings).
+page, in the same body face the personal site uses (Zen Maru Gothic).
 
-The upstream fonts are not committed here (they are ~3-8 MB each). Fetch them
+Only the body face is built. Headings, tables and cards are English on both
+pages, so --font-display never has to resolve a Japanese character and its
+Japanese counterpart there (Klee One) would be ~0.9 MB of dead weight. Adding a
+Japanese heading means bringing Klee One back, here and in style.css.
+
+The upstream fonts are not committed here (they are ~3-4 MB each). Fetch them
 once from the Google Fonts repository, then point ``--src`` at that directory:
 
     base=https://raw.githubusercontent.com/google/fonts/main/ofl
     curl -O $base/zenmarugothic/ZenMaruGothic-{Regular,Medium,Bold}.ttf
-    curl -O $base/kleeone/KleeOne-{Regular,SemiBold}.ttf
 
 Usage:
     ./scripts/build_font_subsets.py --src /path/to/source-fonts
@@ -50,19 +53,11 @@ MARKUP = re.compile(
     r"<script.*?</script>|<style.*?</style>|<svg.*?</svg>|<[^>]+>", re.S
 )
 
-# (source filename, output stem, weight, charset)
-#
-# Zen Maru Gothic sets body text, so it carries JIS X 0208 level 1 on top of the
-# characters actually used: ordinary edits to the prose stay covered without a
-# rebuild. Klee One only ever renders h1-h3 (it sits behind Outfit in
-# --font-display, so it is reached only by non-Latin characters), and it is the
-# heavier face per glyph, so it carries just the page's own characters plus kana.
+# (source filename, output stem, weight)
 FACES = (
-    ("ZenMaruGothic-Regular.ttf", "zenmaru", "400", "body"),
-    ("ZenMaruGothic-Medium.ttf", "zenmaru", "500", "body"),
-    ("ZenMaruGothic-Bold.ttf", "zenmaru", "700", "body"),
-    ("KleeOne-Regular.ttf", "kleeone", "400", "heading"),
-    ("KleeOne-SemiBold.ttf", "kleeone", "600", "heading"),
+    ("ZenMaruGothic-Regular.ttf", "zenmaru", "400"),
+    ("ZenMaruGothic-Medium.ttf", "zenmaru", "500"),
+    ("ZenMaruGothic-Bold.ttf", "zenmaru", "700"),
 )
 
 
@@ -90,28 +85,25 @@ def page_characters() -> set[str]:
     return {c for c in chars if c.isprintable()}
 
 
-def charsets() -> dict[str, set[str]]:
+def charset() -> set[str]:
+    """The characters in use, plus enough of JIS X 0208 to absorb prose edits."""
     ascii_printable = {chr(c) for c in range(0x20, 0x7F)}
     kana_and_punctuation = {chr(c) for c in range(0x3000, 0x3100)}
     fullwidth_forms = {chr(c) for c in range(0xFF01, 0xFF60)}
     base = page_characters() | ascii_printable | kana_and_punctuation | fullwidth_forms
-    return {
-        "body": base | jis_x0208(1, 8) | jis_x0208(16, 47),
-        "heading": base,
-    }
+    return base | jis_x0208(1, 8) | jis_x0208(16, 47)
 
 
 def build(src_dir: Path) -> None:
-    sets = charsets()
+    chars = charset()
     total = 0
-    for source, stem, weight, charset in FACES:
+    for source, stem, weight in FACES:
         src = src_dir.joinpath(source)
         if not src.exists():
             raise SystemExit(
                 f"source font not found: {src}\nSee this script's docstring."
             )
         out = OUT_DIR.joinpath(f"{stem}-{weight}-jp.woff2")
-        chars = sets[charset]
         pyftsubset(
             [
                 str(src),
@@ -135,7 +127,7 @@ def main() -> None:
         "--src",
         type=Path,
         required=True,
-        help="directory holding the upstream Zen Maru Gothic and Klee One TTFs",
+        help="directory holding the upstream Zen Maru Gothic TTFs",
     )
     args = parser.parse_args()
     build(args.src.expanduser().resolve())
