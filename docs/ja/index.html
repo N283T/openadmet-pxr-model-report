@@ -661,36 +661,28 @@
       そこで representation としての活用を考えました。
     </p>
     <p>
-      取り出すのは trunk の 2 つのテンソル、トークン単位の <code>s</code> とトークン対の <code>z</code> です。
-      これを化合物あたり <strong>1,024 次元</strong>にプーリングして TabPFN に渡します。
-      <code>s</code> はタンパク質側とリガンド側をそれぞれ平均した要約、
-      <code>z</code> は残基 × 原子の相互作用ブロックで、信号の大半はこちらにあります。
-      2 メンバーの違いは <code>z</code> に入れる範囲だけで、固定 13 残基の core pocket か、434 残基すべてかです。
+      trunk の <code>s</code> と <code>z</code> を、化合物あたり <strong>1,024 次元</strong>に
+      プーリングして TabPFN に渡します（Figure 7）。2 メンバーの違いは <code>z</code> に入れる範囲だけです。
     </p>
+    <ul>
+      <li><strong>Boltz-pocket</strong> — 固定 13 残基の core pocket × リガンド原子</li>
+      <li><strong>Boltz-allpairs</strong> — 434 残基すべて × リガンド原子</li>
+    </ul>
     <figure class="chart-figure">
       <img class="figure-img" src="../assets/img/boltz-pooling.svg" alt="Boltz trunk のプーリング" />
-      <figcaption>Figure 7: trunk の <code>s</code> と <code>z</code> を 1,024 次元に落とすまで。<code>s</code> ブロック（768 次元）は 2 メンバーで共通で、変わるのは <code>z</code> のプーリング範囲だけです。</figcaption>
+      <figcaption>Figure 7: trunk の <code>s</code> と <code>z</code> を 1,024 次元に落とすまで。<code>s</code> ブロック（768 次元）は 2 メンバーで共通です。</figcaption>
     </figure>
     <p>
-      どうプーリングするかは、それ自体が小さな探索でした。どのトークンを、どのテンソルで縮約するかを 20 通り以上試しています。
+      プーリングは 20 通り以上試しましたが、<strong>効いていたのは <code>z</code> のペア表現</strong>でした。
+      128 次元の <code>z</code> だけで 0.490 と、全部入りの 0.486 に肉薄します。一方 <code>s</code> は 768 次元あっても 0.507。
+      リガンド単体の形より、残基とリガンド原子の関係が効いているわけで、
+      Boltz-2 自身の affinity module がペアを重視する設計とも符合します。
+      対して、どの残基で pool するかはほとんど効きません（pocket と allpairs で MAE の差は 0.001 以内、どちらも約 0.486）。
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 8: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（OOF MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 8: プーリング方法別の OOF MAE。コーラルの 2 本がアンサンブルに残したものです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
-    <p>
-      目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
-      13 残基の core pocket と 434 残基すべてで、MAE の差は 0.001 以内に収まります。
-      一方で、pair テンソルをどう縮約するかは大きく効きます。<code>z</code> の mean pooling は問題ありませんが、
-      <code>z</code> の max pooling だけにすると 0.576 まで崩れます。
-      信号の大半を担っているのは <em>pair</em> representation であり（z だけで約 0.489、single ベクトルはより弱い）、
-      これは Boltz-2 自身の affinity モジュールがタンパク質-リガンド対を重視していることとも符合します。
-      PXR 活性にはリガンドの形だけでなく、ポケットとリガンドの相互作用が必要だということです。
-      embedding を affinity head 風の構造に通したり、Boltz 本来の affinity モジュールのように distogram を混ぜたりしても、
-      特段の効果はありませんでした。最終的にアンサンブルに残ったプーリングは 2 つ、
-      <strong>Boltz-pocket</strong>（13 残基の core）と <strong>Boltz-allpairs</strong>（434 残基すべて）で、
-      いずれも単独で約 0.486 です。
-    </p>
     <p>
       trunk の各次元には解釈可能な名前がないので、非線形な readout が効きます。
       同じベクトルに対して TabPFN（0.486）が LightGBM と MLP（0.512、0.538）を上回りました。
