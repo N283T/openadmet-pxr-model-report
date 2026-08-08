@@ -91,7 +91,7 @@ GAIN_AUDIT_CSV = (
     "feature_gain_summary.csv",
 )
 GAIN_FAMILY_LABEL = {
-    "log2fc_pred": "predicted log2fc",
+    "log2fc_pred": "pred log2fc",
     "mordred": "Mordred",
     "chemeleon": "CheMeleon",
     "boltz_tier1_conf": "Boltz-2 tier-1",
@@ -158,6 +158,14 @@ COVERAGE_SQL = """
 """
 # The public-leaderboard row for each submission id.
 LB_SUBMISSIONS_SQL = "SELECT id, lb_mae, lb_spearman FROM lb_submissions"
+# Mean fold MAE for a named experiment: each member's single-model OOF score.
+MEMBER_OOF_SQL = """
+    SELECT e.name, avg(r.mae) AS oof_mae
+      FROM experiments e
+      JOIN experiment_cv_results r ON r.experiment_id = e.id
+     WHERE e.name = ANY(%(names)s)
+     GROUP BY e.name
+"""
 # Representative features for the correlation heatmap.
 # (full label, short column header, master/pred column, family).
 # Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
@@ -204,81 +212,81 @@ MEMBER_STRATEGY = {"tabular": 2, "embed": 4, "structural": None}
 ENSEMBLE_MEMBERS = [
     {
         "key": "cheme_t10_full",
+        "experiment": "tabpfn_cheme_2d_full_boltz_log2fc_pred_optuna_trial10_seed5ens_umap_default",
         "alias": "tabular-full",
         "label": "CheMeleon + 2D + Boltz + pred (full, 2103d)",
-        "oofMae": 0.396,
         "role": "broad tabular core",
         "family": "tabular",
         "usesLog2fc": True,
     },
     {
         "key": "cheme_t10_top500",
+        "experiment": "tabpfn_cheme_2d_full_boltz_log2fc_pred_seed10ens_top500_umap",
         "alias": "tabular-top500",
         "label": "same feature stack, LightGBM-gain top-500",
-        "oofMae": 0.397,
         "role": "selected tabular core",
         "family": "tabular",
         "usesLog2fc": True,
     },
     {
         "key": "chemprop_embed",
+        "experiment": "tabpfn_chemprop_pretrain_embed_umap_default",
         "alias": "ChemProp",
         "label": "ChemProp D-MPNN, log2fc-pretrained embed",
-        "oofMae": 0.437,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "kermt",
+        "experiment": "tabpfn_kermt_pretrain_embed_umap_default",
         "alias": "KERMT",
         "label": "KERMT graph-transformer, log2fc-pretrained embed",
-        "oofMae": 0.449,
         "role": "frozen graph-transformer",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "pooled_boltz",
+        "experiment": "tabpfn_pooled_boltz_umap_default",
         "alias": "Boltz-pocket",
         "label": "Boltz-2 trunk, pooled over the core pocket",
-        "oofMae": 0.486,
         "role": "structural reserve",
         "family": "structural",
         "usesLog2fc": False,
     },
     {
         "key": "molformer_c3",
+        "experiment": "tabpfn_molformer_c3_pretrain_embed_umap",
         "alias": "MoLFormer",
         "label": "MoLFormer-c3, log2fc-pretrained embed",
-        "oofMae": 0.475,
         "role": "frozen transformer",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "pooled_boltz_allpairs",
+        "experiment": "tabpfn_pooled_boltz_allpairs_umap_default",
         "alias": "Boltz-allpairs",
         "label": "Boltz-2 trunk, pooled over all protein-ligand pairs",
-        "oofMae": 0.486,
         "role": "structural reserve",
         "family": "structural",
         "usesLog2fc": False,
     },
     {
         "key": "gatedgcn",
+        "experiment": "tabpfn_gatedgcn_pretrain_embed_umap_default",
         "alias": "GatedGCN",
         "label": "GatedGCN, log2fc-pretrained embed",
-        "oofMae": 0.474,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "attentivefp",
+        "experiment": "tabpfn_attentivefp_pretrain_embed_umap_default",
         "alias": "AttentiveFP",
         "label": "AttentiveFP, log2fc-pretrained embed",
-        "oofMae": 0.484,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
@@ -339,14 +347,20 @@ def _load_true_labels(src: Path) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True).dropna(subset=["true"])
 
 
-def build_ensemble_members(src: Path) -> None:
-    """Production ensemble members; Caruana weights from the reweight audit (old_prod)."""
+def build_ensemble_members(src: Path, dsn: str) -> None:
+    """Production ensemble members: OOF from the run log, weights from the reweight audit."""
     w = pd.read_csv(src.joinpath(*MEMBER_WEIGHTS_CSV))
     prod = w[(w["stage"] == "pre_as1") & (w["weight_source"] == "old_prod")]
     weight_by_key = prod.set_index("member")["weight"]
+    names = [m["experiment"] for m in ENSEMBLE_MEMBERS]
+    oof = query(dsn, MEMBER_OOF_SQL, {"names": names}).set_index("name")["oof_mae"]
+    missing = sorted(set(names) - set(oof.index))
+    if missing:
+        raise SystemExit(f"no cv results for: {missing}")
     members = []
     for m in ENSEMBLE_MEMBERS:
-        entry = {k: v for k, v in m.items() if k != "key"}
+        entry = {k: v for k, v in m.items() if k not in ("key", "experiment")}
+        entry["oofMae"] = round(float(oof[m["experiment"]]), 3)
         entry["weight"] = round(float(weight_by_key[m["key"]]), 3)
         entry["strategy"] = MEMBER_STRATEGY[m["family"]]
         members.append(entry)
@@ -701,7 +715,7 @@ def main() -> None:
 
     logger.info("source repo: %s", src)
     logger.info("database: %s", dsn)
-    build_ensemble_members(src)
+    build_ensemble_members(src, dsn)
     build_coverage(dsn)
     build_topk_sweep(src)
     build_lgbm_gain(src)

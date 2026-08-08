@@ -183,8 +183,8 @@
       </div>
     </div>
 
-    <p class="metrics-key">順位を付けているのは MAE だけで、他の指標の順位はリーダーボードの値から数えたものです。</p>
-    <p class="metrics-key">最終リーダーボードの全体は、チャレンジの <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face Space</a>（Leaderboard タブ）で確認できます。主催者による記事は <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1 の結果</a>と<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">コンペ終了後のまとめ</a>です。</p>
+    <p class="metrics-key">順位を付けているのは MAE だけで、他の指標の順位は LB の値から数えたものです。</p>
+    <p class="metrics-key">最終 LB の全体は、チャレンジの <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face Space</a>（Leaderboard タブ）で確認できます。主催者による記事は <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1 の結果</a>と<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">コンペ終了後のまとめ</a>です。</p>
   </section>
 
   <section id="strategy">
@@ -468,10 +468,10 @@
           <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
           <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
           <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
-          <tr><th><a href="#pred-log2fc">predicted log2fc</a></th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
+          <tr><th><a href="#pred-log2fc">pred log2fc</a></th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
         </tbody>
       </table>
-      <figcaption>Table 4: tabular core が共有する 2,103 次元の内訳。predicted log2fc の 2 列は Strategy の章で扱ったものと同じで、この 2 メンバーが単独最強である理由でもあります。</figcaption>
+      <figcaption>Table 4: tabular core が共有する 2,103 次元の内訳。pred log2fc の 2 列は Strategy の章で扱ったものと同じで、この 2 メンバーが単独最強である理由でもあります。</figcaption>
     </figure>
 
     <h4>CheMeleon</h4>
@@ -519,12 +519,12 @@
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
-      gain の<strong>約 4 分の 3</strong> は 2 本の predicted log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（Figure 6）。
+      gain の<strong>約 4 分の 3</strong> は 2 本の pred log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（Figure 6）。
       要するにこの選択器がやっているのは「pred log2fc の 2 列を残し、あとは記述子で空間を埋める」ことです。
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>Figure 6: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
+      <figcaption>Figure 6: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。pred log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
     </figure>
     <p>
       個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred log2fc の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
@@ -536,8 +536,8 @@
       <table class="metric-table">
         <thead><tr><th>Feature</th><th class="bk">Family</th><th>Gain share</th></tr></thead>
         <tbody>
-          <tr class="hi"><th>log2fc_8p25_pred</th><td class="bk">predicted log2fc</td><td>51.6%</td></tr>
-          <tr class="hi"><th>log2fc_33_pred</th><td class="bk">predicted log2fc</td><td>22.1%</td></tr>
+          <tr class="hi"><th>log2fc_8p25_pred</th><td class="bk">pred log2fc</td><td>51.6%</td></tr>
+          <tr class="hi"><th>log2fc_33_pred</th><td class="bk">pred log2fc</td><td>22.1%</td></tr>
           <tr><th>chemeleon_067</th><td class="bk">CheMeleon</td><td>0.30%</td></tr>
           <tr><th>chemeleon_006</th><td class="bk">CheMeleon</td><td>0.23%</td></tr>
           <tr><th>chemeleon_175</th><td class="bk">CheMeleon</td><td>0.20%</td></tr>
@@ -642,7 +642,7 @@
     <p>
       同じ frozen レシピを、さらに 2 つの GNN backbone に適用したものです。いくつも試したなかで
       成績が良かった 2 つ、というだけで、アーキテクチャ自体に意味はありません。
-      単独では弱く（0.474、0.484）、重みもごく小さい（0.018、0.002）です。
+      単独では弱く（0.474、0.484）、重みもごく小さい（0.017、0.002）です。
     </p>
     <p>
       それでも残しているのは <strong>buffer</strong> だからです。約 0.02 の重みを削るとコア側で約 0.1 の増加に
@@ -706,7 +706,7 @@
     <p>
       アンサンブルを組み終えた時点で残っていたレバーは 2 つ、出力の calibration と、
       特定の失敗モードに対する tail gate 群でした。正直にまとめると、明確な勝ちが 1 つ、あとは横ばいです。
-      アンサンブル予測に対する単純なアフィン calibration は public リーダーボードで実際に効き、
+      アンサンブル予測に対する単純なアフィン calibration は public LBで実際に効き、
       素の Caruana ブレンドを約 <strong>0.441</strong> から <strong>0.4154</strong> まで下げました。
       さらに seed 拡張したメンバーを取り込んだことで <strong>0.4078</strong> まで到達しています。
       それ以降、id51 から id55 にかけての tail gate 群は、どちらに転んでも MAE 0.004 未満の動きしかなく、
@@ -717,7 +717,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public LB MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
     </figure>
     <p>
       ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
@@ -733,7 +733,7 @@
     </p>
     <p>
       ここから先はコンペの手さばきであって、研究ではありません。id51 から id55 の調整は、
-      ほとんど public リーダーボードを見ながらの作業でした。メンバー入れ替えや gate を試し、提出し、
+      ほとんど public LBを見ながらの作業でした。メンバー入れ替えや gate を試し、提出し、
       スコアが下がれば採用する、という具合です。最終 anchor は短いレシピに展開できます。
       2 つの編集ではなく、id51 の上に載った 1 つの gated blend です。
     </p>
@@ -769,7 +769,7 @@
       系統的に過小予測されます。モデルはそれらを平均方向へ 1 log 単位近く縮めてしまい
       （その区間でのバイアスは約 -0.8）、大域的な calibration では届きません。
       分かりやすい手当て（強力化合物の持ち上げ、log2fc・環数・ファミリーギャップによる記述子 gate）は試しましたが、
-      public リーダーボード上ではどれもノイズと区別がつきませんでした。
+      public LB上ではどれもノイズと区別がつきませんでした。
       tail は、Phase 1 で本当に未解決のまま残った唯一の箇所です。
     </p>
   </section>
@@ -778,14 +778,14 @@
     <h2>7. Phase 1 → Phase 2</h2>
     <p>
       anchor に戻って Phase 1 を終えたことは、当時は及び腰に見えました。
-      public リーダーボードでは 8 位前後で、明らかに良い public スコアを出しているチームが複数あり、
+      public LBでは 8 位前後で、明らかに良い public スコアを出しているチームが複数あり、
       おそらくまだ調整を続けていたはずです。しかしその板こそ、追いかけないと決めたばかりのノイズの多い代理指標でした。
       そしてブラインドの最終採点では、その自制が報われて <strong>95 中 4 位</strong>です。
-      public リーダーボードに過剰適合しなかったことは、振り返れば Phase 1 の良い判断のひとつでした。
+      public LBに過剰適合しなかったことは、振り返れば Phase 1 の良い判断のひとつでした。
     </p>
     <p>
       Phase 2 では、同じ勘を働かせようにも安全に押せる場所がほとんどありませんでした。
-      Phase 2 の Activity は完全にブラインドで、舵にできる public リーダーボードがなく、
+      Phase 2 の Activity は完全にブラインドで、舵にできる public LBがなく、
       いま分かっている AS2 のラベルで見ると、我々が加えた変更はすべて予測を悪い方向へ動かしていました。
       Phase 1 の anchor（id55、id60 として再提出）は AS2 で 0.4075。
       Phase 2 の変更はそこから一つずつ離れていき、提出した id63 では 0.4123 まで悪化しています。
@@ -805,7 +805,7 @@
         <tr class="hi"><th>id63</th><td>+ composite pairrank/ChemProp gate, α 0.45 (final)</td><td>0.4123</td><td>+0.0048</td></tr>
       </tbody>
     </table>
-    <p class="metrics-key">ブラインド解除後のラベルで測った AS2 MAE。Phase 2 には照合できる public リーダーボードがありませんでした。anchor から離れる操作は、どれも誤差を増やしています。</p>
+    <p class="metrics-key">ブラインド解除後のラベルで測った AS2 MAE。Phase 2 には照合できる public LBがありませんでした。anchor から離れる操作は、どれも誤差を増やしています。</p>
     <p>何が悪かったのか、おおむね順番に並べると次のとおりです。</p>
     <ul>
       <li><strong>公開された AS1 ラベルで再学習し、top500 の AS1 追加学習モデルをブレンドしたこと。</strong> AS2 の予測を新しいモデル側へ引っ張りましたが、ほとんどのメンバーでは AS1 再学習が AS2 をほとんど改善しておらず、結果としてブレンドは主に誤差を持ち込みました。</li>
@@ -836,7 +836,7 @@
       <p>
         コンペ後に走らせた完全な解答照合
         (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) は、この点をさらに際立たせます。
-        リーダーボードを一度も見ずに組んだ機械的な anchor-residual stacker ですら、テスト全体で
+        LB を一度も見ずに組んだ機械的な anchor-residual stacker ですら、テスト全体で
         約 <strong>0.405</strong> に着地し、importance calibration 版アンサンブル（0.407）も、
         Phase 2 で実際に提出したものも上回りました。ある地点から先では、上乗せした仕掛けは
         得るものより失うもののほうが大きかったわけです。やらないという規律のほうが、二重の意味で優れたモデルでした。
@@ -855,7 +855,7 @@
     </p>
     <ul>
       <li><strong>安価な活性データは過小評価されている。</strong> 低コストの単一濃度アッセイを pEC50 モデルの背骨に変えるという発想は、実際のスクリーニング現場にこそ効くはずです。そこではノイズの多いハイスループット測定が潤沢にあり、ゴールドスタンダードのラベルは希少だからです。</li>
-      <li><strong>生の信号を使うこと。</strong> データにもともと含まれるアッセイから直接作った predicted log2fc 列は、単独で見ればどの設計記述子よりも、どの基盤モデルの embedding よりも強力でした。直接関係する測定値が存在するなら、汎用特徴量に手を伸ばす前に、まずそれをモデル化するべきです。</li>
+      <li><strong>生の信号を使うこと。</strong> データにもともと含まれるアッセイから直接作った pred log2fc 列は、単独で見ればどの設計記述子よりも、どの基盤モデルの embedding よりも強力でした。直接関係する測定値が存在するなら、汎用特徴量に手を伸ばす前に、まずそれをモデル化するべきです。</li>
       <li><strong>TabPFN は readout head として実力以上に働く</strong>。しかも唯一というわけでもなく、同じベクトルに対して LightGBM も、本レポートにはほとんど登場しなかった KAN readout も強力でした。</li>
       <li><strong>予測構造と affinity は期待外れだった。</strong> Boltz-2 のポーズと affinity head は、そのまま使うにはノイズが多すぎ、representation として読んで初めて元が取れました。実際の活性予測において、既製の affinity モデルは最も弱い環でした。構造ベースの仕事をするときに覚えておく価値のある注意点だと思います。</li>
     </ul>
