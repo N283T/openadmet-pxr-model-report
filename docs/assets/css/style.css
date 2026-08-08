@@ -414,6 +414,14 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 }
 .phase-rank b { font-size: 1.15rem; font-weight: 800; color: var(--color-blue); letter-spacing: 0; }
 .phase-eval { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
+/* What a scoring round covered, as label/value pairs above its metrics. */
+.phase-meta { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 8px 0 14px; }
+.phase-meta > div { display: flex; flex-direction: column; gap: 1px; }
+.phase-meta dt {
+  font-family: var(--font-display); font-size: .64rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+}
+.phase-meta dd { margin: 0; font-size: .88rem; color: var(--ink); }
 .stat-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .stat {
   background: color-mix(in srgb, var(--color-blue) 6%, var(--surface));

@@ -147,19 +147,13 @@
       この課題のスコアは、主に <strong>3 回</strong>出ています。live leaderboard は提出のたびに
       更新されるので、あとから動かない結果と言えるのはこの 3 つです。
     </p>
-    <table class="spec-table">
-      <thead>
-        <tr><th>Result</th><th>Scored on</th><th>Leaderboard</th><th>Notes</th></tr>
-      </thead>
-      <tbody>
-        <tr><th>Phase 1 final</th><td class="val">AS1 (253)</td><td>live</td><td>live leaderboard の最終スコア</td></tr>
-        <tr><th>Interim</th><td class="val">AS1 + AS2 (513)</td><td>one-off</td><td>モデルは Phase 1 final と同じ</td></tr>
-        <tr><th>Phase 2</th><td class="val">AS2 (260)</td><td>none</td><td>AS1 のラベルは Phase 1 終了時に公開済み</td></tr>
-      </tbody>
-    </table>
-
     <div class="phase-block">
-      <h3>Phase 1 final <span class="badge">AS1 only</span><span class="phase-rank">rank <b>8</b></span></h3>
+      <h3>Phase 1 final <span class="phase-rank">rank <b>8</b></span></h3>
+      <dl class="phase-meta">
+        <div><dt>Scored on</dt><dd>AS1 (253)</dd></div>
+        <div><dt>Leaderboard</dt><dd>live</dd></div>
+        <div><dt>Note</dt><dd>live leaderboard の最終スコア</dd></div>
+      </dl>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4071</span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5115</span></div>
@@ -170,7 +164,12 @@
     </div>
 
     <div class="phase-block">
-      <h3>Interim <span class="badge">AS1 + AS2</span><span class="phase-rank">rank <b>4</b> / 338</span></h3>
+      <h3>Interim <span class="phase-rank">rank <b>4</b> / 338</span></h3>
+      <dl class="phase-meta">
+        <div><dt>Scored on</dt><dd>AS1 + AS2 (513)</dd></div>
+        <div><dt>Leaderboard</dt><dd>one-off</dd></div>
+        <div><dt>Note</dt><dd>モデルは Phase 1 final と同じ</dd></div>
+      </dl>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4059</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5359</span><span class="stat-r">rank <b>4</b></span></div>
@@ -182,6 +181,11 @@
 
     <div class="phase-block">
       <h3>Phase 2 <span class="badge">final standing</span><span class="phase-rank">rank <b>4</b> / 95</span></h3>
+      <dl class="phase-meta">
+        <div><dt>Scored on</dt><dd>AS2 (260)</dd></div>
+        <div><dt>Leaderboard</dt><dd>none</dd></div>
+        <div><dt>Note</dt><dd>AS1 のラベルは Phase 1 終了時に公開済み</dd></div>
+      </dl>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4113</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5703</span><span class="stat-r">rank <b>4</b></span></div>
