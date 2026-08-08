@@ -344,11 +344,11 @@
         <div id="chart-feat-2" class="chart chart-mini" style="height:280px"></div>
         <div id="chart-feat-3" class="chart chart-mini" style="height:280px"></div>
       </div>
-      <figcaption>Figure 1: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed と predicted、それぞれ 8.25 と 33 µM で、各パネルに Pearson r を表示しています。observed 側はアッセイが実際に走った化合物しかないので、学習 4,140 件に対して 2,374 件と 2,321 件です。</figcaption>
+      <figcaption>Figure 1: 4 種類の log2fc と学習 pEC50 の関係（点は学習化合物 1 件）。observed 側はアッセイが実際に走った化合物にしかないので、学習 4,140 件に対して 2,374 件と 2,321 件です。</figcaption>
     </figure>
     <figure class="chart-figure">
       <div id="chart-featcorr" class="chart" style="height:210px"></div>
-      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。上段が Pearson r、下段が Spearman r で、緑が正、赤が負、値はセル内に表示しています。2 本の pred log2fc 列が先頭に立ち、続いて observed log2fc と Boltz-2 の affinity スコア（log10 IC50 なので符号は逆向き）、その後ろに個々には弱い物理化学記述子が並びます。列によって母数が違う点に注意してください。observed log2fc は 2,374 件と 2,321 件、Boltz-2 系は予測が無い 1 化合物を除く 4,139 件で、残りは学習 4,140 件すべてです。</figcaption>
+      <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。Boltz-2 の affinity は log10 IC50 なので符号が逆向きです。母数は列ごとに違い、observed log2fc が 2,374 件と 2,321 件、Boltz-2 系が 4,139 件（1 化合物は予測なし）、ほかは学習 4,140 件すべてです。</figcaption>
     </figure>
 
     <h3>How far does pred log2fc alone get?</h3>
