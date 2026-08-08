@@ -791,12 +791,12 @@
   <section id="phase2">
     <h2>8. Phase 1 &rarr; Phase 2</h2>
     <p>
-      Phase 1 は、LB に合わせに行くのをやめて anchor をそのまま出し直して終えました。
+      Phase 1 は、LB に合わせに行くのをやめ、anchor をそのまま出し直して終えました。
       当時は及び腰に見えましたが、ブラインドの最終採点は <strong>95 中 4 位</strong>。
       public LB に過剰適合しなかったことが、Phase 1 の良い判断のひとつでした。
     </p>
     <p>
-      Phase 2 は完全にブラインドで、舵にできる public LB がありません。
+      Phase 2 は完全にブラインドで、手がかりになる public LB がありません。
       答え合わせで見ると、<strong>加えた変更はすべて予測を悪い方向へ動かしていました</strong>。
     </p>
     <figure class="chart-figure">
@@ -823,12 +823,13 @@
       </li>
     </ul>
     <p>
-      そして両刃です。提出しなかった候補 <code>id55shape_t10top500_t40_soft_g35</code> は
-      AS2 で <strong>0.4056</strong>、優勝の 0.4061 を下回っていました。動かす値が多く、
-      自前の preflight を通らなかったので見送っています。
-      動かさない id60 が 0.4075、大きく動かした id55shape が 0.4056、その中間の id63 が 0.4123。
-      <strong>中途半端に足したものが一番悪い</strong>、という並びでした。
-      LB がない以上、勝ち筋と負け筋を提出時点で見分ける方法はありません。ブラインドで難しいのはそこです。
+      ただし「動かさなければよかった」という話でもありません。提出しなかった候補
+      <code>id55shape_t10top500_t40_soft_g35</code> は AS2 で <strong>0.4056</strong>、
+      優勝の 0.4061 を下回っています。動かす値が多く、自前の preflight を通らなかったので見送りました。
+      並べると、動かさない id60 が 0.4075、大きく動かした id55shape が 0.4056、
+      その中間の id63 が 0.4123。<strong>一番悪いのは中途半端に足したもの</strong>でした。
+      とはいえ LB がない以上、どちらに賭けるかを提出時点で見分ける手段はありません。
+      ブラインドの難しさはそこです。
     </p>
     <div class="aside">
       <p>
@@ -836,7 +837,7 @@
         (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) では、
         LB を一度も見ずに組んだ anchor-residual stacker がテスト全体で約 <strong>0.405</strong> に着地し、
         importance calibration 版アンサンブル（0.407）も Phase 2 の提出もすべて上回りました。
-        ある地点から先は、上乗せした仕掛けのほうが損でした。
+        ある地点から先は、足した仕掛けが得よりも損を生んでいた、ということです。
       </p>
     </div>
   </section>
