@@ -752,32 +752,32 @@
   <section id="gates">
     <h2>7. Gates</h2>
     <p>
-      public LB の履歴では、素の Caruana ブレンド <strong>0.4414</strong>（id13）から
-      importance 版 calibration の初回 <strong>0.4154</strong>（id19）、
-      seed 拡張メンバーを含めた <strong>0.4078</strong>（id31）へと下がっています。
-      それ以降、id51 から id55 にかけての tail gate 群は、どちらに転んでも MAE 0.004 未満の動きしかなく、
-      calibration の効果に比べればノイズです。<strong>id55</strong> がわずかな差で Phase 1 の anchor になりました。
-      その後もいくつか試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
-      combo gate と高活性 gate のランク版 id58・id59）が、どれも id55 を超えられず、
-      結局まったく同じモデルを id60 として再提出して Phase 1 を終えました。これが最終エントリです。
+      ここから先は研究ではなく<strong>競技の手さばき</strong>です。メンバーを差し替え、gate を足し、
+      提出して、下がったものを残す。public LB を見ながらの作業でした。
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 10: Phase 1 の calibration と gate の各マイルストーンにおける public LB MAE（軸は 0.40 から）。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 10: Phase 1 の public LB MAE（軸は 0.40 から）。素の Caruana ブレンド 0.4414 から calibration で 0.4154、seed 拡張メンバーで 0.4078 まで落ちたあとは横ばいです。コーラルの id55 が anchor になりました。</figcaption>
     </figure>
     <p>
-      ここから先はコンペの手さばきであって、研究ではありません。id51 から id55 の調整は、
-      ほとんど public LBを見ながらの作業でした。メンバー入れ替えや gate を試し、提出し、
-      スコアが下がれば採用する、という具合です。最終 anchor は短いレシピに展開できます。
-      2 つの編集ではなく、id51 の上に載った 1 つの gated blend です。
+      最終提出の <strong>id55</strong> は、補正済みアンサンブル（id51）に対して、
+      potent-46 に似た化合物<strong>だけ</strong>を top500 メンバーの方向へ寄せたものです。
     </p>
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
+    <ul>
+      <li><strong>gate</strong> — Test 化合物の Morgan 最近傍を potent かつ selective な Train 46 件に対して測り、
+        Tanimoto 0.40 から 0.15 幅で緩やかに立ち上げます</li>
+      <li><strong>寄せる量</strong> — 0.35。寄せる先は top500 メンバーと素のアンサンブルの差です</li>
+    </ul>
     <p>
-      「top500 の入れ替え」と「potent-46 の持ち上げ」は同じ 1 項です。
-      2 つのアンサンブルの差分を、gate が開くところにだけ適用しています。
-      gate 抜きでメンバーだけを入れ替えた提出は存在しませんし、個々のつまみの値に科学的な面白さもありません。
-      この期間の全体は下表のとおりで、見てのとおり横ばいです。
+      「top500 の入れ替え」と「potent-46 の持ち上げ」は 2 つの編集ではなく、この 1 項です。
+      gate 抜きでメンバーだけを入れ替えた提出は存在しません。
+    </p>
+    <p>
+      id55 のあとも試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
+      gate のランク版 id58・id59）が、どれも超えられず、まったく同じファイルを id60 として
+      出し直して Phase 1 を終えました。これが最終エントリです。
     </p>
     <table class="metric-table">
       <thead>
@@ -797,14 +797,12 @@
         <tr class="hi"><th>id60</th><td>id55 resubmitted unchanged, final Phase 1 entry</td><td>0.4071</td></tr>
       </tbody>
     </table>
-    <p class="metrics-key">Phase 1 期間中の public LB MAE（AS1、253 化合物）。id60 が id55 と同じスコアなのは、同一ファイルだからです。上の順位表に出てくる 0.4059 は、のちの AS1 + AS2（513 化合物）に対する暫定採点であり、評価対象が異なります。Spearman が、このモデルがライブ板で保っていた約 0.845 ではなく 0.8343 と読めるのも同じ理由です。</p>
+    <p class="metrics-key">Phase 1 期間中の public LB MAE（AS1、253 化合物）。id60 が id55 と同じスコアなのは同一ファイルだからです。順位表の 0.4059 は AS1 + AS2（513 化合物）に対する中間採点で、評価対象が違います（Spearman が、ライブ板で保っていた約 0.845 ではなく 0.8343 と読めるのも同じ理由です）。</p>
     <p>
-      どれをもってしても直らなかったのが <strong>tail</strong> です。最も強力な化合物（pEC50 ≥ 6）は
-      系統的に過小予測されます。モデルはそれらを平均方向へ 1 log 単位近く縮めてしまい
-      （その区間でのバイアスは約 -0.8）、大域的な calibration では届きません。
-      分かりやすい手当て（強力化合物の持ち上げ、log2fc・環数・ファミリーギャップによる記述子 gate）は試しましたが、
-      public LB上ではどれもノイズと区別がつきませんでした。
-      tail は、Phase 1 で本当に未解決のまま残った唯一の箇所です。
+      どれを足しても直らなかったのが <strong>tail</strong> です。pEC50 ≥ 6 の帯は系統的に低く出て、
+      その区間の bias は約 −0.8。平均方向へ 1 log 近く縮んでおり、大域的な calibration では届きません。
+      持ち上げも記述子 gate（log2fc、環数、ファミリーギャップ）も試しましたが、
+      public LB 上ではどれもノイズと区別がつきませんでした。Phase 1 で唯一そのまま残った課題です。
     </p>
   </section>
 
