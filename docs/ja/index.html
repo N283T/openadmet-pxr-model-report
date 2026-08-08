@@ -756,8 +756,8 @@
       提出して、下がったものを残す。public LB を見ながらの作業でした。
     </p>
     <figure class="chart-figure">
-      <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 10: Phase 1 の public LB MAE（軸は 0.40 から）。素の Caruana ブレンド 0.4414 から calibration で 0.4154、seed 拡張メンバーで 0.4078 まで落ちたあとは横ばいです。コーラルの id55 が anchor になりました。</figcaption>
+      <div id="chart-phase1-run" class="chart" style="height:360px"></div>
+      <figcaption>Figure 10: Phase 1 終盤の 11 提出（public LB、AS1 253 化合物）。両軸ともスコアの入る範囲に寄せてあるので揺れが大きく見えますが、幅は MAE 0.0064・Spearman 0.0077 です。破線が anchor の水準で、そこに乗っているものは結果ではありません。中抜きの id60 は id55 と同じファイルです。</figcaption>
     </figure>
     <p>
       最終提出の <strong>id55</strong> は、補正済みアンサンブル（id51）に対して、
@@ -766,9 +766,16 @@
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
     <ul>
-      <li><strong>gate</strong> — Test 化合物の Morgan 最近傍を potent かつ selective な Train 46 件に対して測り、
-        Tanimoto 0.40 から 0.15 幅で緩やかに立ち上げます</li>
-      <li><strong>寄せる量</strong> — 0.35。寄せる先は top500 メンバーと素のアンサンブルの差です</li>
+      <li><strong>potent-46</strong> — Train のうち pEC50 ≥ 6 で、かつ counter assay に対する選択性
+        （pEC50 − counter pEC50）が 1.5 以上ある 46 化合物です。強く、しかも非特異的でない、
+        という条件で、狙いたい帯の見本になります。</li>
+      <li><strong>gate</strong> — Test 化合物ごとに、potent-46 に対する Morgan fingerprint の
+        最近傍 Tanimoto を測ります。0.40 未満では 0、0.55 以上で 1、その間は線形に上がる soft gate です。
+        硬い閾値にしないのは、境界付近の化合物が入るか外れるかで予測が跳ねるのを避けるためで、
+        実際に効くのは Test 513 件のうち一部だけです。</li>
+      <li><strong>寄せる量</strong> — gate が開いているところで、seed 拡張版の top500 メンバーと
+        素の Caruana ブレンドの差を 0.35 だけ足します。top500 に<strong>置き換える</strong>のではなく、
+        その方向へ 3 割ほど寄せる強さです。gate が 0 の化合物は id51 のままで、まったく動きません。</li>
     </ul>
     <p>
       「top500 の入れ替え」と「potent-46 の持ち上げ」は 2 つの編集ではなく、この 1 項です。
@@ -779,25 +786,7 @@
       gate のランク版 id58・id59）が、どれも超えられず、まったく同じファイルを id60 として
       出し直して Phase 1 を終えました。これが最終エントリです。
     </p>
-    <table class="metric-table">
-      <thead>
-        <tr><th>id</th><th>Change</th><th>Public-LB MAE</th></tr>
-      </thead>
-      <tbody>
-        <tr><th>id50</th><td>internal-decorrelation blend</td><td>0.4092</td></tr>
-        <tr><th>id51</th><td>meta-axis anchor over id50</td><td>0.4073</td></tr>
-        <tr><th>id52</th><td>re-pooled Boltz trunk swap</td><td>0.4087</td></tr>
-        <tr><th>id53</th><td>trunk core-only variant</td><td>0.4106</td></tr>
-        <tr><th>id54</th><td>id51 + potent gate</td><td>0.4096</td></tr>
-        <tr class="hi"><th>id55</th><td>id51 + gated top500 blend, soft potent-46 gate (anchor)</td><td>0.4071</td></tr>
-        <tr><th>id56</th><td>Optuna-tuned member swap</td><td>0.4135</td></tr>
-        <tr><th>id57</th><td>softer potent gate (g50)</td><td>0.4074</td></tr>
-        <tr><th>id58</th><td>combo gate rank</td><td>0.4075</td></tr>
-        <tr><th>id59</th><td>high-activity lift rank</td><td>0.4077</td></tr>
-        <tr class="hi"><th>id60</th><td>id55 resubmitted unchanged, final Phase 1 entry</td><td>0.4071</td></tr>
-      </tbody>
-    </table>
-    <p class="metrics-key">Phase 1 期間中の public LB MAE（AS1、253 化合物）。id60 が id55 と同じスコアなのは同一ファイルだからです。順位表の 0.4059 は AS1 + AS2（513 化合物）に対する中間採点で、評価対象が違います（Spearman が、ライブ板で保っていた約 0.845 ではなく 0.8343 と読めるのも同じ理由です）。</p>
+    <p class="metrics-key">id60 は台帳では 0.4059 と記録されていますが、これは AS1 + AS2（513 化合物）に対する中間採点で、他の 10 本が乗っているライブ板（AS1 のみ）とは評価対象が違います。同じファイルを同じ集合で採点し直しただけなら、Spearman が 0.845 前後から 0.8343 へ動くことはありません。図では id55 の値のまま置いています。</p>
     <p>
       どれを足しても直らなかったのが <strong>tail</strong> です。pEC50 ≥ 6 の帯は系統的に低く出て、
       その区間の bias は約 −0.8。平均方向へ 1 log 近く縮んでおり、大域的な calibration では届きません。

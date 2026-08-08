@@ -378,6 +378,7 @@
     { el: "chart-member-mae", file: "model_cards.json", build: optMemberMae },
     { el: "chart-boltz-pool", file: "boltz_pooling.json", build: optBoltzPooling },
     { el: "chart-calib-journey", file: "calibration_journey.json", build: optCalibJourney },
+    { el: "chart-phase1-run", file: "phase1_run.json", build: optPhase1Run },
     { el: "chart-phase2-as2", file: "phase2_as2.json", build: optPhase2As2 },
   ];
 
@@ -410,6 +411,99 @@
         label: { show: true, position: "top", color: p.muted, fontSize: 11,
           formatter: function (o) { return o.value.toFixed(3); } },
       }],
+    };
+  }
+
+  // The eleven Phase-1 endgame submissions. The shape is the argument: a flat
+  // run. Both axes are zoomed onto the range the scores occupy, which makes the
+  // wobble look larger than it is, so the anchor's own level is drawn across the
+  // full width -- anything sitting on that line is not a result.
+  function optPhase1Run(d, p) {
+    var rows = d.rows;
+    var anchor = rows.filter(function (r) { return r.anchor; })[0];
+    var pad = function (values, room) {
+      var lo = Math.min.apply(null, values), hi = Math.max.apply(null, values);
+      var span = (hi - lo) || 0.001;
+      return { min: lo - span * room, max: hi + span * room };
+    };
+    var mb = pad(rows.map(function (r) { return r.lbMae; }), 0.5);
+    var sb = pad(rows.map(function (r) { return r.spearman; }), 0.5);
+    // The resubmission carries the anchor's numbers, so a filled marker would
+    // read as a result of its own. Hollow instead.
+    var symbol = function (r) { return r.resubmit ? "emptyCircle" : "circle"; };
+    // axisStyle carries its own axisLabel, so it goes on first and the
+    // three-decimal formatter is merged over it rather than under it.
+    var valueAxis = function (name, color, bounds) {
+      var base = axisStyle(p);
+      return Object.assign({}, base, {
+        type: "value", name: name, min: bounds.min, max: bounds.max,
+        nameTextStyle: { color: color },
+        axisLabel: Object.assign({}, base.axisLabel, {
+          formatter: function (v) { return v.toFixed(3); },
+        }),
+      });
+    };
+    return {
+      textStyle: { color: p.ink, fontFamily: p.font },
+      grid: { left: 8, right: 8, top: 44, bottom: 8, containLabel: true },
+      legend: {
+        data: ["MAE", "Spearman"], top: 0, itemGap: 20,
+        textStyle: { color: p.muted, fontFamily: p.font, fontSize: 11 },
+      },
+      tooltip: {
+        trigger: "axis", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
+        formatter: function (points) {
+          var r = rows[points[0].dataIndex];
+          return "<b>" + r.id + "</b> " + r.label +
+            "<br/>public-LB MAE <b>" + r.lbMae.toFixed(4) + "</b>" +
+            "<br/>Spearman <b>" + r.spearman.toFixed(4) + "</b>" +
+            "<br/>rank " + r.rank +
+            (r.anchor ? "<br/><b>Phase 1 anchor</b>" : "") +
+            (r.resubmit ? "<br/>id55 と同じファイル" : "");
+        },
+      },
+      xAxis: Object.assign({
+        type: "category", boundaryGap: false,
+        data: rows.map(function (r) { return r.id; }),
+      }, axisStyle(p)),
+      yAxis: [
+        Object.assign(valueAxis("MAE", p.blue, mb), { position: "left" }),
+        Object.assign(valueAxis("Spearman", p.teal, sb), { position: "right", splitLine: { show: false } }),
+      ],
+      series: [
+        {
+          name: "MAE", type: "line", yAxisIndex: 0,
+          data: rows.map(function (r) {
+            return { value: r.lbMae, symbol: symbol(r), symbolSize: r.anchor ? 11 : 7 };
+          }),
+          lineStyle: { color: p.blue, width: 2 }, itemStyle: { color: p.blue },
+          markLine: {
+            silent: true, symbol: "none", precision: 4,
+            lineStyle: { color: p.coral, type: "dashed", width: 1.5 },
+            label: {
+              formatter: "anchor " + anchor.lbMae.toFixed(4), position: "insideStartBottom",
+              color: p.coral, fontSize: 11, fontFamily: p.font,
+            },
+            data: [{ yAxis: anchor.lbMae }],
+          },
+          markPoint: {
+            symbol: "circle", symbolSize: 12,
+            itemStyle: { color: p.coral, borderColor: p.surface, borderWidth: 2 },
+            label: {
+              formatter: anchor.id, position: "bottom", distance: 8,
+              color: p.coral, fontSize: 11, fontWeight: 700, fontFamily: p.font,
+            },
+            data: [{ coord: [rows.indexOf(anchor), anchor.lbMae] }],
+          },
+        },
+        {
+          name: "Spearman", type: "line", yAxisIndex: 1,
+          data: rows.map(function (r) {
+            return { value: r.spearman, symbol: symbol(r), symbolSize: 7 };
+          }),
+          lineStyle: { color: p.teal, width: 2 }, itemStyle: { color: p.teal },
+        },
+      ],
     };
   }
 
