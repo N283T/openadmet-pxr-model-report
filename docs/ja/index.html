@@ -651,16 +651,14 @@
 
     <h3>5.3 Boltz trunk (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
-      名前のとおり、この 2 つが使うのは Boltz-2 の <strong>trunk</strong>、つまり内部の学習済み
-      <strong>representation</strong> です。予測された 3D ポーズも、ドッキングや構造スコアも
-      一切使いません。構造予測器の上に建っている representation モデル、と読んでください。
+      この 2 つが使うのは Boltz-2 の <strong>trunk</strong>、つまり内部の学習済み
+      <strong>representation</strong> で、予測構造は使いません。
     </p>
     <p>
-      当初は <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> の予測構造と affinity head を
-      そのまま使うつもりでした。PXR（UniProt O75469、434 残基）を各リガンドと co-fold し、
-      ポーズか affinity スコアから活性を読む、という筋書きです。実際にはどちらも期待したほどではなく、
-      affinity スカラーは tabular core の弱い 1 列として残るにとどまりました。
-      そこで、<strong>representation として使う方法</strong>を考えることになります。
+      当初は PXR（UniProt O75469、434 残基）を各リガンドと
+      <a href="https://github.com/jwohlwend/boltz">co-fold</a> し、ポーズや affinity スコアから
+      活性を読むつもりでした。そちらは期待外れで、tabular core の弱い列として残るにとどまります（Table 4）。
+      そこで representation としての活用を考えました。
     </p>
     <p>
       取り出すのは trunk の 2 つのテンソル、トークン単位の <code>s</code> とトークン対の <code>z</code> です。
