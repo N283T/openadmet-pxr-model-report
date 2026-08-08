@@ -318,7 +318,7 @@
       凍結して下流を単純にするほど良くなりました。枠組みは論文のまま、下流だけ差し替えたことになります。
     </p>
 
-    <h3>Predicted log2fc: the strongest feature</h3>
+    <h3 id="pred-log2fc">Predicted log2fc: the strongest feature</h3>
     <p>
       戦略 <span class="strat-ref coral">2</span> の中身です。単一濃度 log2fc を予測する
       <strong>ChemProp</strong> モデルを学習し、その予測値 2 列（8.25&nbsp;µM と 33&nbsp;µM）を
@@ -468,7 +468,7 @@
           <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
           <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
           <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
-          <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
+          <tr><th><a href="#pred-log2fc">predicted log2fc</a></th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
         </tbody>
       </table>
       <figcaption>Table 4: tabular core が共有する 2,103 次元の内訳。predicted log2fc の 2 列は Strategy の章で扱ったものと同じで、この 2 メンバーが単独最強である理由でもあります。</figcaption>
@@ -478,19 +478,15 @@
     <p>
       <strong>CheMeleon</strong> は単独では強くありません（CheMeleon だけを TabPFN で読むと MAE は約 0.512）。
       それでもスタックに加えると明確に効き、同じ tabular core の MAE が 0.443 から 0.421 まで改善しました。
-      手作りの 2D 記述子では拾いきれない、学習済みの分子グラフ由来の事前知識を補っているのだと思います。
     </p>
     <div class="aside">
       <p>
-        ただし、この 300 次元は<strong>実装ミスの産物</strong>です。CheMeleon 本体の D-MPNN は隠れ 2,048 次元で、
-        本来はそちらを使うつもりでした。特徴量を作るスクリプトが checkpoint の message passing 部分だけを読み、
-        後段の regression FFN を未学習のまま新規に作って埋め込みを取り出していたため、
-        chemprop の FFN 既定幅である 300 次元が入っていました。
-      </p>
-      <p>
-        つまり上の 0.443 → 0.421 は、事前学習を通していない 300 次元で得た改善です。
-        2,048 次元での再検証は別途進めていて、<strong>OOF は改善するものの Test はさほど変わらない</strong>感触ですが、
-        数値が出たらここに追記します。
+        ただし、この 300 次元は<strong>実装ミス</strong>です。本来は CheMeleon 本体の 2,048 次元を使うつもりでしたが、
+        特徴量を作らせた Claude Code が事前学習層を通さない埋め込みを取り出していました。
+        つまり 0.443 → 0.421 は、その 300 次元で得た改善です。
+        2,048 次元での再検証は
+        <a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a> で進めていて、
+        <strong>OOF は改善するものの Test はさほど変わらない</strong>感触です。数値が出たらここに追記します。
       </p>
     </div>
     <h4>Boltz-2 features</h4>
@@ -507,7 +503,6 @@
         </tbody>
       </table>
     </div>
-    <p class="metrics-key">tier-1 のなかでは <code>pde_pocket_ligand_min</code> が、構造由来の特徴量として有用なほうでした。</p>
     <h4>top-500 selection</h4>
     <p>
       <strong>tabular-full</strong> は 2,103 特徴量をそのまま TabPFN に渡します。
