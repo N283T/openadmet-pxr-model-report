@@ -602,8 +602,8 @@ def build_phase1_run(dsn: str) -> None:
             "resubmit": True,
         }
     )
-    maes = [r["lbMae"] for r in rows]
-    rhos = [r["spearman"] for r in rows]
+    maes = [float(r["lbMae"]) for r in rows]
+    rhos = [float(r["spearman"]) for r in rows]
     _write(
         "phase1_run.json",
         {
@@ -740,7 +740,10 @@ def build_calibration_effect() -> None:
     scopes = []
     for key, label, split in CALIB_SCOPES:
         sub = d if split is None else d[d["split"] == split]
-        row = {"scope": label, "n": int(metrics.loc[(key, "raw"), "n"])}
+        row: dict[str, str | float] = {
+            "scope": label,
+            "n": int(metrics.loc[(key, "raw"), "n"]),
+        }
         for column, name in (
             ("MAE", "Mae"),
             ("RAE", "Rae"),
