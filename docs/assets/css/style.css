@@ -550,6 +550,12 @@ h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color:
 @media (max-width: 640px) { .scatter-grid { grid-template-columns: 1fr; } }
 
 .chart-figure { margin: 22px 0 4px; }
+/* A drawn figure rather than a chart. It carries its own light background, so
+   it is framed to read as a deliberate plate in the dark theme too. */
+.figure-img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line); border-radius: 12px;
+}
 /* Charts sit directly on the page, no card chrome. */
 .chart { width: 100%; }
 .chart + .chart { margin-top: 6px; }
