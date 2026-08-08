@@ -516,7 +516,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 5: TabPFN に残す上位 gain 特徴量の数を変えたときの OOF MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
+      <figcaption>Figure 5: TabPFN に残す上位 gain 特徴量の数を変えたときの OOF MAE（左軸）と Spearman ρ（右軸）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
@@ -682,7 +682,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 8: プーリング方法別の OOF MAE。コーラルの 2 本がアンサンブルに残したものです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 8: プーリング方法別の OOF MAE。色を変えた 2 本が、アンサンブルに残したものです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       trunk の各次元には解釈可能な名前がないので、非線形な readout が効きます。
@@ -801,9 +801,9 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 11: ブラインド解除後のラベルで測った AS2 MAE。Phase 1 の anchor 0.4075 から、提出した id63 は 0.4123 まで悪化しています。破線は優勝スコア 0.4061、ティールは作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 11: ブラインド解除後のラベルで測った AS2 MAE。Phase 1 の anchor 0.4075 から、提出した id63 は 0.4123 まで悪化しています。破線は優勝スコア 0.4061。右端の id55shape は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
-    <p>Phase 2 で下した判断は次の 3 つです。</p>
+    <p>Phase 2 では、おもに次の 3 つの操作を行いました。</p>
     <ul>
       <li><strong>AS1 ラベルでの再学習</strong> — 公開された AS1 を学習データに足して top500 を
         学習し直し、その予測を anchor に 0.45 混ぜた
