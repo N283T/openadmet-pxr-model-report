@@ -459,7 +459,7 @@
             "<br/>Spearman <b>" + r.spearman.toFixed(4) + "</b>" +
             "<br/>rank " + r.rank +
             (r.anchor ? "<br/><b>Phase 1 anchor</b>" : "") +
-            (r.resubmit ? "<br/>id55 と同じファイル" : "");
+            (r.resubmit ? "<br/>same file as id55" : "");
         },
       },
       xAxis: Object.assign({

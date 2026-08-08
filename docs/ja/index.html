@@ -75,7 +75,7 @@
     <p class="eyebrow">OpenADMET PXR Blind Challenge · 2026-04-01 → 07-01</p>
     <h1>Predicting PXR activation (pEC50) for 513 blinded compounds</h1>
     <p class="lede">
-      Model report for OpenADMET PXR Challenge Track&nbsp;1 (Activity) &mdash; N283T, final rank 4 of 95.
+      Model report for OpenADMET PXR Challenge Track&nbsp;1 (Activity) — N283T, final rank 4 of 95.
     </p>
     <div class="result-cards">
       <div class="result-card muted">
@@ -250,7 +250,7 @@
       </div>
       <div class="cascade__arrow">
         <span class="cascade__mark" aria-hidden="true">→</span>
-        <span class="cascade__note">一部だけが進む<br>件数の差は 500 倍以上</span>
+        <span class="cascade__note">件数の差は 500 倍以上</span>
       </div>
       <div class="cascade__tier is-hf">
         <span class="cascade__tag">high-fidelity</span>
@@ -272,8 +272,7 @@
     <p class="metrics-key">右端の数字は、51 ケース中でその戦略が最良だった回数です。</p>
     <p>
       論文の結論は、生ラベルを足すだけで MAE が 10〜40% 下がり、embedding はそれをさらに最大 10% 上回る、
-      というものです。ただし効くのは adaptive readout があるときだけで、表現を使った 41 勝のうち
-      40 がそちら側でした。
+      というものです。
     </p>
 
     <h4 id="adapting">Adapting it</h4>
@@ -564,14 +563,14 @@
     <h4>Why both?</h4>
     <p>
       単独性能はほぼ同じです（OOF 0.396 対 0.397）。問題は、選択の効果が OOF に限られていた疑いがあることです。
-      コンペ後に条件を揃えて比べると、top-500 は OOF では 0.3968 と full の 0.4056 を上回る一方、
+      コンペ後に条件を揃えて比べると、top500 は OOF では 0.3968 と full の 0.4056 を上回る一方、
       <strong>Test では 0.4327 対 0.4281 で逆転します</strong>
       (<a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a>)。
       fold ごとの選択そのものが OOF に効いてしまっている、と読むのが自然です。
     </p>
     <p>
       当時そこまで分かっていたわけではありませんが、両方を抱えて Caruana が重みをほぼ均等に割ったこと（top500 が 0.309、full が 0.288）は、結果としてこのズレに対する保険になっていました。
-      実際、top-500 側に寄せた入れ替え（id56）は OOF では最良に見えたのに、
+      実際、top500 側に寄せた入れ替え（id56）は OOF では最良に見えたのに、
       public LB を 0.4071 から 0.4135 へ悪化させています。
     </p>
     <div class="aside">
@@ -618,7 +617,7 @@
     </p>
     <p>
       pred log2fc を鋭くしたのは <strong>seed averaging</strong> でした。複数シードで事前学習して予測を平均し、
-      5 → 10 シードで下流が改善（top-500 の OOF MAE 0.399 → 0.397）、15 シードで頭打ちになったので止めています。
+      5 → 10 シードで下流が改善（top500 の OOF MAE 0.399 → 0.397）、15 シードで頭打ちになったので止めています。
     </p>
     <div class="aside">
       <p>
@@ -732,7 +731,7 @@
     <h3>How much did it buy? <span class="badge post">post-challenge</span></h3>
     <p>
       提出履歴の中では、calibration の効果とメンバー改善が混ざって見えます。そこで最終アンサンブル重みで
-      raw と calibrated を<strong>同じ 1 回の実行から</strong>出し直しました（unblinded test 513 件、Table&nbsp;11）。
+      raw と calibrated を<strong>同じ 1 回の実行から</strong>出し直しました（unblinded Test 513 件、Table&nbsp;11）。
     </p>
     <figure class="chart-figure" id="tbl-calib">
     <div class="table-scroll">
@@ -741,7 +740,7 @@
         <tbody data-calib-metrics></tbody>
       </table>
     </div>
-      <figcaption>Table 11: 最終アンサンブル重みでの、補正前と補正後の指標（unblinded test 513 件）。同じ 1 回の実行から出したものです。</figcaption>
+      <figcaption>Table 11: 最終アンサンブル重みでの、補正前と補正後の指標（unblinded Test 513 件）。同じ 1 回の実行から出したものです。</figcaption>
     </figure>
     <p>
       MAE は <strong>0.4209 → 0.4077</strong>、bias は −0.056 → +0.002。
