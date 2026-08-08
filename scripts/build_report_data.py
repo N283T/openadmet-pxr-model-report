@@ -575,7 +575,9 @@ def build_phase1_run(dsn: str) -> None:
         raise SystemExit("the id order and the submission order disagree")
     anchor = df.loc[PHASE1_ANCHOR_ID]
     if df.loc[PHASE1_RESUBMIT[0], "file_path"] != anchor["file_path"]:
-        raise SystemExit("id60 no longer points at id55's file; it is not a resubmission")
+        raise SystemExit(
+            "id60 no longer points at id55's file; it is not a resubmission"
+        )
 
     rows = [
         {
