@@ -595,25 +595,13 @@
       （<a href="#adapting">Adapting it</a>）。encoder を pEC50 で fine-tune しないほうが良かったことは、
       同じ節の Table 2 のとおりです。
     </p>
-    <div class="table-scroll">
-      <table class="metric-table">
-        <thead><tr><th>Member</th><th class="bk">Backbone</th><th>Embed dims</th><th>OOF MAE</th><th>Weight</th></tr></thead>
-        <tbody>
-          <tr><th>ChemProp</th><td class="bk">D-MPNN</td><td>256</td><td>0.437</td><td>0.151</td></tr>
-          <tr><th>KERMT</th><td class="bk">graph transformer</td><td>3,200</td><td>0.448</td><td>0.111</td></tr>
-          <tr><th>MoLFormer</th><td class="bk">SMILES transformer</td><td>768</td><td>0.475</td><td>0.040</td></tr>
-          <tr><th>GatedGCN</th><td class="bk">gated GNN</td><td>512</td><td>0.474</td><td>0.018</td></tr>
-          <tr><th>AttentiveFP</th><td class="bk">graph attention</td><td>512</td><td>0.484</td><td>0.002</td></tr>
-        </tbody>
-      </table>
-    </div>
 
     <h4>ChemProp</h4>
     <p>
       <a href="https://chemprop.readthedocs.io/en/latest/">ChemProp</a> はこのレシピの原型であり、embedding 系では最強のメンバーです（OOF MAE 0.437、Caruana 重み 0.151）。
       しかもこのモデルは二重に効いています。同じ「log2fc を予測する ChemProp」が
       tabular core の <strong>pred log2fc</strong> 列を生み出しており（<a href="#strategy">Strategy</a> と 5.1）、
-      その 256 次元の frozen embedding が、この独立したメンバーになっているからです。
+      その D-MPNN から取り出した 256 次元の frozen embedding が、この独立したメンバーになっているからです。
       同じ log2fc 信号を、鋭い prediction としてと、広がりのある representation としての 2 通りで注入していることになります。
     </p>
     <p>log2fc の事前学習は、小さなマルチタスク構成です。</p>
