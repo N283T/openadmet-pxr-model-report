@@ -312,7 +312,7 @@
           </tbody>
         </table>
       </div>
-      <figcaption>Table 2: 同じ log2fc 事前学習済み ChemProp に対して、下流だけを変えたときの out-of-fold 成績。</figcaption>
+      <figcaption>Table 2: 同じ log2fc 事前学習済み ChemProp に対して、下流だけを変えたときの OOF 成績。</figcaption>
     </figure>
     <p>
       凍結して下流を単純にするほど良くなりました。枠組みは論文のまま、下流だけ差し替えたことになります。
@@ -515,7 +515,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 5: TabPFN に残す上位 gain 特徴量の数を変えたときの out-of-fold MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
+      <figcaption>Figure 5: TabPFN に残す上位 gain 特徴量の数を変えたときの OOF MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
@@ -564,20 +564,15 @@
     <p>
       当時そこまで分かっていたわけではありませんが、両方を抱えて Caruana が重みをほぼ均等に割ったこと
       （top500 が 0.309、full が 0.288）は、結果としてこのズレに対する保険になっていました。
-      実際、top-500 側に寄せた入れ替え（id56）は out-of-fold では最良に見えたのに、
+      実際、top-500 側に寄せた入れ替え（id56）は OOF では最良に見えたのに、
       public LB を 0.4071 から 0.4135 へ悪化させています。
     </p>
     <div class="aside">
       <p>
-        コンペ後の補足です。ブラインドが解除された AS2 に対してメンバー重みを再最適化してみると、
-        この軸が実在すること、そして同時に信じすぎやすいことの両方が確認できました。
-        我々の top500 重み（0.31）は AS2 最適値（0.33）に近く、単純にゼロにしていればわずかに上回れていました。
-        問題は top500 そのものではなく、out-of-fold での最適化が top500 の重みを 0.84 まで膨らませ、
-        それが AS2 で破綻する、という失敗の形にあります。
-        以下の行は公開された AS2 ラベルに対する事後のメンバー重み検討
-        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) であり、
-        Phase 2 の実際の提出そのものではありません（提出のほうは tail gate の分だけ数値が高くなっています。
-        <a href="#phase2">7 章</a>参照）。
+        公開された AS2 ラベルで重みを再最適化すると、同じことが数字で出ます
+        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>)。
+        実際に使った 0.31 は AS2 最適の 0.33 に近い一方、<strong>OOF に合わせて最適化すると 0.84 まで膨らみ、
+        AS2 は 0.422 まで悪化します</strong>。
       </p>
       <div class="table-scroll">
         <table class="metric-table">
@@ -586,10 +581,11 @@
             <tr><th>Our weights (as used)</th><td>0.31</td><td>0.405</td></tr>
             <tr><th>Zero the top500 weight</th><td>0.00</td><td>0.402</td></tr>
             <tr><th>Optimized on AS2 (oracle)</th><td>0.33</td><td>0.399</td></tr>
-            <tr><th>Optimized on out-of-fold</th><td>0.84</td><td>0.422</td></tr>
+            <tr><th>Optimized on OOF</th><td>0.84</td><td>0.422</td></tr>
           </tbody>
         </table>
       </div>
+      <p class="metrics-key">Phase 2 の提出そのものではなく、AS2 ラベルに対する事後のメンバー重み検討です。</p>
     </div>
 
     <h3>5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
@@ -630,7 +626,7 @@
       <li>濃度ごとに 1 つずつ、<strong>2 つの回帰ヘッド</strong>（8.25 µM と 33 µM の log2fc）。</li>
       <li>13,136 化合物すべてで学習し、欠測している目的変数はマスクします。</li>
       <li>ハイパーパラメータは <a href="https://optuna.org/">Optuna</a> で探索しますが、
-        最適化対象は log2fc の損失そのものではなく、下流の pEC50 out-of-fold MAE です。</li>
+        最適化対象は log2fc の損失そのものではなく、下流の pEC50 OOF MAE です。</li>
     </ul>
     <p>
       pred log2fc を鋭くする上で主に効いたのは <strong>seed averaging</strong> でした。
@@ -641,16 +637,16 @@
     </p>
     <p>
       encoder を fine-tune せずに凍結し、その embedding を TabPFN で読む、というのが
-      Buterez et&nbsp;al. から持ってきたレシピです（Strategy の章）。直接の代替案はどれも out-of-fold で劣りました。
+      Buterez et&nbsp;al. から持ってきたレシピです（Strategy の章）。直接の代替案はどれも OOF で劣りました。
       pEC50 スクラッチ 0.530、全体 fine-tune 0.507、head のみ fine-tune 0.456 に対し、frozen embedding は 0.437 です。
       これによって、frozen embedding のレシピが以降すべてのメンバーの雛形になりました。
     </p>
     <div class="aside">
       <p>
-        ひとつ書き添えておくべき奇妙な点があります。この out-of-fold の数字は、frozen レシピの優位を過大に見せていました。
-        ChemProp を pEC50 で直接学習した場合、out-of-fold では約 0.53 と弱いのに、
+        ひとつ書き添えておくべき奇妙な点があります。この OOF の数字は、frozen レシピの優位を過大に見せていました。
+        ChemProp を pEC50 で直接学習した場合、OOF では約 0.53 と弱いのに、
         ブラインド解除後の Test（AS1 + AS2）では約 0.48 に達し、同じ Test での frozen embedding メンバー（0.44）にかなり近づきます。
-        frozen レシピが勝ったこと自体は変わりませんが、その差は out-of-fold の順位付けが誇張していたわけです。
+        frozen レシピが勝ったこと自体は変わりませんが、その差は OOF の順位付けが誇張していたわけです。
         OOF と Test が食い違った、もう 1 つの小さな例です。
       </p>
     </div>
@@ -666,10 +662,10 @@
       どちらも tabular core と約 0.92 の相関で予測しますが（同じ log2fc 信号なので当然です）、
       backbone が違う分だけ誤差の出方がずれ、その差で重みを獲得しています。
       すべての backbone が基準を満たしたわけではありません。<strong>ChemBERTa</strong>
-      （5M / 10M のマルチタスク回帰版）は同じ frozen レシピに通しても out-of-fold で 0.53 前後にとどまり、
+      （5M / 10M のマルチタスク回帰版）は同じ frozen レシピに通しても OOF で 0.53 前後にとどまり、
       Caruana の add-value 判定を通らず（MAE の改善なし、重みも無視できる大きさ）、外しました。
       より惜しかったのが <strong><a href="https://github.com/deepmodeling/Uni-Mol">UniMol-v2</a></strong> です。
-      3D 配座の基盤モデルに同じ log2fc の frozen 事前学習を施したところ、out-of-fold で約 0.484 という
+      3D 配座の基盤モデルに同じ log2fc の frozen 事前学習を施したところ、OOF で約 0.484 という
       残ったメンバーに迫る水準に達しましたが、Caruana が保持するだけの付加価値は得られませんでした。
       一方で MoLFormer-XL を pEC50 に直接 fine-tune する路線は 0.529 と弱く、ここでも ChemProp と同じ教訓が繰り返されました。
     </p>
@@ -682,7 +678,7 @@
       単独では弱く（0.474、0.484）、重みもごく小さい（0.018、0.002）です。
       本当の役割は、このアンサンブル全体が目的としているもの、すなわち
       Caruana が top500 / cheme-log2fc のコアにすべてを寄せ直してしまうのを防ぐ <strong>buffer</strong> です。
-      外すと out-of-fold は良くなりますが、系統シェアが 0.94 近くまで上がり、
+      外すと OOF は良くなりますが、系統シェアが 0.94 近くまで上がり、
       その過集中がリーダーボードでは悪化を招きました。約 0.02 のメンバー重みを削ったことが、
       コア側では約 0.1 の増加に増幅され、MAE で約 0.006 のコストになったのです。
       重みが小さいことは、外して安全であることを意味しませんでした。
@@ -744,7 +740,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 7: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 7: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（OOF MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
@@ -764,14 +760,14 @@
       同じベクトルに対して TabPFN（0.486）が LightGBM と MLP（0.512、0.538）を上回りました。
       重みはそれぞれ小さいものの（0.046、0.035）、2D 記述子と log2fc で組み上がったアンサンブルに、
       2 つ合わせて確かに異質な軸を加えています。これらを外したり、
-      再プーリングした変種に差し替えたりすると out-of-fold は良く見えるのにリーダーボードでは悪化しました。
+      再プーリングした変種に差し替えたりすると OOF は良く見えるのにリーダーボードでは悪化しました。
       追加 GNN のときと同じ逆方向の増幅です。そのため、構造由来の予備戦力として残しています。
     </p>
     <p>
       一歩引くと、この 2 つはあることを示唆しています。まず、<strong>log2fc をまったく持たない</strong>唯一のメンバーです。
       test 予測で見ると、アンサンブルの中で最も decorrelated にも見えます（他メンバーとの一致は平均で約 0.85 と、
       約 0.88 の集団より低い。ただし独立とは到底言えません）。もっとも 4 章で述べたとおり、この順序は
-      out-of-fold では成り立たず、そちらでは約 0.92 と集団の中ほどに収まります。
+      OOF では成り立たず、そちらでは約 0.92 と集団の中ほどに収まります。
       他のすべてのメンバーを支えている log2fc 信号を一切持たずに、
       <strong>co-fold した構造だけから約 0.486</strong> に達しているという事実は、
       Boltz の representation が単独でも実質的な信号を持っていることを示しています。
@@ -805,7 +801,7 @@
     <p>
       ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
       素の予測 pEC50 から補正後の pEC50 への 1 次元の写像を、
-      4,140 件の out-of-fold 予測と真のラベルの対で当てはめます。傾き正のアフィン当てはめ（isotonic 版も併用）で、
+      4,140 件の OOF 予測と真のラベルの対で当てはめます。傾き正のアフィン当てはめ（isotonic 版も併用）で、
       calibrator 自体が過学習しないよう 5-fold のネスト CV で検証しました。
       実際に採用した <code>calibrated_importance</code> は、これに共変量シフト補正を加えています。
       Train の各化合物を密度比 P(test|x) / (1 - P(test|x))（[1/3, 3] にクリップ）で重み付けし、
