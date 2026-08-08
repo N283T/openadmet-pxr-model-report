@@ -199,26 +199,31 @@
     <p>
       最初は pEC50 の学習ラベルだけから特徴量とモデルを作っていました。しかし
       pEC50 のラベルは <strong>4,140</strong> 件しかなく、精度はすぐ頭打ちになります。
-      一方で配布データには、もっと安価な PXR アッセイも含まれていました。単一濃度のレポーターアッセイで、
-      8.25&nbsp;µM と 33&nbsp;µM における
-      <strong>log2 fold-change</strong>（log2fc）が、はるかに多くの化合物について測られています。
-      この補助信号があること自体は分かっていたものの、うまい使い方が分かりませんでした。
-      擬似 pEC50 ラベルに変換するといった素朴なやり方は、精度を下げるだけでした。
+      一方で配布データには、単一濃度のレポーターアッセイ（8.25&nbsp;µM と 33&nbsp;µM の
+      <strong>log2 fold-change</strong>、log2fc）が補助データとして含まれており、こちらは
+      はるかに多くの化合物をカバーしています。この補助信号があること自体は分かっていたものの、
+      うまい使い方が分かりませんでした。擬似 pEC50 ラベルに変換するといった素朴なやり方は、
+      精度を下げるだけでした。
     </p>
-    <p>
-      このデータセットは実質的に多段のアッセイ・ファネルで、測定ラベルごとに到達している化合物が違います。
-      用量反応からは <strong>pEC50</strong> と <strong>Emax</strong>（efficacy）が得られ、
-      PXR-null の <strong>counter assay</strong> が選択性の読み出しを加え、
-      単一濃度スクリーニングは、完全な用量反応曲線まで進む化合物よりずっと多くの化合物について
-      <strong>log2fc</strong> を提供します。この単一濃度スクリーニングは
-      <strong>2 つの濃度</strong>（8.25&nbsp;µM と 33&nbsp;µM）で log2fc を報告するので、
-      1 化合物あたり 2 つの測定値になります。どのグループがどのラベルを持っているかは下の図のとおりです。
-      スクリーニング全体のファネルを描いた OpenADMET 自身のデータセット構築図は、
-      <a href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Phase 1 のブログ記事</a>にあります。
-    </p>
+    <ul>
+      <li>配布されるのは <strong>Train / Test / AUX data</strong> の 3 つで、揃っている項目はそれぞれ違います。</li>
+      <li><strong>Test は SMILES のみ</strong>。実測値が一切ないので、テスト時に使える log2fc も存在しません。</li>
+      <li>log2fc は 2 濃度で測られるので、1 化合物あたり 2 つの測定値になります。</li>
+    </ul>
     <figure class="chart-figure">
-      <div id="chart-coverage" class="chart" style="height:280px"></div>
-      <figcaption>図 1: 化合物グループ別の測定ラベル被覆率。セルの濃さはそのグループのうち当該ラベルを持つ割合、セル内の数字は件数です。ブラインドのテストセットは測定ラベルを一切持ちません（構造のみ）。log2fc は 2 濃度（8.25 と 33 µM）で測定されています。</figcaption>
+      <div class="table-scroll">
+        <table class="roster-table">
+          <thead>
+            <tr><th>Dataset</th><th>Compounds</th><th class="c">SMILES</th><th class="c">pEC50</th><th class="c">Emax</th><th class="c">counter assay</th><th class="c">log2fc 8.25 µM</th><th class="c">log2fc 33 µM</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>Train</th><td class="num">4,139</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="part">2,859</span></td><td class="c"><span class="part">2,375</span></td><td class="c"><span class="part">2,321</span></td></tr>
+            <tr><th>Test</th><td class="num">513</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td></tr>
+            <tr><th>AUX data</th><td class="num">10,870</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="part">2,360</span></td><td class="c"><span class="part">10,747</span></td><td class="c"><span class="part">9,523</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption>図 1: 配布データの内訳。✓ は全件にあるもの、数字はその件数にだけあるもの、✗ はそのデータには無いものです。アッセイ全体のファネルは、<a href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Phase 1 のブログ記事</a>にある OpenADMET 自身のデータセット構築図が詳しいです。</figcaption>
     </figure>
 
     <h3>Finding Buterez et al.</h3>

@@ -274,6 +274,9 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 .roster-table .fam-structural { color: var(--color-coral); font-weight: 600; }
 .roster-table .yes { color: #3f9e8b; font-weight: 700; }
 .roster-table .no { color: var(--color-coral); font-weight: 800; }
+/* Partial coverage: the count of rows that carry the column, not all of them. */
+.roster-table .part { color: var(--muted); font-variant-numeric: tabular-nums; }
+.roster-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Boltz pooled-vector composition strip (mimics the 1024-d block diagram) */
 .vblocks { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 6px; }
