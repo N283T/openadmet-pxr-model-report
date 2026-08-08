@@ -693,10 +693,11 @@
       MoLFormer-XL を直接 fine-tune した路線が 0.529 止まりだったことと並べれば、なおさらです。
     </p>
     <p>
-      ただし、log2fc なしでそこまで届くのは Boltz だけではありません。ブラインド解除後の Test では、
-      pEC50 でスクラッチ学習した ChemProp も約 0.484 に達しています。
-      それでも、少なくともこの標的では <strong>Boltz-2 は予測構造や affinity として使うより、
+      少なくともこの標的では、<strong>Boltz-2 は予測構造や affinity として使うより、
       学習済みの representation として読むほうが価値がありました</strong>。
+      構造生成や長い diffusion を回さず trunk だけ取り出すなら軽く済むので、大きな化合物集合にも掛けられます。
+      ポーズを出す道具ではなく <strong>protein-aware な表現抽出器</strong>として使う、
+      という方向に可能性があるかもしれません。PXR 1 標的の結果なので、一般化を主張するのはまだ早いですが。
     </p>
   </section>
 
