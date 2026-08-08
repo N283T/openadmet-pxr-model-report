@@ -3,20 +3,31 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "pandas",
+#     "psycopg[binary]",
 #     "pyarrow",
 # ]
 # ///
 """Build the JSON chart data for the PXR model-report GitHub Pages site.
 
-This script reads the *local, un-committed* challenge working repo and emits
-small aggregated / per-point JSON files under ``docs/assets/data/``. Only the
-data actually needed to render the report charts is exported; raw feature
-matrices, checkpoints and full prediction pools stay out of the public repo.
+This script emits small aggregated / per-point JSON files under
+``docs/assets/data/``. Only the data actually needed to render the report charts
+is exported; raw feature matrices, checkpoints and full prediction pools stay
+out of the public repo.
+
+Measured data comes from the challenge's working **database** — compounds,
+assays, leaderboard rows — because it is the state the models were built
+against. The parquets the challenge later distributed are a newer revision with
+some compounds removed, so they no longer match the runs described here.
+
+What still comes from the working repo, because the database does not hold it:
+the per-model submission CSVs and member weights, the LightGBM gain audit, the
+Boltz pooling report, and the Phase 2 answer-key replays.
 
 Usage:
-    ./scripts/build_report_data.py [--src /path/to/pxr-iduction-challenge]
+    ./scripts/build_report_data.py [--src /path/to/pxr-iduction-challenge] [--dsn ...]
 
-The source repo defaults to a sibling checkout. Nothing here reaches the network.
+The source repo defaults to a sibling checkout and the database to the local
+cluster. Nothing here reaches the network.
 """
 
 from __future__ import annotations
@@ -28,6 +39,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import psycopg
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger("build_report_data")
@@ -37,6 +49,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT.joinpath("docs", "assets", "data")
 
 DEFAULT_SRC = Path("/home/nagaet/pxr-iduction-challenge")
+# The challenge's working database, restored from the dump (see the slide repo's
+# db/README.md). Anything measured per compound comes from here rather than from
+# the distributed parquets: a later data update removed compounds the models
+# were actually trained on, so the parquets no longer match the runs.
+DEFAULT_DSN = "host=/tmp port=5433 user=postgres dbname=pxr"
 
 AS1_TRUE_CSV = (
     "data",
@@ -74,7 +91,7 @@ GAIN_AUDIT_CSV = (
     "feature_gain_summary.csv",
 )
 GAIN_FAMILY_LABEL = {
-    "log2fc_pred": "predicted log2fc",
+    "log2fc_pred": "pred log2fc",
     "mordred": "Mordred",
     "chemeleon": "CheMeleon",
     "boltz_tier1_conf": "Boltz-2 tier-1",
@@ -87,31 +104,92 @@ GAIN_TOP_N = 12
 # Per-compound master table + predicted log2fc + raw provided train files.
 MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
-DEFAULT_TRAIN_PARQUET = ("data", "default_train.parquet")
-SINGLECONC_TRAIN_PARQUET = ("data", "single_concentration_train.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
 CONC_33 = 3.30e-5  # 33 uM
+# Single-concentration rows sit a hair off the nominal molarity, so match within
+# a percent rather than on equality.
+# One row per training compound: the label, the descriptors and Boltz-2 columns
+# the correlation strip reads, and the observed log2fc at each concentration.
+# Everything joins on compound_id.
+TRAIN_FEATURES_SQL = """
+    WITH obs AS (
+        SELECT compound_id,
+               avg(log2_fc_estimate) FILTER (
+                   WHERE abs(concentration_m - %(c8)s) <= %(c8)s * 0.02) AS obs_8p25,
+               avg(log2_fc_estimate) FILTER (
+                   WHERE abs(concentration_m - %(c33)s) <= %(c33)s * 0.02) AS obs_33
+          FROM single_concentration
+         WHERE log2_fc_estimate IS NOT NULL
+         GROUP BY compound_id
+    )
+    SELECT a.compound_id, a.pec50,
+           o.obs_8p25, o.obs_33,
+           b.affinity_pred_value, b.confidence_score, b.iptm,
+           d.logp, d.amw, d.num_aromatic_rings, d.hbd, d.num_rotatable_bonds
+      FROM train_activity a
+      LEFT JOIN obs o USING (compound_id)
+      LEFT JOIN compound_boltz2 b USING (compound_id)
+      LEFT JOIN compound_descriptors d USING (compound_id)
+"""
+# Group sizes and per-label counts for the coverage grid. "aux" is a compound
+# with a single-concentration row that is neither train nor test.
+COVERAGE_SQL = """
+    WITH tr AS (SELECT DISTINCT compound_id FROM train_activity),
+         te AS (SELECT DISTINCT compound_id FROM test_activity),
+         sc AS (SELECT DISTINCT compound_id FROM single_concentration
+                 WHERE log2_fc_estimate IS NOT NULL),
+         aux AS (SELECT compound_id FROM sc
+                 EXCEPT SELECT compound_id FROM tr
+                 EXCEPT SELECT compound_id FROM te),
+         ct AS (SELECT DISTINCT compound_id FROM counter_assay WHERE pec50 IS NOT NULL)
+    SELECT 'train' AS grp, (SELECT count(*) FROM tr) AS n,
+           (SELECT count(*) FROM train_activity WHERE pec50 IS NOT NULL) AS pec50,
+           (SELECT count(*) FROM train_activity WHERE emax_estimate IS NOT NULL) AS emax,
+           (SELECT count(*) FROM ct JOIN tr USING (compound_id)) AS counter,
+           (SELECT count(*) FROM sc JOIN tr USING (compound_id)) AS log2fc
+    UNION ALL
+    SELECT 'test', (SELECT count(*) FROM te), 0, 0,
+           (SELECT count(*) FROM ct JOIN te USING (compound_id)),
+           (SELECT count(*) FROM sc JOIN te USING (compound_id))
+    UNION ALL
+    SELECT 'aux', (SELECT count(*) FROM aux), 0, 0,
+           (SELECT count(*) FROM ct JOIN aux USING (compound_id)),
+           (SELECT count(*) FROM sc JOIN aux USING (compound_id))
+"""
+# The public-leaderboard row for each submission id.
+LB_SUBMISSIONS_SQL = "SELECT id, lb_mae, lb_spearman FROM lb_submissions"
+# Mean fold MAE for a named experiment: each member's single-model OOF score.
+MEMBER_OOF_SQL = """
+    SELECT e.name, avg(r.mae) AS oof_mae
+      FROM experiments e
+      JOIN experiment_cv_results r ON r.experiment_id = e.id
+     WHERE e.name = ANY(%(names)s)
+     GROUP BY e.name
+"""
 # Representative features for the correlation heatmap.
 # (full label, short column header, master/pred column, family).
 # Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
 # by |correlation| within each family.
+#
+# The observed log2fc is split per concentration rather than carried as one
+# max-over-both column, so that "observed log2fc" means the same thing here as
+# in the scatter panels. The columns that came out near zero are dropped rather
+# than drawn: TPSA, fCsp3 and HBA at |r| <= 0.07, then Boltz-2 confidence, HBD
+# and rotatable bonds, which were crowding the strip without saying anything.
 FEATURE_CORR = [
     ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred", "log2fc"),
     ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred", "log2fc"),
-    ("Observed log2fc (max)", "obs log2fc", "single_max_log2_fc", "log2fc"),
-    ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred", "boltz"),
-    ("Boltz-2 confidence", "Boltz conf.", "b2_confidence", "boltz"),
-    ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm", "boltz"),
+    ("Observed log2fc (8.25 µM)", "obs 8.25µM", "obs_8p25", "log2fc"),
+    ("Observed log2fc (33 µM)", "obs 33µM", "obs_33", "log2fc"),
+    ("Boltz-2 affinity", "Boltz aff.", "affinity_pred_value", "boltz"),
+    ("Boltz-2 ipTM", "Boltz ipTM", "iptm", "boltz"),
     ("logP", "logP", "logp", "desc"),
-    ("TPSA", "TPSA", "tpsa", "desc"),
     ("Mol. weight", "MW", "amw", "desc"),
-    ("Fraction Csp3", "fCsp3", "fractioncsp3", "desc"),
     ("Aromatic rings", "arom. rings", "num_aromatic_rings", "desc"),
-    ("H-bond donors", "HBD", "hbd", "desc"),
-    ("H-bond acceptors", "HBA", "hba", "desc"),
-    ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds", "desc"),
 ]
 FEATURE_CORR_FAMILY_ORDER = {"log2fc": 0, "boltz": 1, "desc": 2}
+# The columns the section is arguing for; the chart boxes them.
+FEATURE_CORR_PICK = {"log2fc_8p25_pred", "log2fc_33_pred"}
 # Label-coverage matrix: which compound group carries which measured label.
 # Groups are (display name, master flag column); a compound is "aux" if it has a
 # single-concentration row but is neither train nor test.
@@ -120,13 +198,13 @@ COVERAGE_GROUPS = [
     ("Blinded test", "test"),
     ("Single-conc-only aux", "aux"),
 ]
-COVERAGE_LABELS = [
-    ("pEC50", "train_pec50"),
-    ("Emax", "train_emax"),
-    ("Counter", "counter_pec50"),
-    ("log2fc", "single_max_log2_fc"),
-]
+COVERAGE_LABEL_NAMES = ["pEC50", "Emax", "Counter", "log2fc"]
+COVERAGE_LABELS = ["pec50", "emax", "counter", "log2fc"]
 
+
+# Which of the paper's six augmentation strategies a member applies. The Boltz
+# trunk pair is outside them: no low-fidelity signal is involved at all.
+MEMBER_STRATEGY = {"tabular": 2, "embed": 4, "structural": None}
 
 # Human-readable labels for the production ensemble members.
 # Production ensemble members (canonical list from the Track-1 strategy report):
@@ -134,81 +212,81 @@ COVERAGE_LABELS = [
 ENSEMBLE_MEMBERS = [
     {
         "key": "cheme_t10_full",
+        "experiment": "tabpfn_cheme_2d_full_boltz_log2fc_pred_optuna_trial10_seed5ens_umap_default",
         "alias": "tabular-full",
         "label": "CheMeleon + 2D + Boltz + pred (full, 2103d)",
-        "oofMae": 0.396,
         "role": "broad tabular core",
         "family": "tabular",
         "usesLog2fc": True,
     },
     {
         "key": "cheme_t10_top500",
+        "experiment": "tabpfn_cheme_2d_full_boltz_log2fc_pred_seed10ens_top500_umap",
         "alias": "tabular-top500",
         "label": "same feature stack, LightGBM-gain top-500",
-        "oofMae": 0.397,
         "role": "selected tabular core",
         "family": "tabular",
         "usesLog2fc": True,
     },
     {
         "key": "chemprop_embed",
+        "experiment": "tabpfn_chemprop_pretrain_embed_umap_default",
         "alias": "ChemProp",
         "label": "ChemProp D-MPNN, log2fc-pretrained embed",
-        "oofMae": 0.437,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "kermt",
+        "experiment": "tabpfn_kermt_pretrain_embed_umap_default",
         "alias": "KERMT",
         "label": "KERMT graph-transformer, log2fc-pretrained embed",
-        "oofMae": 0.449,
         "role": "frozen graph-transformer",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "pooled_boltz",
+        "experiment": "tabpfn_pooled_boltz_umap_default",
         "alias": "Boltz-pocket",
         "label": "Boltz-2 trunk, pooled over the core pocket",
-        "oofMae": 0.486,
         "role": "structural reserve",
         "family": "structural",
         "usesLog2fc": False,
     },
     {
         "key": "molformer_c3",
+        "experiment": "tabpfn_molformer_c3_pretrain_embed_umap",
         "alias": "MoLFormer",
         "label": "MoLFormer-c3, log2fc-pretrained embed",
-        "oofMae": 0.475,
         "role": "frozen transformer",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "pooled_boltz_allpairs",
+        "experiment": "tabpfn_pooled_boltz_allpairs_umap_default",
         "alias": "Boltz-allpairs",
         "label": "Boltz-2 trunk, pooled over all protein-ligand pairs",
-        "oofMae": 0.486,
         "role": "structural reserve",
         "family": "structural",
         "usesLog2fc": False,
     },
     {
         "key": "gatedgcn",
+        "experiment": "tabpfn_gatedgcn_pretrain_embed_umap_default",
         "alias": "GatedGCN",
         "label": "GatedGCN, log2fc-pretrained embed",
-        "oofMae": 0.474,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
     },
     {
         "key": "attentivefp",
+        "experiment": "tabpfn_attentivefp_pretrain_embed_umap_default",
         "alias": "AttentiveFP",
         "label": "AttentiveFP, log2fc-pretrained embed",
-        "oofMae": 0.484,
         "role": "frozen GNN embed",
         "family": "embed",
         "usesLog2fc": True,
@@ -269,15 +347,22 @@ def _load_true_labels(src: Path) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True).dropna(subset=["true"])
 
 
-def build_ensemble_members(src: Path) -> None:
-    """Production ensemble members; Caruana weights from the reweight audit (old_prod)."""
+def build_ensemble_members(src: Path, dsn: str) -> None:
+    """Production ensemble members: OOF from the run log, weights from the reweight audit."""
     w = pd.read_csv(src.joinpath(*MEMBER_WEIGHTS_CSV))
     prod = w[(w["stage"] == "pre_as1") & (w["weight_source"] == "old_prod")]
     weight_by_key = prod.set_index("member")["weight"]
+    names = [m["experiment"] for m in ENSEMBLE_MEMBERS]
+    oof = query(dsn, MEMBER_OOF_SQL, {"names": names}).set_index("name")["oof_mae"]
+    missing = sorted(set(names) - set(oof.index))
+    if missing:
+        raise SystemExit(f"no cv results for: {missing}")
     members = []
     for m in ENSEMBLE_MEMBERS:
-        entry = {k: v for k, v in m.items() if k != "key"}
+        entry = {k: v for k, v in m.items() if k not in ("key", "experiment")}
+        entry["oofMae"] = round(float(oof[m["experiment"]]), 3)
         entry["weight"] = round(float(weight_by_key[m["key"]]), 3)
+        entry["strategy"] = MEMBER_STRATEGY[m["family"]]
         members.append(entry)
     members.sort(key=lambda x: x["weight"], reverse=True)
     _write("ensemble_members.json", {"members": members})
@@ -391,12 +476,7 @@ def build_boltz_pooling(src: Path) -> None:
 
 # Phase-1 calibration-and-gate journey, read from the LB submission ledger.
 # (lb_submission id, short axis label, full label, is-anchor).
-CALIB_LEDGER = (
-    "track1_activity",
-    "analysis",
-    "oof_proxy_diagnostics",
-    "lb_submission_direction_table.csv",
-)
+CALIB_ANCHOR_ID = 55  # id55, the Phase 1 anchor every delta is measured against
 CALIB_JOURNEY = [
     (13, "raw", "Caruana ensemble (raw)", False),
     (19, "calibrated", "+ affine calibration", False),
@@ -409,11 +489,12 @@ CALIB_JOURNEY = [
 ]
 
 
-def build_calibration_journey(src: Path) -> None:
+def build_calibration_journey(dsn: str) -> None:
     """Public-LB MAE across the Phase-1 calibration + tail-gate milestones."""
-    df = pd.read_csv(src.joinpath(*CALIB_LEDGER))
+    df = query(dsn, LB_SUBMISSIONS_SQL)
     mae_by_id = df.drop_duplicates("id").set_index("id")["lb_mae"]
-    delta_by_id = df.drop_duplicates("id").set_index("id")["delta_lb_mae_vs_id55"]
+    # The ledger carried this column; against the anchor it is just a difference.
+    delta_by_id = mae_by_id - mae_by_id[CALIB_ANCHOR_ID]
     milestones = []
     for sub_id, short, label, anchor in CALIB_JOURNEY:
         if sub_id not in mae_by_id.index:
@@ -524,28 +605,32 @@ def build_lgbm_gain(src: Path) -> None:
     _write("lgbm_gain.json", {"families": families})
 
 
-def build_coverage(src: Path) -> None:
+def query(dsn: str, sql: str, params: dict | None = None) -> pd.DataFrame:
+    """Run one read-only query and hand back a frame."""
+    with psycopg.connect(dsn) as conn, conn.cursor() as cur:
+        cur.execute(sql, params or {})
+        columns = [c.name for c in cur.description]
+        return pd.DataFrame(cur.fetchall(), columns=columns)
+
+
+def train_frame(dsn: str) -> pd.DataFrame:
+    """Everything the feature figures need per training compound, on compound_id."""
+    frame = query(dsn, TRAIN_FEATURES_SQL, {"c8": CONC_8P25, "c33": CONC_33})
+    return frame.set_index("compound_id")
+
+
+def build_coverage(dsn: str) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
-    tr = m["in_train"].fillna(False)
-    te = m["in_test"].fillna(False)
-    si = m["in_single"].fillna(False)
-    masks = {"train": tr, "test": te, "aux": si & ~tr & ~te}
+    counts = query(dsn, COVERAGE_SQL).set_index("grp")
     groups = []
     matrix = []
-    for gname, gkey in COVERAGE_GROUPS:
-        mask = masks[gkey]
-        groups.append({"name": gname, "n": int(mask.sum())})
-        matrix.append(
-            [int((mask & m[col].notna()).sum()) for _, col in COVERAGE_LABELS]
-        )
+    for name, key in COVERAGE_GROUPS:
+        row = counts.loc[key]
+        groups.append({"name": name, "n": int(row["n"])})
+        matrix.append([int(row[column]) for column in COVERAGE_LABELS])
     _write(
         "coverage.json",
-        {
-            "groups": groups,
-            "labels": [label for label, _ in COVERAGE_LABELS],
-            "matrix": matrix,
-        },
+        {"groups": groups, "labels": COVERAGE_LABEL_NAMES, "matrix": matrix},
     )
 
 
@@ -558,46 +643,34 @@ def _scatter_block(x: pd.Series, y: pd.Series, key: str, label: str) -> dict:
     return {"key": key, "label": label, "r": r, "n": len(points), "points": points}
 
 
-def build_feature_scatter(src: Path) -> None:
+def build_feature_scatter(src: Path, dsn: str) -> None:
     """Four log2fc panels vs training pEC50: observed and predicted, at 8.25 and 33 uM."""
-    features = []
-    # Observed log2fc per concentration, joined to pEC50 by Molecule Name.
-    sc = pd.read_parquet(src.joinpath(*SINGLECONC_TRAIN_PARQUET))
-    tr = pd.read_parquet(src.joinpath(*DEFAULT_TRAIN_PARQUET))[
-        ["Molecule Name", "pEC50"]
-    ]
-    for key, label, conc in (
-        ("obs_8p25", "Observed log2fc · 8.25 µM", CONC_8P25),
-        ("obs_33", "Observed log2fc · 33 µM", CONC_33),
-    ):
-        at = sc[(sc["concentration_M"] - conc).abs() <= conc * 0.02]
-        at = at.groupby("Molecule Name", as_index=False)["log2_fc_estimate"].mean()
-        j = at.merge(tr, on="Molecule Name", how="inner")
-        features.append(_scatter_block(j["log2_fc_estimate"], j["pEC50"], key, label))
-    # Predicted log2fc per concentration, joined to pEC50 by compound_id.
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    frame = train_frame(dsn)
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
-    mp = m[m["in_train"].fillna(False)].merge(
-        pred, left_on="compound_id", right_index=True, how="inner"
-    )
-    for key, label, col in (
-        ("pred_8p25", "Predicted log2fc · 8.25 µM", "log2fc_8p25_pred"),
-        ("pred_33", "Predicted log2fc · 33 µM", "log2fc_33_pred"),
-    ):
-        features.append(_scatter_block(mp[col], mp["train_pec50"], key, label))
+    frame = frame.join(pred, how="left")
+    features = [
+        _scatter_block(frame[column], frame["pec50"], key, label)
+        for key, label, column in (
+            ("obs_8p25", "Observed log2fc · 8.25 µM", "obs_8p25"),
+            ("obs_33", "Observed log2fc · 33 µM", "obs_33"),
+            ("pred_8p25", "Predicted log2fc · 8.25 µM", "log2fc_8p25_pred"),
+            ("pred_33", "Predicted log2fc · 33 µM", "log2fc_33_pred"),
+        )
+    ]
     _write("feature_vs_pec50.json", {"features": features})
 
 
-def build_feature_corr(src: Path) -> None:
-    """Rank representative features by their single Pearson correlation with training pEC50."""
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+def build_feature_corr(src: Path, dsn: str) -> None:
+    """Rank representative features by their single correlation with training pEC50."""
+    frame = train_frame(dsn)
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
-    m = m.merge(pred, left_on="compound_id", right_index=True, how="left")
-    m = m[m["in_train"].fillna(False)]
-    y = pd.to_numeric(m["train_pec50"], errors="coerce")
+    frame = frame.join(pred, how="left")
+    y = pd.to_numeric(frame["pec50"], errors="coerce")
     feats = []
-    for label, short, col, family in FEATURE_CORR:
-        d = pd.DataFrame({"x": pd.to_numeric(m[col], errors="coerce"), "y": y}).dropna()
+    for label, short, column, family in FEATURE_CORR:
+        d = pd.DataFrame(
+            {"x": pd.to_numeric(frame[column], errors="coerce"), "y": y}
+        ).dropna()
         if len(d) < 20:
             continue
         feats.append(
@@ -609,6 +682,7 @@ def build_feature_corr(src: Path) -> None:
                 # Spearman == Pearson on ranks (avoids a scipy dependency).
                 "spearman": round(float(d["x"].rank().corr(d["y"].rank())), 2),
                 "n": len(d),
+                "pick": column in FEATURE_CORR_PICK,
             }
         )
     # Group by family (log2fc, Boltz, descriptors), sort by |correlation| within.
@@ -628,23 +702,30 @@ def main() -> None:
         default=DEFAULT_SRC,
         help="Path to the local pxr-iduction-challenge working repo.",
     )
+    parser.add_argument(
+        "--dsn",
+        default=DEFAULT_DSN,
+        help="libpq connection string for the challenge's working database.",
+    )
     args = parser.parse_args()
     src: Path = args.src
+    dsn: str = args.dsn
     if not src.exists():
         raise SystemExit(f"Source repo not found: {src}")
 
     logger.info("source repo: %s", src)
-    build_ensemble_members(src)
-    build_coverage(src)
+    logger.info("database: %s", dsn)
+    build_ensemble_members(src, dsn)
+    build_coverage(dsn)
     build_topk_sweep(src)
     build_lgbm_gain(src)
     build_member_corr(src)
     build_model_cards(src)
     build_boltz_pooling(src)
-    build_calibration_journey(src)
+    build_calibration_journey(dsn)
     build_phase2_as2(src)
-    build_feature_scatter(src)
-    build_feature_corr(src)
+    build_feature_scatter(src, dsn)
+    build_feature_corr(src, dsn)
     logger.info("done -> %s", OUT_DIR)
 
 

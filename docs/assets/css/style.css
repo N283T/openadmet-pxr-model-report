@@ -27,6 +27,25 @@
   src: url("../vendor/fonts/zenmaru-700-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/* Japanese body face for the translated page (scripts/build_font_subsets.py).
+   It carries its own family name rather than extending "Zen Maru Gothic" with a
+   CJK unicode-range: browsers fetch every face of a family that a page
+   references, unicode-range or not, which would cost the English page ~1.3 MB it
+   never renders. Only html[lang="ja"] puts it in the stack.
+   No Japanese counterpart for --font-display: headings, tables and cards are
+   English on both pages, so nothing Japanese ever reaches Outfit's fallbacks. */
+@font-face {
+  font-family: "Zen Maru Gothic JP"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../vendor/fonts/zenmaru-400-jp.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Zen Maru Gothic JP"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("../vendor/fonts/zenmaru-500-jp.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Zen Maru Gothic JP"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("../vendor/fonts/zenmaru-700-jp.woff2") format("woff2");
+}
 @font-face {
   font-family: "PlemolJP"; font-style: normal; font-weight: 400; font-display: swap;
   src: url("../vendor/fonts/PlemolJP-Regular.woff2") format("woff2");
@@ -196,7 +215,7 @@ h2 { font-size: 1.55rem; margin: 0 0 16px; letter-spacing: -0.01em; display: fle
 h2::before { content: "\2726"; color: var(--color-coral); font-size: 0.68em; }
 h3 { font-size: 1.02rem; margin: 0 0 6px; font-family: var(--font-display); }
 p { margin: 0 0 14px; }
-ul { margin: 0 0 14px; padding-left: 22px; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; }
 li { margin-bottom: 6px; }
 a { color: var(--color-blue); text-underline-offset: 2px; }
 strong { font-weight: 700; }
@@ -210,6 +229,92 @@ pre {
 }
 pre code { background: none; border: 0; padding: 0; font-size: .84em; line-height: 1.55; }
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
+
+/* ============================================================
+   Buterez et al.: the paper card and its six strategies
+   ============================================================ */
+.paper-card {
+  border: 1px solid var(--line); border-left: 4px solid var(--color-coral);
+  border-radius: 12px; padding: 14px 18px; margin: 4px 0 18px; background: var(--surface);
+}
+:root[data-theme="dark"] .paper-card { background: #3b4263; }
+.paper-card__title { font-family: var(--font-display); font-weight: 700; margin: 0 0 4px; line-height: 1.45; }
+.paper-card__meta { margin: 0; font-size: .84rem; color: var(--muted); }
+
+/* The paper's setting: a cheap screen feeding a small confirmatory assay. */
+.cascade { display: flex; align-items: stretch; gap: 12px; margin: 6px 0 10px; }
+.cascade__tier {
+  flex: 1; display: flex; flex-direction: column; gap: 3px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;
+}
+:root[data-theme="dark"] .cascade__tier { background: #3b4263; }
+.cascade__tier.is-hf { border-color: var(--color-coral); }
+.cascade__tag {
+  font-family: var(--font-display); font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--color-blue);
+}
+.cascade__tier.is-hf .cascade__tag { color: var(--color-coral); }
+.cascade__what { font-weight: 700; font-size: .95rem; }
+.cascade__note { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+.cascade__arrow {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; text-align: center; max-width: 150px;
+}
+.cascade__mark { font-size: 1.5rem; color: var(--muted); line-height: 1; }
+.cascade__ask { margin: 0 0 16px; }
+@media (max-width: 640px) {
+  .cascade { flex-direction: column; }
+  .cascade__mark { transform: rotate(90deg); }
+}
+
+/* The six strategies read as a set, so they sit in a grid rather than a list.
+   The circled numbers are drawn rather than typed: the report vendors a subset
+   font, and the enclosed-numeral glyphs are not in it. */
+.strat-grid {
+  list-style: none; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin: 0 0 8px; padding: 0;
+}
+.strat {
+  display: flex; align-items: center; gap: 10px; margin: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px;
+}
+:root[data-theme="dark"] .strat { background: #3b4263; }
+.strat__n, .strat-ref {
+  flex: 0 0 auto; display: inline-grid; place-items: center;
+  width: 23px; height: 23px; border-radius: 999px;
+  background: var(--color-blue); color: #fff;
+  font-family: var(--font-display); font-weight: 800; font-size: .78rem; line-height: 1;
+}
+.strat__body { flex: 1; font-size: .9rem; line-height: 1.5; }
+.strat__count {
+  flex: 0 0 auto; font-family: var(--font-display); font-weight: 700; font-size: .95rem;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+/* The two the report went on to use. */
+.strat.is-picked { border-color: var(--color-coral); }
+.strat.is-picked .strat__n { background: var(--color-coral); }
+.strat.is-picked .strat__count { color: var(--color-coral); }
+.strat-ref { vertical-align: -.2em; margin-right: 7px; }
+.strat-ref.coral { background: var(--color-coral); }
+@media (max-width: 640px) { .strat-grid { grid-template-columns: 1fr; } }
+
+/* Language switch (English page <-> Japanese page) */
+.lang-switch {
+  font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .02em;
+  color: var(--muted); text-decoration: none; border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+}
+.lang-switch:hover { color: var(--ink); border-color: var(--color-blue); }
+
+/* Japanese page: append the CJK face to the body stack (Latin still resolves to
+   Zen Maru Gothic first), then tighten punctuation and open up the leading a
+   little. */
+html[lang="ja"] {
+  --font-body: "Zen Maru Gothic", "Zen Maru Gothic JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+html[lang="ja"] body { font-feature-settings: "palt" 1; }
+html[lang="ja"] p, html[lang="ja"] li { line-height: 1.9; }
+html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { line-height: 1.5; }
 
 /* Member roster table (aliases) */
 .roster-table {
@@ -237,6 +342,22 @@ pre code { background: none; border: 0; padding: 0; font-size: .84em; line-heigh
 .roster-table .fam-structural { color: var(--color-coral); font-weight: 600; }
 .roster-table .yes { color: #3f9e8b; font-weight: 700; }
 .roster-table .no { color: var(--color-coral); font-weight: 800; }
+/* Partial coverage: the count of rows that carry the column, not all of them. */
+.roster-table .part { color: var(--muted); font-variant-numeric: tabular-nums; }
+.roster-table td.num, .roster-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.roster-table .no-strat { color: var(--muted); }
+.roster-table td .strat-ref { margin-right: 0; }
+/* The log2fc columns are the signal the whole approach leans on, so they read as
+   one coral-tinted group rather than as two more columns that happen to exist. */
+.roster-table td.aux { background: color-mix(in srgb, var(--color-coral) 15%, transparent); }
+.roster-table thead th.aux {
+  background: color-mix(in srgb, var(--color-coral) 24%, transparent);
+  color: #b35f47;
+}
+.roster-table td.aux .part { color: var(--ink); font-weight: 700; }
+:root[data-theme="dark"] .roster-table thead th.aux {
+  background: color-mix(in srgb, var(--color-coral) 30%, #3b4263); color: #f4b7a3;
+}
 
 /* Boltz pooled-vector composition strip (mimics the 1024-d block diagram) */
 .vblocks { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 6px; }
@@ -370,6 +491,17 @@ pre code { background: none; border: 0; padding: 0; font-size: .84em; line-heigh
   font-family: var(--font-display); font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
   color: #fff; background: var(--color-coral); padding: 3px 9px; border-radius: 999px;
 }
+/* Secondary badge: sits next to a coral one without competing with it. */
+.badge.soft { color: var(--muted); background: transparent; border: 1px solid var(--line); }
+/* Marks an analysis run after the challenge closed, on labels nobody had at the
+   time. It is not evidence of how the model was built. */
+.badge.post { background: var(--color-blue); }
+/* Overall standing for a scoring round, pushed to the end of its h3. */
+.phase-rank {
+  margin-left: auto; font-family: var(--font-display); font-size: .72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap;
+}
+.phase-rank b { font-size: 1.15rem; font-weight: 800; color: var(--color-blue); letter-spacing: 0; }
 .phase-eval { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
 .stat-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .stat {
@@ -389,7 +521,7 @@ pre code { background: none; border: 0; padding: 0; font-size: .84em; line-heigh
 
 #strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
 #members h3 { font-size: 1.16rem; margin: 28px 0 8px; color: var(--ink); }
-#members h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
+h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
 .metric-table td.bk { text-align: left; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .metric-table thead th.bk { text-align: left; }
 
@@ -405,9 +537,24 @@ pre code { background: none; border: 0; padding: 0; font-size: .84em; line-heigh
 .cov-table td.cov0 { color: var(--muted); font-weight: 500; }
 
 .scatter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+/* The predicted panels are the point of the figure; the observed ones are what
+   they are being compared against. Boxing the pair says which is which before
+   the caption does. Every panel carries the same border and padding so that all
+   four canvases come out the same size — ECharts measures the content box — and
+   only the highlighted pair has them coloured in. */
+.scatter-grid .chart {
+  border: 1px solid transparent; border-radius: 12px; padding: 8px 8px 4px;
+}
+.scatter-grid .is-pick {
+  border-color: var(--color-coral);
+  background: color-mix(in srgb, var(--color-coral) 5%, transparent);
+}
 @media (max-width: 640px) { .scatter-grid { grid-template-columns: 1fr; } }
 
 .chart-figure { margin: 22px 0 4px; }
+/* A drawn figure rather than a chart. The artwork is transparent and carries
+   its own panels, so it needs no frame and sits on either theme. */
+.figure-img { display: block; width: 100%; height: auto; }
 /* Charts sit directly on the page, no card chrome. */
 .chart { width: 100%; }
 .chart + .chart { margin-top: 6px; }

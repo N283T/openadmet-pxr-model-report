@@ -3,7 +3,9 @@
 (function () {
   "use strict";
 
-  var DATA = "assets/data/";
+  /* Data lives next to the English page; translated pages in a subdirectory
+     set window.PXR_DATA_BASE to point back at it. */
+  var DATA = window.PXR_DATA_BASE || "assets/data/";
   var charts = {}; // id -> echarts instance
   var cache = {};
 
@@ -45,37 +47,29 @@
     });
   }
 
-  // ---- Individual chart builders (return ECharts option) ----
-
-  // Ensemble member Caruana weights (horizontal bars, colored by family).
-  function optWeights(d, p) {
-    var famColor = { tabular: p.blue, embed: p.teal, structural: p.coral };
-    var m = d.members;
-    var cats = m.map(function (x) { return x.alias; });
-    var data = m.map(function (x) {
-      return { value: x.weight, itemStyle: { color: famColor[x.family] || p.blue, borderRadius: [0, 4, 4, 0] } };
-    });
-    return {
-      textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 8, right: 44, top: 10, bottom: 30, containLabel: true },
-      tooltip: {
-        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          var x = m[o.dataIndex];
-          return x.label + "<br/>Caruana weight <b>" + x.weight.toFixed(3) + "</b><br/>" +
-            x.role + "<br/>single-model OOF MAE " + x.oofMae.toFixed(3);
-        },
-      },
-      xAxis: Object.assign({ type: "value", name: "Caruana weight", min: 0,
-        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
-      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
-      series: [{
-        type: "bar", data: data, barWidth: "62%",
-        label: { show: true, position: "right", color: p.muted, fontSize: 11,
-          formatter: function (o) { return o.value.toFixed(3); } },
-      }],
-    };
+  // The nine members, drawn from the same JSON the charts use so the table and
+  // the numbers cannot drift apart. Rows come sorted by Caruana weight.
+  function renderMemberTable() {
+    var body = document.querySelector("[data-member-rows]");
+    if (!body) return;
+    var famClass = { tabular: "fam-tabular", embed: "fam-embed", structural: "fam-structural" };
+    var famLabel = { tabular: "tabular core", embed: "frozen embed", structural: "Boltz trunk" };
+    getJSON("ensemble_members.json").then(function (d) {
+      body.innerHTML = d.members.map(function (m) {
+        var strat = m.strategy
+          ? '<span class="strat-ref' + (m.strategy === 2 ? " coral" : "") + '">' + m.strategy + "</span>"
+          : '<span class="no-strat">—</span>';
+        return "<tr><th>" + m.alias + "</th>" +
+          "<td>" + m.label + "</td>" +
+          '<td><span class="' + famClass[m.family] + '">' + famLabel[m.family] + "</span></td>" +
+          '<td class="c">' + strat + "</td>" +
+          '<td class="num">' + m.oofMae.toFixed(3) + "</td>" +
+          '<td class="num">' + m.weight.toFixed(3) + "</td></tr>";
+      }).join("");
+    }).catch(function (e) { console.error(e); });
   }
+
+  // ---- Individual chart builders (return ECharts option) ----
 
   // Label-coverage heatmap: which compound group carries which measured label.
   function optCoverage(d, p) {
@@ -127,26 +121,39 @@
   // Feature-vs-pEC50 correlation heatmap: Pearson and Spearman rows x feature columns.
   function optFeatureCorr(d, p) {
     var feats = d.features, rows = d.rows;
-    var data = [];
+    // The picked columns keep a coral outline; visualMap still owns the fill.
+    var pickStyle = { borderColor: p.coral, borderWidth: 2, borderRadius: 4 };
+    // Two things keep the outline whole: the unpicked cells space themselves with
+    // a transparent border rather than a background-coloured one, and the picked
+    // cells paint last, since within a series the later item goes on top.
+    var data = [], picked = [];
     feats.forEach(function (f, xi) {
-      data.push([xi, 0, f.pearson]);
-      data.push([xi, 1, f.spearman]);
+      var into = f.pick ? picked : data;
+      var style = f.pick ? { itemStyle: pickStyle } : null;
+      into.push(Object.assign({ value: [xi, 0, f.pearson] }, style));
+      into.push(Object.assign({ value: [xi, 1, f.spearman] }, style));
     });
+    data = data.concat(picked);
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
       grid: { left: 80, right: 12, top: 10, bottom: 82 },
       tooltip: {
         backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
-          var f = feats[o.data[0]];
-          return f.label + "<br/>" + rows[o.data[1]] + " = <b>" + o.data[2].toFixed(2) +
+          var v = o.data.value || o.data;
+          var f = feats[v[0]];
+          return f.label + "<br/>" + rows[v[1]] + " = <b>" + v[2].toFixed(2) +
             "</b><br/>n = " + f.n.toLocaleString();
         },
       },
       xAxis: {
         type: "category", data: feats.map(function (f) { return f.short; }),
         axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
-        axisLabel: { color: p.ink, interval: 0, rotate: 45, fontSize: 11, fontFamily: p.font },
+        axisLabel: {
+          color: p.ink, interval: 0, rotate: 45, fontSize: 11, fontFamily: p.font,
+          formatter: function (v, i) { return feats[i].pick ? "{pick|" + v + "}" : v; },
+          rich: { pick: { color: p.coral, fontWeight: 800, fontSize: 11, fontFamily: p.font } },
+        },
       },
       yAxis: {
         type: "category", data: rows, inverse: true,
@@ -161,10 +168,10 @@
       },
       series: [{
         type: "heatmap", data: data,
-        itemStyle: { borderColor: p.bg, borderWidth: 2, borderRadius: 4 },
+        itemStyle: { borderColor: "transparent", borderWidth: 2, borderRadius: 4 },
         label: {
           show: true, fontFamily: p.font, fontWeight: 700, color: "#2b333a",
-          formatter: function (o) { return o.data[2].toFixed(2); },
+          formatter: function (o) { return (o.data.value || o.data)[2].toFixed(2); },
         },
         emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
       }],
@@ -292,7 +299,6 @@
   var SPECS = [
     { el: "chart-coverage", file: "coverage.json", build: optCoverage },
     { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
-    { el: "chart-weights", file: "ensemble_members.json", build: optWeights },
     { el: "chart-membercorr", file: "member_corr.json", build: optMemberCorr },
     { el: "chart-ksweep", file: "topk_sweep.json", build: optKSweep },
     { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
@@ -515,6 +521,7 @@
       });
     });
     renderFeatureScatter(p);
+    renderMemberTable();
   }
 
   function setupTheme() {
