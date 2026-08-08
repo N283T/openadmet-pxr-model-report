@@ -404,7 +404,7 @@
       readout head は全メンバー <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a></strong> で、
       違うのはその手前だけです。
     </p>
-    <p>9 つのメンバーと、以降で使う短い別名は次のとおりです。</p>
+    <p>9 つのメンバーと、以降で使うエイリアスは次のとおりです。</p>
     <div class="table-scroll">
       <table class="roster-table">
         <thead>
@@ -415,32 +415,29 @@
     </div>
     <p class="metrics-key">Caruana 重みの大きい順。Strategy は 3 章の 6 通りの番号で、Boltz trunk の 2 つはそのどれでもありません（log2fc を使わないため）。OOF MAE はそのメンバー単独の値です。</p>
     <p>
-      CV 分割は <strong>UMAP クラスタ分割</strong>です。いくつか試したなかで public LB に最も近かったというだけで、
+      CV 分割は <strong>UMAP クラスタ分割</strong>（Morgan FP + UMAP → KMeans）です。いくつか試したなかで public LB に最も近かったというだけで、
       分割として優れているわけではありません。メンバーの統合には <strong>Caruana forward selection</strong>
       (<a href="https://dl.acm.org/doi/10.1145/1015330.1015432">Caruana et&nbsp;al., ICML 2004</a>) を使いました。
       提出したのはこのアンサンブルそのものではなく、出力に post-hoc な calibration と gate を重ねたものです
-      （<a href="#calibration">6 章</a>）。
+      （<a href="#calibration">6. Calibration</a>）。
     </p>
 
     <h3>How independent are the members? <span class="badge post">post-challenge</span></h3>
     <p>
       答えは「あまり独立ではない」です。<strong>全 36 ペアが 0.81〜0.98、平均 0.88</strong>。
-      tabular core 2 つはほぼ重複（0.98）、Boltz trunk の 2 つも同様（0.97）で、
-      化学系のメンバーはどれも他と 0.85 を超えています。log2fc より強い手がかりが無く、
-      使える情報がそもそも限られている、ということでもあります。
+      同じ log2fc を共有するメンバー同士が高いのは当然として、
+      <strong>log2fc をまったく持たない Boltz trunk ですら他と 0.81〜0.88</strong> あります。
+      log2fc より強い手がかりが無く、使える情報がそもそも限られている、ということです。
     </p>
     <figure class="chart-figure">
       <div id="chart-membercorr" class="chart" style="height:440px"></div>
       <figcaption>Figure 4: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。重みを決めたのは OOF 誤差なので、これは採点対象で後から取った別スライスの数字です。</figcaption>
     </figure>
     <p>
-      注意点として、これは <strong>test 予測（AS1 + AS2）どうしの相関</strong>で、Caruana が重みを決めるときに
-      見ていた OOF の相関ではありません。test 側では Boltz trunk が最も decorrelated に見えます
-      （化学系に対して 0.81〜0.88）が、OOF で計算し直すと <strong>0.90〜0.99、平均 0.93</strong> になり、
-      その差はほぼ消えます。<a href="#members">5.3</a> の「Boltz は独立だから重みを得た」という読み方は、
-      test 側だけに現れた見かけです。<sup>*</sup>
+      ただしこれは <strong>test 予測どうしの相関</strong>で、Caruana が重みを決めた OOF の相関ではありません。
+      OOF で計算し直すと <strong>0.90〜0.99、平均 0.93</strong> になり、Boltz がやや低いという差も消えます。<sup>*</sup>
     </p>
-    <p class="metrics-key"><sup>*</sup> 重みを決めた本番の OOF 予測は残っていません。上の OOF 側の数字は、ディスクに残っていた cross-fit の OOF 予測 4,393 行から再計算したもので、決定的な確認ではありません。</p>
+    <p class="metrics-key"><sup>*</sup> 本番の OOF 予測は残っていないため、ディスクにあった cross-fit の 4,393 行からの再計算です。</p>
     <p>
       それでもアンサンブルが効いている理由は、独立な視点を混ぜているからではなく
       <strong>buffer</strong> として働いているからです。重みの小さいメンバーを外すと系統シェアが 0.94 まで上がり、
