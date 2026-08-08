@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "pandas",
+#     "psycopg[binary]",
 #     "pyarrow",
 # ]
 # ///
@@ -28,6 +29,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import psycopg
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger("build_report_data")
@@ -37,6 +39,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT.joinpath("docs", "assets", "data")
 
 DEFAULT_SRC = Path("/home/nagaet/pxr-iduction-challenge")
+# The challenge's working database, restored from the dump (see the slide repo's
+# db/README.md). Anything measured per compound comes from here rather than from
+# the distributed parquets: a later data update removed compounds the models
+# were actually trained on, so the parquets no longer match the runs.
+DEFAULT_DSN = "host=/tmp port=5433 user=postgres dbname=pxr"
 
 AS1_TRUE_CSV = (
     "data",
@@ -87,13 +94,20 @@ GAIN_TOP_N = 12
 # Per-compound master table + predicted log2fc + raw provided train files.
 MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
-DEFAULT_TRAIN_PARQUET = ("data", "default_train.parquet")
-SINGLECONC_TRAIN_PARQUET = ("data", "single_concentration_train.parquet")
-# The crosswalk between compound_id and Molecule Name; the descriptor tables
-# key on one and the label tables on the other.
-TRAIN_ACTIVITY_DB_PARQUET = ("data", "train_activity_db.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
 CONC_33 = 3.30e-5  # 33 uM
+# Single-concentration rows sit a hair off the nominal molarity, so match within
+# a percent rather than on equality.
+OBS_LOG2FC_SQL = """
+    SELECT compound_id,
+           avg(log2_fc_estimate) FILTER (
+               WHERE abs(concentration_m - %(c8)s) <= %(c8)s * 0.02) AS obs_log2fc_8p25,
+           avg(log2_fc_estimate) FILTER (
+               WHERE abs(concentration_m - %(c33)s) <= %(c33)s * 0.02) AS obs_log2fc_33
+      FROM single_concentration
+     WHERE log2_fc_estimate IS NOT NULL
+     GROUP BY compound_id
+"""
 # Representative features for the correlation heatmap.
 # (full label, short column header, master/pred column, family).
 # Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
@@ -530,6 +544,15 @@ def build_lgbm_gain(src: Path) -> None:
     _write("lgbm_gain.json", {"families": families})
 
 
+def observed_log2fc(dsn: str) -> pd.DataFrame:
+    """Per-compound observed log2fc at each concentration, keyed by compound_id."""
+    with psycopg.connect(dsn) as conn, conn.cursor() as cur:
+        cur.execute(OBS_LOG2FC_SQL, {"c8": CONC_8P25, "c33": CONC_33})
+        columns = [c.name for c in cur.description]
+        rows = cur.fetchall()
+    return pd.DataFrame(rows, columns=columns).set_index("compound_id")
+
+
 def build_coverage(src: Path) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
     m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
@@ -564,24 +587,23 @@ def _scatter_block(x: pd.Series, y: pd.Series, key: str, label: str) -> dict:
     return {"key": key, "label": label, "r": r, "n": len(points), "points": points}
 
 
-def build_feature_scatter(src: Path) -> None:
+def build_feature_scatter(src: Path, dsn: str) -> None:
     """Four log2fc panels vs training pEC50: observed and predicted, at 8.25 and 33 uM."""
     features = []
-    # Observed log2fc per concentration, joined to pEC50 by Molecule Name.
-    sc = pd.read_parquet(src.joinpath(*SINGLECONC_TRAIN_PARQUET))
-    tr = pd.read_parquet(src.joinpath(*DEFAULT_TRAIN_PARQUET))[
-        ["Molecule Name", "pEC50"]
-    ]
-    for key, label, conc in (
-        ("obs_8p25", "Observed log2fc · 8.25 µM", CONC_8P25),
-        ("obs_33", "Observed log2fc · 33 µM", CONC_33),
-    ):
-        at = sc[(sc["concentration_M"] - conc).abs() <= conc * 0.02]
-        at = at.groupby("Molecule Name", as_index=False)["log2_fc_estimate"].mean()
-        j = at.merge(tr, on="Molecule Name", how="inner")
-        features.append(_scatter_block(j["log2_fc_estimate"], j["pEC50"], key, label))
-    # Predicted log2fc per concentration, joined to pEC50 by compound_id.
     m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    # Observed log2fc per concentration, from the database on compound_id.
+    obs = observed_log2fc(dsn)
+    mt = m[m["in_train"].fillna(False)]
+    for key, label, col in (
+        ("obs_8p25", "Observed log2fc · 8.25 µM", "obs_log2fc_8p25"),
+        ("obs_33", "Observed log2fc · 33 µM", "obs_log2fc_33"),
+    ):
+        features.append(
+            _scatter_block(
+                mt["compound_id"].map(obs[col]), mt["train_pec50"], key, label
+            )
+        )
+    # Predicted log2fc per concentration, joined to pEC50 by compound_id.
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
     mp = m[m["in_train"].fillna(False)].merge(
         pred, left_on="compound_id", right_index=True, how="inner"
@@ -594,23 +616,16 @@ def build_feature_scatter(src: Path) -> None:
     _write("feature_vs_pec50.json", {"features": features})
 
 
-def build_feature_corr(src: Path) -> None:
+def build_feature_corr(src: Path, dsn: str) -> None:
     """Rank representative features by their single Pearson correlation with training pEC50."""
     m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
     m = m.merge(pred, left_on="compound_id", right_index=True, how="left")
-    # Observed log2fc, one column per concentration. The single-concentration
-    # table keys on Molecule Name and the master on compound_id, so the join
-    # goes through the activity db, which carries both. Matching on SMILES
-    # instead silently drops a few hundred training compounds: the two tables do
-    # not always write a compound the same way.
-    sc = pd.read_parquet(src.joinpath(*SINGLECONC_TRAIN_PARQUET))
-    crosswalk = pd.read_parquet(src.joinpath(*TRAIN_ACTIVITY_DB_PARQUET))
-    name_by_id = crosswalk.set_index("compound_id")["molecule_name"]
-    for col, conc in (("obs_log2fc_8p25", CONC_8P25), ("obs_log2fc_33", CONC_33)):
-        at = sc[(sc["concentration_M"] - conc).abs() <= conc * 0.02]
-        per_compound = at.groupby("Molecule Name")["log2_fc_estimate"].mean()
-        m[col] = m["compound_id"].map(name_by_id).map(per_compound)
+    # Observed log2fc, one column per concentration, straight from the database
+    # on compound_id — no name or SMILES matching anywhere in the join.
+    obs = observed_log2fc(dsn)
+    for col in ("obs_log2fc_8p25", "obs_log2fc_33"):
+        m[col] = m["compound_id"].map(obs[col])
     m = m[m["in_train"].fillna(False)]
     y = pd.to_numeric(m["train_pec50"], errors="coerce")
     feats = []
@@ -646,12 +661,19 @@ def main() -> None:
         default=DEFAULT_SRC,
         help="Path to the local pxr-iduction-challenge working repo.",
     )
+    parser.add_argument(
+        "--dsn",
+        default=DEFAULT_DSN,
+        help="libpq connection string for the challenge's working database.",
+    )
     args = parser.parse_args()
     src: Path = args.src
+    dsn: str = args.dsn
     if not src.exists():
         raise SystemExit(f"Source repo not found: {src}")
 
     logger.info("source repo: %s", src)
+    logger.info("database: %s", dsn)
     build_ensemble_members(src)
     build_coverage(src)
     build_topk_sweep(src)
@@ -661,8 +683,8 @@ def main() -> None:
     build_boltz_pooling(src)
     build_calibration_journey(src)
     build_phase2_as2(src)
-    build_feature_scatter(src)
-    build_feature_corr(src)
+    build_feature_scatter(src, dsn)
+    build_feature_corr(src, dsn)
     logger.info("done -> %s", OUT_DIR)
 
 
