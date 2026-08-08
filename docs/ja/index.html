@@ -482,32 +482,14 @@
     <div class="aside">
       <p>
         ただし、この 300 次元は<strong>実装ミス</strong>です。本来は CheMeleon 本体の 2,048 次元を使うつもりでしたが、
-        特徴量を作らせた Claude Code が、事前学習済みの 2,048 次元を<strong>未学習のままの 2048→300 射影</strong>に
-        通した値を保存していました。seed も固定していないので、作り直せば別の 300 次元が出ます。
+        特徴量を作らせた Claude Code が、事前学習済みの 2,048 次元を未学習のままの 2048→300 射影に
+        通した値を保存していました。
       </p>
       <p>
-        コンペ後に 2,048 次元をそのまま取り出して検証しました
-        (<a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a>)。
-        結論から言うと、<strong>正しく作っていても提出は良くなりませんでした</strong>。
-        CheMeleon 単独では OOF が 0.5118 → 0.4983 と改善する一方、Test は 0.5099 → 0.5132 と改善しません。
-        スタックに混ぜると下表のとおりで、full では明確に悪化します。
-      </p>
-      <div class="table-scroll">
-        <table class="roster-table">
-          <thead><tr><th>CheMeleon</th><th>Feature set</th><th class="num">OOF MAE</th><th class="num">Test MAE</th></tr></thead>
-          <tbody>
-            <tr><th>300d（実際に使った方）</th><td>mixed full</td><td class="num">0.4056</td><td class="num">0.4281</td></tr>
-            <tr><th>2,048d</th><td>mixed full</td><td class="num">0.4525</td><td class="num">0.4692</td></tr>
-            <tr><th>300d（実際に使った方）</th><td>mixed top-500</td><td class="num">0.3968</td><td class="num">0.4327</td></tr>
-            <tr><th>2,048d</th><td>mixed top-500</td><td class="num">0.3992</td><td class="num">0.4259</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p>
-        top-500 だけは Test が 0.4327 → 0.4259 と改善しますが、これはアンサンブルには伝わりません。
-        本番のスロットを 2,048 次元版に差し替える検証では、Caruana の seed 42〜46 すべてで悪化しました
-        （top-500 版で Test 平均 +0.0003、full 版で +0.0037）。
-        既存のメンバーのほうが、このプールの中では誤差の出方が補完的だった、ということです。
+        コンペ後に 2,048 次元で検証したところ、<strong>正しく作っていても提出は良くなりませんでした</strong>。
+        単独では OOF が 0.5118 → 0.4983 と改善する一方 Test は 0.5099 → 0.5132 で、
+        スタックに混ぜた full でも悪化します。詳細は
+        <a href="https://github.com/N283T/pxr-iduction-challenge/pull/233">PR #233</a> を参照してください。
       </p>
     </div>
     <h4>Boltz-2 features</h4>
