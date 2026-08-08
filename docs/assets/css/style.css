@@ -407,6 +407,12 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
   font-family: var(--font-display); font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
   color: #fff; background: var(--color-coral); padding: 3px 9px; border-radius: 999px;
 }
+/* Overall standing for a scoring round, pushed to the end of its h3. */
+.phase-rank {
+  margin-left: auto; font-family: var(--font-display); font-size: .72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap;
+}
+.phase-rank b { font-size: 1.15rem; font-weight: 800; color: var(--color-blue); letter-spacing: 0; }
 .phase-eval { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
 .stat-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .stat {
