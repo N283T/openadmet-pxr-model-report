@@ -129,10 +129,13 @@
   // Feature-vs-pEC50 correlation heatmap: Pearson and Spearman rows x feature columns.
   function optFeatureCorr(d, p) {
     var feats = d.features, rows = d.rows;
+    // The picked columns keep a coral outline; visualMap still owns the fill.
+    var pickStyle = { borderColor: p.coral, borderWidth: 2, borderRadius: 4 };
     var data = [];
     feats.forEach(function (f, xi) {
-      data.push([xi, 0, f.pearson]);
-      data.push([xi, 1, f.spearman]);
+      var style = f.pick ? { itemStyle: pickStyle } : null;
+      data.push(Object.assign({ value: [xi, 0, f.pearson] }, style));
+      data.push(Object.assign({ value: [xi, 1, f.spearman] }, style));
     });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
@@ -140,15 +143,20 @@
       tooltip: {
         backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
-          var f = feats[o.data[0]];
-          return f.label + "<br/>" + rows[o.data[1]] + " = <b>" + o.data[2].toFixed(2) +
+          var v = o.data.value || o.data;
+          var f = feats[v[0]];
+          return f.label + "<br/>" + rows[v[1]] + " = <b>" + v[2].toFixed(2) +
             "</b><br/>n = " + f.n.toLocaleString();
         },
       },
       xAxis: {
         type: "category", data: feats.map(function (f) { return f.short; }),
         axisLine: { show: false }, axisTick: { show: false }, splitArea: { show: false },
-        axisLabel: { color: p.ink, interval: 0, rotate: 45, fontSize: 11, fontFamily: p.font },
+        axisLabel: {
+          color: p.ink, interval: 0, rotate: 45, fontSize: 11, fontFamily: p.font,
+          formatter: function (v, i) { return feats[i].pick ? "{pick|" + v + "}" : v; },
+          rich: { pick: { color: p.coral, fontWeight: 800, fontSize: 11, fontFamily: p.font } },
+        },
       },
       yAxis: {
         type: "category", data: rows, inverse: true,
@@ -166,7 +174,7 @@
         itemStyle: { borderColor: p.bg, borderWidth: 2, borderRadius: 4 },
         label: {
           show: true, fontFamily: p.font, fontWeight: 700, color: "#2b333a",
-          formatter: function (o) { return o.data[2].toFixed(2); },
+          formatter: function (o) { return (o.data.value || o.data)[2].toFixed(2); },
         },
         emphasis: { itemStyle: { borderColor: p.coral, borderWidth: 2 } },
       }],

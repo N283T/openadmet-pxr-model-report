@@ -325,18 +325,6 @@
       特徴量に足しました。本レポートではこれを <strong>pred log2fc</strong> と呼びます。
       予測器の作り方は後述の <a href="#members">ChemProp のメンバー説明</a>で扱います。
     </p>
-    <p>
-      Figure&nbsp;1 は、4 種類の log2fc を学習セットの pEC50 に対して並べたものです。
-      predicted 側のほうが pEC50 との連動が強く（Pearson r ≈ 0.75 と 0.80、学習化合物 4,140 件すべてに対して）、
-      生の observed 値（r ≈ 0.72 と 0.50、しかもアッセイが実際に走った 2,374 件と 2,321 件に限られる）を上回ります。
-      アッセイを生で使うのではなく予測することで、被覆率の穴を埋めつつ信号を滑らかにできるわけです。
-    </p>
-    <p>
-      それだけではありません。pred log2fc は構造だけから計算できるので、<strong>すべての</strong>化合物に対して存在します。
-      log2fc の実測値を持たない（そもそも測定ラベルを一切持たない）ブラインドのテストセットも含めてです。
-      実測値はテスト時にはそもそも手に入らないので、そこで特徴量として使えるのは predicted の形だけです。
-      これは地味ですが重要な点で、アッセイ由来の信号を、実際に採点される化合物にまで届かせているのはこの性質です。
-    </p>
     <figure class="chart-figure">
       <div class="scatter-grid">
         <div id="chart-feat-0" class="chart chart-mini" style="height:280px"></div>
@@ -350,6 +338,20 @@
       <div id="chart-featcorr" class="chart" style="height:210px"></div>
       <figcaption>Figure 2: 代表的な特徴量と学習 pEC50 の相関。Boltz-2 の affinity は log10 IC50 なので符号が逆向きです。母数は列ごとに違い、observed log2fc が 2,374 件と 2,321 件、Boltz-2 系が 4,139 件（1 化合物は予測なし）、ほかは学習 4,140 件すべてです。</figcaption>
     </figure>
+    <p>
+      Figure&nbsp;1 の下段が pred log2fc です。上段の observed より pEC50 との連動が強く
+      （r 0.75 / 0.80 対 0.72 / 0.50）、しかも observed はアッセイが走った化合物にしかありません。
+      予測に置き換えることで、被覆率の穴を埋めながら信号も滑らかになります。
+    </p>
+    <p>
+      Figure&nbsp;2 で他の特徴量と並べても、pred log2fc の 2 列が先頭です。
+      記述子はどれも単独では弱く、モデルの中では pred log2fc の周りを固める文脈として働きます。
+    </p>
+    <p>
+      効いているのは精度だけではありません。pred log2fc は構造だけから計算できるので、
+      測定ラベルを一切持たないブラインドテストにも存在します。実測はテスト時に手に入らないので、
+      アッセイ由来の信号を採点対象の化合物まで届かせられるのは、予測した形だけです。
+    </p>
 
     <h3>How far does pred log2fc alone get?</h3>
     <p>

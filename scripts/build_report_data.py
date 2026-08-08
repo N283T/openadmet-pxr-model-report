@@ -182,6 +182,8 @@ FEATURE_CORR = [
     ("Rotatable bonds", "rot. bonds", "num_rotatable_bonds", "desc"),
 ]
 FEATURE_CORR_FAMILY_ORDER = {"log2fc": 0, "boltz": 1, "desc": 2}
+# The columns the section is arguing for; the chart boxes them.
+FEATURE_CORR_PICK = {"log2fc_8p25_pred", "log2fc_33_pred"}
 # Label-coverage matrix: which compound group carries which measured label.
 # Groups are (display name, master flag column); a compound is "aux" if it has a
 # single-concentration row but is neither train nor test.
@@ -663,6 +665,7 @@ def build_feature_corr(src: Path, dsn: str) -> None:
                 # Spearman == Pearson on ranks (avoids a scipy dependency).
                 "spearman": round(float(d["x"].rank().corr(d["y"].rank())), 2),
                 "n": len(d),
+                "pick": column in FEATURE_CORR_PICK,
             }
         )
     # Group by family (log2fc, Boltz, descriptors), sort by |correlation| within.
