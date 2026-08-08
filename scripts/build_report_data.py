@@ -102,6 +102,23 @@ GAIN_FAMILY_LABEL = {
 GAIN_TOP_N = 12
 
 # Per-compound master table + predicted log2fc + raw provided train files.
+# Raw vs calibrated on the unblinded test, vendored in this repo because it was
+# reproduced outside the working repo (see data/ensemble_calibration/README.md).
+CALIB_EFFECT_CSV = REPO_ROOT.joinpath(
+    "data", "ensemble_calibration", "ens_current_raw_calibrated_test_20260807.csv"
+)
+CALIB_METRICS_CSV = REPO_ROOT.joinpath(
+    "data", "ensemble_calibration", "ens_current_raw_vs_calibrated_metrics_20260807.csv"
+)
+# Scope key in the metrics file, how the report names it, and the split it covers.
+CALIB_SCOPES = [
+    ("full_test", "AS1 + AS2", None),
+    ("phase1_as1", "AS1", "AS1"),
+    ("phase2_as2", "AS2", "AS2"),
+]
+# True-pEC50 bands the per-band MAE is reported over.
+CALIB_BANDS = [(None, 3), (3, 4), (4, 5), (5, 6), (6, None)]
+
 MASTER_PARQUET = ("data", "eda_redo", "master.parquet")
 PLOG2FC_PARQUET = ("data", "ensemble4_log2fc_predictions.parquet")
 CONC_8P25 = 8.251e-6  # 8.25 uM
@@ -158,6 +175,12 @@ COVERAGE_SQL = """
 """
 # The public-leaderboard row for each submission id.
 LB_SUBMISSIONS_SQL = "SELECT id, lb_mae, lb_spearman FROM lb_submissions"
+# The same ledger with the columns the Phase-1 run chart needs.
+LB_RUN_SQL = """
+    SELECT id, file_path, submitted_at, lb_mae, lb_spearman, lb_rank
+      FROM lb_submissions
+     WHERE id = ANY(%(ids)s)
+"""
 # Mean fold MAE for a named experiment: each member's single-model OOF score.
 MEMBER_OOF_SQL = """
     SELECT e.name, avg(r.mae) AS oof_mae
@@ -476,7 +499,7 @@ def build_boltz_pooling(src: Path) -> None:
 
 # Phase-1 calibration-and-gate journey, read from the LB submission ledger.
 # (lb_submission id, short axis label, full label, is-anchor).
-CALIB_ANCHOR_ID = 55  # id55, the Phase 1 anchor every delta is measured against
+PHASE1_ANCHOR_ID = 55  # id55, the Phase 1 anchor every delta is measured against
 CALIB_JOURNEY = [
     (13, "raw", "Caruana ensemble (raw)", False),
     (19, "calibrated", "+ affine calibration", False),
@@ -494,7 +517,7 @@ def build_calibration_journey(dsn: str) -> None:
     df = query(dsn, LB_SUBMISSIONS_SQL)
     mae_by_id = df.drop_duplicates("id").set_index("id")["lb_mae"]
     # The ledger carried this column; against the anchor it is just a difference.
-    delta_by_id = mae_by_id - mae_by_id[CALIB_ANCHOR_ID]
+    delta_by_id = mae_by_id - mae_by_id[PHASE1_ANCHOR_ID]
     milestones = []
     for sub_id, short, label, anchor in CALIB_JOURNEY:
         if sub_id not in mae_by_id.index:
@@ -510,6 +533,85 @@ def build_calibration_journey(dsn: str) -> None:
             }
         )
     _write("calibration_journey.json", {"milestones": milestones})
+
+
+# The eleven Phase-1 endgame submissions, in id order: (id, short label).
+PHASE1_RUN = [
+    (50, "internal-decorrelation blend"),
+    (51, "meta-axis anchor over id50"),
+    (52, "re-pooled Boltz trunk swap"),
+    (53, "trunk core-only variant"),
+    (54, "id51 + potent gate"),
+    (55, "+ top500 swap + soft potent-46 gate"),
+    (56, "Optuna-tuned member swap"),
+    (57, "softer potent gate (g50)"),
+    (58, "combo gate rank"),
+    (59, "high-activity lift rank"),
+]
+PHASE1_RESUBMIT = (60, "id55 resubmitted, final Phase 1 entry")
+# The rank the organisers announced for the final Phase-1 standing, which is not
+# the rank the live board was showing when the file was submitted:
+# https://openadmet.ghost.io/woah-were-halfway-there/
+PHASE1_RESUBMIT_RANK = 8
+
+
+def build_phase1_run(dsn: str) -> None:
+    """The id50-id60 leaderboard run: MAE and Spearman per submission.
+
+    id60 is id55 resubmitted unchanged, so it is carried at id55's numbers and
+    flagged. Its own ledger row reads 0.4059 / 0.8343, but that is the interim
+    scoring over AS1 + AS2 (513 compounds) rather than the live AS1 board the
+    other ten rows come from -- rescoring the identical file on the same set
+    could not have moved Spearman off the 0.845 the run had been holding.
+    """
+    ids = [i for i, _ in PHASE1_RUN] + [PHASE1_RESUBMIT[0]]
+    df = query(dsn, LB_RUN_SQL, {"ids": ids}).drop_duplicates("id").set_index("id")
+    missing = [i for i in ids if i not in df.index]
+    if missing:
+        raise SystemExit(f"submission ids not in the ledger: {missing}")
+
+    stamps = [df.loc[i, "submitted_at"] for i, _ in PHASE1_RUN]
+    if stamps != sorted(stamps):
+        raise SystemExit("the id order and the submission order disagree")
+    anchor = df.loc[PHASE1_ANCHOR_ID]
+    if df.loc[PHASE1_RESUBMIT[0], "file_path"] != anchor["file_path"]:
+        raise SystemExit(
+            "id60 no longer points at id55's file; it is not a resubmission"
+        )
+
+    rows = [
+        {
+            "id": f"id{sub_id}",
+            "label": label,
+            "lbMae": round(float(df.loc[sub_id, "lb_mae"]), 4),
+            "spearman": round(float(df.loc[sub_id, "lb_spearman"]), 4),
+            "rank": int(df.loc[sub_id, "lb_rank"]),
+            "anchor": sub_id == PHASE1_ANCHOR_ID,
+            "resubmit": False,
+        }
+        for sub_id, label in PHASE1_RUN
+    ]
+    rows.append(
+        {
+            "id": f"id{PHASE1_RESUBMIT[0]}",
+            "label": PHASE1_RESUBMIT[1],
+            "lbMae": round(float(anchor["lb_mae"]), 4),
+            "spearman": round(float(anchor["lb_spearman"]), 4),
+            "rank": PHASE1_RESUBMIT_RANK,
+            "anchor": False,
+            "resubmit": True,
+        }
+    )
+    maes = [float(r["lbMae"]) for r in rows]
+    rhos = [float(r["spearman"]) for r in rows]
+    _write(
+        "phase1_run.json",
+        {
+            "rows": rows,
+            "spread": round(max(maes) - min(maes), 4),
+            "spearmanSpread": round(max(rhos) - min(rhos), 4),
+        },
+    )
 
 
 # Phase-2 AS2 MAE regression, from the final-label answer-key replay.
@@ -619,6 +721,94 @@ def train_frame(dsn: str) -> pd.DataFrame:
     return frame.set_index("compound_id")
 
 
+def build_calibration_effect() -> None:
+    """Calibration measured on one run: the same ensemble, raw and calibrated."""
+    d = pd.read_csv(CALIB_EFFECT_CSV)
+
+    def mae(pred):
+        return float((d[pred] - d["test"]).abs().mean())
+
+    def spearman(pred):
+        return float(d[pred].rank().corr(d["test"].rank()))
+
+    # A positive-slope affine cannot reorder anything; if it did, the file is not
+    # what this section claims it is.
+    if round(spearman("raw"), 6) != round(spearman("calibrated"), 6):
+        raise SystemExit("raw and calibrated disagree on Spearman; not a monotone fit")
+
+    metrics = pd.read_csv(CALIB_METRICS_CSV).set_index(["scope", "prediction"])
+    scopes = []
+    for key, label, split in CALIB_SCOPES:
+        sub = d if split is None else d[d["split"] == split]
+        row: dict[str, str | float] = {
+            "scope": label,
+            "n": int(metrics.loc[(key, "raw"), "n"]),
+        }
+        for column, name in (
+            ("MAE", "Mae"),
+            ("RAE", "Rae"),
+            ("R2", "R2"),
+            ("Spearman_R", "Spearman"),
+        ):
+            for which in ("raw", "calibrated"):
+                prefix = "raw" if which == "raw" else "cal"
+                row[prefix + name] = round(float(metrics.loc[(key, which), column]), 4)
+        for which, prefix in (("raw", "raw"), ("calibrated", "cal")):
+            row[prefix + "Bias"] = round(float((sub[which] - sub["test"]).mean()), 4)
+        scopes.append(row)
+
+    bands = []
+    for low, high in CALIB_BANDS:
+        sub = d
+        if low is not None:
+            sub = sub[sub["test"] >= low]
+        if high is not None:
+            sub = sub[sub["test"] < high]
+        if not len(sub):
+            continue
+        raw = float((sub["raw"] - sub["test"]).abs().mean())
+        cal = float((sub["calibrated"] - sub["test"]).abs().mean())
+        bands.append(
+            {
+                "label": (
+                    f"< {high}"
+                    if low is None
+                    else f"\u2265 {low}"
+                    if high is None
+                    else f"{low}-{high}"
+                ),
+                "low": low,
+                "high": high,
+                "n": int(len(sub)),
+                "rawMae": round(raw, 3),
+                "calMae": round(cal, 3),
+                "delta": round(cal - raw, 3),
+            }
+        )
+
+    _write(
+        "calibration_effect.json",
+        {
+            "spearman": round(spearman("raw"), 4),
+            "spread": {
+                "true": round(float(d["test"].std()), 3),
+                "raw": round(float(d["raw"].std()), 3),
+                "calibrated": round(float(d["calibrated"].std()), 3),
+            },
+            "scopes": scopes,
+            "bands": bands,
+            "points": [
+                [
+                    round(float(r.test), 2),
+                    round(float(r.raw), 2),
+                    round(float(r.calibrated), 2),
+                ]
+                for r in d.itertuples()
+            ],
+        },
+    )
+
+
 def build_coverage(dsn: str) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
     counts = query(dsn, COVERAGE_SQL).set_index("grp")
@@ -717,12 +907,14 @@ def main() -> None:
     logger.info("database: %s", dsn)
     build_ensemble_members(src, dsn)
     build_coverage(dsn)
+    build_calibration_effect()
     build_topk_sweep(src)
     build_lgbm_gain(src)
     build_member_corr(src)
     build_model_cards(src)
     build_boltz_pooling(src)
     build_calibration_journey(dsn)
+    build_phase1_run(dsn)
     build_phase2_as2(src)
     build_feature_scatter(src, dsn)
     build_feature_corr(src, dsn)
