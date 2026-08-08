@@ -118,57 +118,46 @@
     };
   }
 
-  // Calibration on one run: raw and calibrated predictions against the truth.
+  // Calibration on one run: what it changed, per true-pEC50 band. Negative is
+  // better, so improvement points one way and the cost points the other.
   function optCalibEffect(d, p) {
-    // The data spans 1.75 to 6.79 on the truth axis and 2.50 to 6.07 on the
-    // prediction axis, so this clips nothing.
-    var lo = 1.5, hi = 7;
-    var raw = d.points.map(function (x) { return [x[0], x[1]]; });
-    var cal = d.points.map(function (x) { return [x[0], x[2]]; });
-    var full = d.scopes.filter(function (s) { return s.scope === "full"; })[0];
+    var bands = d.bands;
+    var cats = bands.map(function (b) { return b.label; });
+    var data = bands.map(function (b) {
+      return {
+        value: b.delta,
+        itemStyle: { color: b.delta < 0 ? p.coral : p.muted, borderRadius: 3 },
+      };
+    });
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 56, right: 18, top: 34, bottom: 46 },
-      legend: {
-        top: 2, right: 4, itemWidth: 10, itemHeight: 10,
-        textStyle: { color: p.muted, fontFamily: p.font, fontSize: 11 },
-        data: ["raw", "calibrated"],
-      },
+      grid: { left: 62, right: 96, top: 12, bottom: 40 },
       tooltip: {
         trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
-          return "true pEC50 <b>" + o.data[0].toFixed(2) + "</b><br/>" +
-            o.seriesName + " <b>" + o.data[1].toFixed(2) + "</b>";
+          var b = bands[o.dataIndex];
+          return "true pEC50 " + b.label + " (n = " + b.n + ")<br/>" +
+            "raw <b>" + b.rawMae.toFixed(3) + "</b> \u2192 calibrated <b>" + b.calMae.toFixed(3) + "</b>" +
+            "<br/>" + (b.delta < 0 ? "改善" : "悪化") + " " + Math.abs(b.delta).toFixed(3);
         },
       },
-      xAxis: Object.assign({ type: "value", min: lo, max: hi, name: "true pEC50",
-        nameLocation: "middle", nameGap: 28, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
-      yAxis: Object.assign({ type: "value", min: lo, max: hi, name: "predicted pEC50",
-        nameLocation: "middle", nameRotate: 90, nameGap: 38, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
-      series: [
-        { name: "raw", type: "scatter", data: raw, symbolSize: 5,
-          itemStyle: { color: p.muted, opacity: 0.5 } },
-        { name: "calibrated", type: "scatter", data: cal, symbolSize: 5,
-          itemStyle: { color: p.coral, opacity: 0.75 },
-          // y = x drawn once, on the series that sits on top.
-          markLine: {
-            silent: true, symbol: "none", animation: false,
-            lineStyle: { color: p.muted, width: 1.2, type: "dashed", opacity: 0.9 },
-            data: [[{ coord: [lo, lo] }, { coord: [hi, hi] }]],
-            label: { show: false },
-          },
-          markPoint: {
-            silent: true, symbol: "circle", symbolSize: 0,
-            label: {
-              show: true, color: p.muted, fontFamily: p.font, fontSize: 11,
-              formatter: "MAE " + full.rawMae.toFixed(4) + " \u2192 " + full.calMae.toFixed(4) +
-                "   Spearman " + d.spearman.toFixed(4) + " (unchanged)",
-            },
-            data: [{ coord: [hi - 0.1, lo + 0.25] }],
-            itemStyle: { color: "transparent" },
+      xAxis: Object.assign({ type: "value", name: "MAE の変化（負が改善）",
+        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      yAxis: Object.assign({ type: "category", inverse: true, data: cats,
+        name: "true pEC50", nameLocation: "middle", nameRotate: 90, nameGap: 44,
+        nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
+      series: [{
+        type: "bar", data: data, barWidth: "56%",
+        label: {
+          show: true, color: p.muted, fontSize: 11, fontFamily: p.font,
+          position: function (o) { return o.value < 0 ? "left" : "right"; },
+          formatter: function (o) {
+            var b = bands[o.dataIndex];
+            return (o.value > 0 ? "+" : "\u2212") + Math.abs(o.value).toFixed(3) +
+              "   " + b.rawMae.toFixed(3) + " \u2192 " + b.calMae.toFixed(3);
           },
         },
-      ],
+      }],
     };
   }
 
