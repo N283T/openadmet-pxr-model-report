@@ -399,12 +399,13 @@ CALIB_LEDGER = (
 )
 CALIB_JOURNEY = [
     (13, "raw", "Caruana ensemble (raw)", False),
-    (31, "calibrated", "+ affine calibration", False),
+    (19, "calibrated", "+ affine calibration", False),
+    (31, "+seed ens", "+ seed-extended members", False),
     (51, "id51", "id51 · decorrelation anchor", False),
     (52, "id52", "id52 · trunk re-pool swap", False),
     (53, "id53", "id53 · trunk core-only", False),
     (54, "id54", "id54 · potent gate", False),
-    (55, "id55", "id55 · top500 + potent + soft gate", True),
+    (55, "id55", "id55 · gated top500 blend (potent-46)", True),
 ]
 
 
