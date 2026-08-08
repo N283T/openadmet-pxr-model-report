@@ -146,39 +146,41 @@
   // better, so improvement points one way and the cost points the other.
   function optCalibEffect(d, p) {
     var bands = d.bands;
-    var cats = bands.map(function (b) { return b.label; });
-    var data = bands.map(function (b) {
-      return {
-        value: b.delta,
-        itemStyle: { color: b.delta < 0 ? p.coral : p.muted, borderRadius: 3 },
-      };
-    });
+    var span = Math.max.apply(null, bands.map(function (b) { return Math.abs(b.delta); }));
+    var pad = span * 0.35; // room for the value label outside the bar end
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 62, right: 96, top: 12, bottom: 40 },
+      grid: { left: 58, right: 24, top: 12, bottom: 40 },
       tooltip: {
         trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (o) {
           var b = bands[o.dataIndex];
-          return "true pEC50 " + b.label + " (n = " + b.n + ")<br/>" +
-            "raw <b>" + b.rawMae.toFixed(3) + "</b> \u2192 calibrated <b>" + b.calMae.toFixed(3) + "</b>" +
-            "<br/>" + (b.delta < 0 ? "改善" : "悪化") + " " + Math.abs(b.delta).toFixed(3);
+          return "true pEC50 " + b.label + " (n = " + b.n + ")<br/>MAE <b>" +
+            b.rawMae.toFixed(3) + "</b> \u2192 <b>" + b.calMae.toFixed(3) + "</b>";
         },
       },
-      xAxis: Object.assign({ type: "value", name: "MAE の変化（負が改善）",
+      xAxis: Object.assign({ type: "value", min: -span - pad, max: span + pad,
+        name: "change in MAE (negative is better)",
         nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
-      yAxis: Object.assign({ type: "category", inverse: true, data: cats,
-        name: "true pEC50", nameLocation: "middle", nameRotate: 90, nameGap: 44,
+      // Not inverse: potency runs up the axis, so the strong compounds — the ones
+      // the challenge is about — sit at the top.
+      yAxis: Object.assign({ type: "category",
+        data: bands.map(function (b) { return b.label; }),
+        name: "true pEC50", nameLocation: "middle", nameRotate: 90, nameGap: 42,
         nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
       series: [{
-        type: "bar", data: data, barWidth: "56%",
+        type: "bar", barWidth: "56%",
+        data: bands.map(function (b) {
+          return {
+            value: b.delta,
+            itemStyle: { color: b.delta < 0 ? p.coral : p.muted, borderRadius: 3 },
+          };
+        }),
         label: {
           show: true, color: p.muted, fontSize: 11, fontFamily: p.font,
           position: function (o) { return o.value < 0 ? "left" : "right"; },
           formatter: function (o) {
-            var b = bands[o.dataIndex];
-            return (o.value > 0 ? "+" : "\u2212") + Math.abs(o.value).toFixed(3) +
-              "   " + b.rawMae.toFixed(3) + " \u2192 " + b.calMae.toFixed(3);
+            return (o.value > 0 ? "+" : "\u2212") + Math.abs(o.value).toFixed(3);
           },
         },
       }],
