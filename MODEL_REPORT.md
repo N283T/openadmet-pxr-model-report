@@ -165,13 +165,27 @@ The members are combined with **Caruana forward selection**
 greedy scheme that repeatedly adds the member that most reduces OOF error.
 Because weights come from bagged selection counts, no single member can dominate.
 
-How independent are the members? Not very: they are **all highly correlated**
-(r from 0.81 to 0.98, mean 0.88). The two tabular cores are near-duplicates
-(0.98), the two Boltz-2 members too (0.97). So the ensemble is less a blend of
-independent views than a **buffer** that keeps any one strong-but-correlated
-member (especially top500) from dominating. The most decorrelated members are the
-two Boltz-2 structural ones (0.81 to 0.88 against the chemistry members), which
-is why they earn weight despite being weak alone.
+How independent are the members? Not very: on their **test** predictions
+(AS1 + AS2, 513 compounds) they are **all highly correlated** (r from 0.81 to
+0.98, mean 0.88). The two tabular cores are near-duplicates (0.98), the two
+Boltz-2 members too (0.97). So the ensemble is less a blend of independent views
+than a **buffer** that keeps any one strong-but-correlated member (especially
+top500) from dominating.
+
+On that test slice the two Boltz-2 structural members look like the decorrelated
+ones (0.81 to 0.88 against the chemistry members), and it is tempting to read that
+as why they earn weight. It does not survive the check. The weights came from
+Caruana selection on **OOF** error, and recomputed there the gap largely
+disappears: the nine members sit at **0.90–0.99, mean 0.93**, with Boltz rising to
+0.90 against top500 and 0.94 against tabular-full, and 0.99 with each other. On
+the slice the selector actually saw, Boltz is not measurably more independent than
+the pack. The buffer reading is unaffected; the "most decorrelated member" story
+is a test-side artifact.
+
+*Caveat on that recomputation.* The production OOF predictions that drove the
+weights are not archived, so it uses the cross-fit OOF predictions still on disk
+(Phase 2 train + AS1, 4,393 rows, TabPFN v2.6, `n_estimators` 8) — a development
+artifact, and the closest available check rather than a definitive one.
 
 ## 5. The members
 
@@ -328,9 +342,11 @@ affinity-style head, or mixing in the distogram, did not particularly help. Two
 poolings survived, each about 0.486 alone. TabPFN (0.486) beat LightGBM and an MLP
 (0.512, 0.538) on the same vector.
 
-Stepping back, these two ended up the only members carrying **no log2fc at all**,
-and the most decorrelated from the rest (agreement with the other members averages
-~0.85, below the ~0.88 pack). Reaching ~0.486 from co-folded structure alone, with
+Stepping back, these two ended up the only members carrying **no log2fc at all**.
+On test predictions they also look the most decorrelated from the rest (agreement
+with the other members averages ~0.85, below the ~0.88 pack), but as Section 4
+notes that ordering does not hold on OOF, where their ~0.92 sits mid-pack rather
+than apart. Reaching ~0.486 from co-folded structure alone, with
 none of the log2fc signal that powers every other member, says the Boltz
 representation holds real standalone signal, a strong showing against a direct
 MoLFormer-XL fine-tune (0.529). The caveat: on the unblinded test a from-scratch
@@ -343,7 +359,8 @@ learned representation than used for its predicted structure or affinity.
 Two levers were left once the ensemble was built: calibrating its output, and a
 set of tail gates. The honest summary is one clear win followed by a plateau. A
 simple affine calibration pulled the raw Caruana blend from about **0.441** down
-to **0.408** on the public leaderboard. Everything after that, the id51 to id55
+to **0.4154** on the public leaderboard, and folding in the seed-extended members
+took it the rest of the way to **0.4078**. Everything after that, the id51 to id55
 run of tail gates, moved the score by less than 0.004 MAE either way, noise
 against the calibration step. **id55** became the Phase 1 anchor by a hair; a few
 later tries never beat it, so we closed Phase 1 by resubmitting that same model
@@ -356,13 +373,22 @@ isotonic variant), validated under 5-fold nested CV so the calibrator could not
 overfit. The shipped version, `calibrated_importance`, adds a covariate-shift
 correction: each training compound is reweighted by a density ratio
 `P(test|x)/(1−P(test|x))`, clipped to [1/3, 3], so the fit leans on the training
-points that most resemble the blinded test set. That single step is where the
-real 0.44 → 0.41 gain came from.
+points that most resemble the blinded test set. That single step is the one clear
+post-ensemble gain: 0.4414 → 0.4154 on its own, about three quarters of the way
+from the raw blend to the 0.4078 that the seed-extended members then reached.
 
 Everything past that was competition craft, not research. The id50–id60 tuning was
 largely done by watching the public leaderboard. The final anchor decodes to a
-short recipe: `id55 = calibrated ensemble (id51) + top500 member swap + a soft
-potent-46 high-activity lift (threshold 40, gain 0.35)`. The whole run is flat:
+short recipe — one gated blend on top of id51, not two edits:
+
+```text
+id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 >= 0.40)
+             * (seed10_top500 - ens_caruana_bag20)
+```
+
+The "top500 swap" and the "potent-46 lift" are the same term: a difference between
+two ensembles, applied only where the gate opens. There is no member-swapped
+submission that exists without the gate. The whole run is flat:
 
 | id | Change | Public-LB MAE |
 |---|---|---:|
@@ -371,15 +397,19 @@ potent-46 high-activity lift (threshold 40, gain 0.35)`. The whole run is flat:
 | id52 | re-pooled Boltz trunk swap | 0.4087 |
 | id53 | trunk core-only variant | 0.4106 |
 | id54 | id51 + potent gate | 0.4096 |
-| **id55** | + top500 swap + soft potent-46 gate (anchor) | 0.4071 |
+| **id55** | id51 + gated top500 blend, soft potent-46 gate (anchor) | 0.4071 |
 | id56 | Optuna-tuned member swap | 0.4135 |
 | id57 | softer potent gate (g50) | 0.4074 |
 | id58 | combo gate rank | 0.4075 |
 | id59 | high-activity lift rank | 0.4077 |
-| **id60** | id55 resubmitted, final Phase 1 entry | 0.4059 |
+| **id60** | id55 resubmitted unchanged, final Phase 1 entry | 0.4071 |
 
-id55 and id60 are the same model; the 0.4071 vs 0.4059 gap is pure leaderboard
-scatter, wider than most of the "improvements" in between.
+id60 carries id55's score because it is the same file: the live Phase 1 board
+(AS1, 253 compounds) never scored it as anything else. The **0.4059** quoted in
+the standings above is the later *interim* scoring over AS1 + AS2 (513 compounds)
+— a different slice, which is also why its Spearman reads 0.8343 against the
+~0.845 this model held on the live board. The two numbers are not two draws from
+the same leaderboard.
 
 The one part that kept mattering was the **tail**. The most potent compounds
 (pEC50 ≥ 6) are systematically under-predicted; the model shrinks them toward the
