@@ -308,13 +308,13 @@ pre code { background: none; border: 0; padding: 0; font-size: .84em; line-heigh
 
 /* Japanese page: append the CJK face to the body stack (Latin still resolves to
    Zen Maru Gothic first), then tighten punctuation and open up the leading a
-   little. */
+   little. Running text only — the headings and the lede are English on both
+   pages, so they keep the shared leading and the two pages stay identical. */
 html[lang="ja"] {
   --font-body: "Zen Maru Gothic", "Zen Maru Gothic JP", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 html[lang="ja"] body { font-feature-settings: "palt" 1; }
-html[lang="ja"] p, html[lang="ja"] li { line-height: 1.9; }
-html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { line-height: 1.5; }
+html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
 
 /* Member roster table (aliases) */
 .roster-table {
