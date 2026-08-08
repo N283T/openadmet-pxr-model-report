@@ -200,9 +200,9 @@
     <p>
       At first we built features and models from the Train pEC50 labels alone. But there are only
       <strong>4,140</strong> pEC50 labels, and accuracy plateaued almost immediately.
-      The challenge data also ships a single-concentration reporter assay —
-      <strong>log2 fold-change</strong> (log2fc) at 8.25&nbsp;µM and 33&nbsp;µM — as auxiliary
-      data, and it covers far more compounds. We knew that auxiliary signal was there; we did not know
+      The challenge data also ships a single-concentration reporter assay as auxiliary data
+      (<strong>log2 fold-change</strong>, or log2fc, at 8.25&nbsp;µM and 33&nbsp;µM), and it covers
+      far more compounds. We knew that auxiliary signal was there; we did not know
       how to use it well. Naive ideas such as converting it into pseudo pEC50 labels only lowered accuracy.
     </p>
     <ul>
@@ -228,8 +228,9 @@
 
     <h3>Finding Buterez et al.</h3>
     <p>
-      To break the plateau, we had Claude Code draft a research prompt that laid the situation out as it stood — scarce pEC50, an abundant auxiliary assay, pseudo-labeling failing — and asked
-      for ways to exploit the auxiliary signal. Running that prompt through ChatGPT Deep Research
+      To break the plateau, we had Claude Code draft a research prompt that laid the situation out
+      as it stood (scarce pEC50, an abundant auxiliary assay, pseudo-labeling that did not work),
+      then asked for ways to exploit the auxiliary signal. Running that prompt through ChatGPT Deep Research
       surfaced Buterez et&nbsp;al.
     </p>
     <div class="paper-card">
@@ -249,7 +250,7 @@
       </div>
       <div class="cascade__arrow">
         <span class="cascade__mark" aria-hidden="true">→</span>
-        <span class="cascade__note">only some move on<br>a 500× or larger gap in count</span>
+        <span class="cascade__note">a 500× or larger gap in count</span>
       </div>
       <div class="cascade__tier is-hf">
         <span class="cascade__tag">high-fidelity</span>
@@ -528,7 +529,7 @@
       <figcaption>Figure 6: Share of LightGBM gain by feature family (over the full stack). The two pred log2fc columns account for about 74% of the gain; Mordred and CheMeleon supply most of the breadth.</figcaption>
     </figure>
     <p>
-      Zooming in on individual features sharpens the same story (Table&nbsp;9). The two pred log2fc columns are first and second by a wide margin (52% and 22% of the gain),
+      Zoom in on individual features and the same story gets sharper (Table&nbsp;9). The two pred log2fc columns are first and second by a wide margin (52% and 22% of the gain),
       and after them no single feature reaches even 0.4%. The tail is a mix of CheMeleon dimensions and readable descriptors like
       <code>SLogP</code>, <code>qed</code>, and the pose-Jazzy hydration terms.
     </p>
@@ -649,7 +650,7 @@
 
     <h3>5.3 Boltz trunk (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
-      These two use Boltz-2's <strong>trunk</strong> — its internal learned <strong>representation</strong> — and never touch the predicted structure.
+      These two use Boltz-2's <strong>trunk</strong>, its internal learned <strong>representation</strong>, and never touch the predicted structure.
     </p>
     <p>
       The original plan was to
@@ -743,7 +744,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-effect" class="chart" style="height:380px"></div>
-      <figcaption>Figure 9: How MAE changes band by band. Calibration gains in the 5-6 and 6+ bands (0.800 → 0.674 above 6) and gives some back in 3-5. That trade points the same way as the challenge's goal, catching the strong inducers. Hover a bar for the before and after values.</figcaption>
+      <figcaption>Figure 9: How MAE changes band by band. Calibration gains in the 5-6 and 6+ bands (0.800 → 0.674 above 6) and gives some back in 3-5. That trade points the same way as the challenge's goal of catching strong inducers. Hover a bar for the before and after values.</figcaption>
     </figure>
     <p>
       The predictions really do spread back out. Against a true standard deviation of 0.996, the raw predictions
@@ -881,7 +882,7 @@
     </ul>
     <p>
       On a personal note, this was my first competition, and 4th of 95 is better than I expected going in.
-      Two things stand out looking back. One is how heavily I leaned on AI coding agents and ChatGPT
+      Two things stick with me. One is how heavily I leaned on AI coding agents and ChatGPT
       throughout, for literature search, for code, and as a sounding board, and how much I got out of
       that workflow; I want to write about it properly in a separate post. The other is that all of this ran on a single home gaming PC, and that I did it alone. Reaching Tier 1 out of 95 teams from that setup
       surprised me, and I am a little proud of it.
