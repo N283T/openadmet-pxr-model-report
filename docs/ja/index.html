@@ -766,15 +766,14 @@
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
     <ul>
-      <li><strong>potent-46</strong> — Test は強い誘導剤の analog set として作られています。
-        その帯の見本として、Train から pEC50 ≥ 6 かつ counter assay に対する選択性 1.5 以上の
-        46 件を取りました。</li>
+      <li><strong>potent-46</strong> — Test は強い誘導剤の analog set。その帯の見本として、
+        Train から pEC50 ≥ 6 かつ counter assay に対する選択性 1.5 以上の 46 件を採用</li>
       <li><strong>gate</strong> — Test 化合物ごとに potent-46 への Morgan 最近傍 Tanimoto を測り、
-        近いものだけ開きます。
-        <ul><li>0.40 未満で 0、0.55 以上で 1、その間は線形。硬い閾値だと境界で予測が跳ねます</li></ul>
+        近いものだけ開く
+        <ul><li>0.40 未満で 0、0.55 以上で 1、その間は線形。硬い閾値だと境界で予測が跳ねる</li></ul>
       </li>
-      <li><strong>寄せる量</strong> — top500 メンバーと素のブレンドの差を 0.35 だけ足します。
-        置き換えではないので、gate が閉じている化合物は id51 のままです。</li>
+      <li><strong>寄せる量</strong> — top500 メンバーと素のブレンドの差を 0.35 だけ加算。
+        置き換えではないので、gate が閉じている化合物は id51 のまま</li>
     </ul>
     <p>
       id55 のあとも試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
@@ -807,15 +806,15 @@
     <p>何が悪かったのか。</p>
     <ul>
       <li><strong>AS1 ラベルでの再学習</strong> — 公開された AS1 を足して top500 を学習し直し、
-        そちらへブレンドしました。ところが AS1 の追加はほとんどのメンバーで AS2 を改善しておらず、
-        ブレンドは誤差だけを持ち込みました。</li>
+        そちらへブレンド。ところが AS1 の追加はほとんどのメンバーで AS2 を改善せず、
+        持ち込んだのは誤差だけ</li>
       <li><strong>高活性 gate</strong> — 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> と
-        公開 PXR 活性から pairrank のランキングモデルを作りました（ペアで学習する Boltz-2 の
-        affinity head に倣った設計です）。検出は AUC 約 0.88 と良かったのですが、難所はそこではありません。
-        <ul><li><em>どれ</em>を動かすかが分かっても、<em>どれだけ</em>動かすかは分かりません。幅を外した損が、ランキングで稼いだ分を超えました</li></ul>
+        公開 PXR 活性から pairrank のランキングモデルを作成（ペアで学習する Boltz-2 の
+        affinity head に倣った設計）。検出は AUC 約 0.88 と良好。ただし難所はそこではない
+        <ul><li><em>どれ</em>を動かすかが分かっても、<em>どれだけ</em>動かすかは分からない。幅を外した損が、ランキングで稼いだ分を超えた</li></ul>
       </li>
-      <li><strong>低活性側に触らなかったこと</strong> — 外したときの損が大きいので見送りました。
-        これだけは正解だったと、解答が公開されて確認できました。</li>
+      <li><strong>低活性側に触らなかったこと</strong> — 外したときの損が大きいので見送り。
+        これだけは正解だったと、解答公開後に確認</li>
     </ul>
     <p>
       そして両刃です。提出しなかった候補 <code>id55shape_t10top500_t40_soft_g35</code> は
