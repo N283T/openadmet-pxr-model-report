@@ -724,17 +724,17 @@
       提出履歴の中では、calibration の効果とメンバー改善が混ざって見えます。そこで最終アンサンブル重みで
       raw と calibrated を<strong>同じ 1 回の実行から</strong>出し直しました（unblinded test 513 件）。
     </p>
+    <div class="table-scroll">
+      <table class="roster-table">
+        <thead><tr><th>Metric</th><th class="num">Ensemble only</th><th class="num">+ calibration</th></tr></thead>
+        <tbody data-calib-metrics></tbody>
+      </table>
+    </div>
+    <p class="metrics-key">unblinded test 513 件。<strong>Spearman だけが動きません</strong>。単調変換なので当然ですが、「順位は合っている」という診断に対する処方として筋が通っていることの確認でもあります。AS1 / AS2 に分けても向きは同じです（0.4191 → 0.4076、0.4226 → 0.4078）。</p>
     <figure class="chart-figure">
       <div id="chart-calib-effect" class="chart" style="height:380px"></div>
       <figcaption>Figure 9: 帯域ごとの MAE の変化。5–6 と 6 以上で稼ぎ（6 以上は 0.800 → 0.674）、3–5 で返しています。チャレンジの目的（強い誘導剤を当てる）とは向きが合っていますが、全域で改善するわけではありません。バーにカーソルを合わせると補正前後の値が出ます。</figcaption>
     </figure>
-    <div class="table-scroll">
-      <table class="roster-table">
-        <thead><tr><th>Scope</th><th class="num">n</th><th class="num">MAE</th><th class="num">RAE</th><th class="num">R²</th><th class="num">Spearman</th><th class="num">bias</th></tr></thead>
-        <tbody data-calib-metrics></tbody>
-      </table>
-    </div>
-    <p class="metrics-key">raw → calibrated。<strong>Spearman だけが動きません</strong>。単調変換なので当然ですが、「順位は合っている」という診断に対する処方として筋が通っていることの確認でもあります。</p>
     <p>
       予測の潰れも実際に広がっています。標準偏差は正解の 0.996 に対し、補正前 0.703、補正後 0.767。
       強い化合物を低めに、弱い化合物を高めに出す癖が、一次式の分だけ戻った形です。

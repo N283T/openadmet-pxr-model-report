@@ -118,26 +118,25 @@
     };
   }
 
-  // The metrics table beside that chart, from the same JSON.
+  // The metrics table beside that chart, from the same JSON. One column per
+  // prediction rather than one row per scope: the comparison is the point, and
+  // the scopes agree with each other (the prose says so).
   function renderCalibMetrics() {
     var body = document.querySelector("[data-calib-metrics]");
     if (!body) return;
-    var cols = [
-      ["MAE", "Mae", 4, false], ["RAE", "Rae", 4, false],
-      ["R\u00b2", "R2", 4, true], ["Spearman", "Spearman", 4, true],
-      ["bias", "Bias", 3, null],
+    var rows = [
+      ["MAE", "Mae", 4], ["RAE", "Rae", 4], ["R\u00b2", "R2", 4],
+      ["Spearman", "Spearman", 4], ["bias", "Bias", 3],
     ];
     getJSON("calibration_effect.json").then(function (d) {
-      body.innerHTML = d.scopes.map(function (s) {
-        var cells = cols.map(function (c) {
-          var raw = s["raw" + c[1]], cal = s["cal" + c[1]];
-          var same = raw === cal;
-          var arrow = same ? " =" : " \u2192 ";
-          return '<td class="num">' + raw.toFixed(c[2]) + arrow +
-            (same ? "" : "<b>" + cal.toFixed(c[2]) + "</b>") + "</td>";
-        }).join("");
-        return "<tr><th>" + s.scope + "</th>" +
-          '<td class="num">' + s.n + "</td>" + cells + "</tr>";
+      var s = d.scopes.filter(function (x) { return x.n === 513; })[0] || d.scopes[0];
+      body.innerHTML = rows.map(function (r) {
+        var raw = s["raw" + r[1]], cal = s["cal" + r[1]];
+        var moved = raw !== cal;
+        return "<tr><th>" + r[0] + "</th>" +
+          '<td class="num">' + raw.toFixed(r[2]) + "</td>" +
+          '<td class="num">' + (moved ? "<b>" + cal.toFixed(r[2]) + "</b>" : cal.toFixed(r[2])) +
+          "</td></tr>";
       }).join("");
     }).catch(function (e) { console.error(e); });
   }
@@ -147,7 +146,8 @@
   function optCalibEffect(d, p) {
     var bands = d.bands;
     var span = Math.max.apply(null, bands.map(function (b) { return Math.abs(b.delta); }));
-    var pad = span * 0.35; // room for the value label outside the bar end
+    // Rounded up so the axis ticks stay tidy, with room for a label past the end.
+    var edge = Math.ceil(span * 1.45 * 100) / 100;
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
       grid: { left: 58, right: 24, top: 12, bottom: 40 },
@@ -159,7 +159,7 @@
             b.rawMae.toFixed(3) + "</b> \u2192 <b>" + b.calMae.toFixed(3) + "</b>";
         },
       },
-      xAxis: Object.assign({ type: "value", min: -span - pad, max: span + pad,
+      xAxis: Object.assign({ type: "value", min: -edge, max: edge,
         name: "change in MAE (negative is better)",
         nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
       // Not inverse: potency runs up the axis, so the strong compounds — the ones
@@ -176,9 +176,12 @@
             itemStyle: { color: b.delta < 0 ? p.coral : p.muted, borderRadius: 3 },
           };
         }),
+        // Always past the bar's right edge — at the zero line for the negative
+        // bars, past the tip for the positive ones — in ink rather than the bar's
+        // own colour, which made them vanish into the fill.
         label: {
-          show: true, color: p.muted, fontSize: 11, fontFamily: p.font,
-          position: function (o) { return o.value < 0 ? "left" : "right"; },
+          show: true, color: p.ink, fontSize: 11, fontFamily: p.font,
+          position: "right", distance: 8,
           formatter: function (o) {
             return (o.value > 0 ? "+" : "\u2212") + Math.abs(o.value).toFixed(3);
           },
