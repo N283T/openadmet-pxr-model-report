@@ -206,9 +206,9 @@
       精度を下げるだけでした。
     </p>
     <ul>
-      <li>配布されるのは <strong>Train / Test / AUX data</strong> の 3 つで、揃っている項目はそれぞれ違います。</li>
-      <li><strong>Test は SMILES のみ</strong>。実測値が一切ないので、Test で使える log2fc も存在しません。</li>
-      <li>log2fc は 2 濃度で測られるので、1 化合物あたり 2 つの測定値になります。</li>
+      <li>配布されるのは <strong>Train / Test / AUX data</strong> の 3 つ 揃っている項目はそれぞれ違う</li>
+      <li><strong>Test は SMILES のみ</strong> 実測値がないので Test で使える log2fc も存在しない</li>
+      <li>log2fc は 2 濃度で測るので 1 化合物あたり 2 つの測定値</li>
     </ul>
     <figure class="chart-figure">
       <div class="table-scroll">
@@ -263,7 +263,7 @@
     <ol class="strat-grid">
       <li class="strat"><span class="strat__n">1</span><span class="strat__body">生の LF ラベルを特徴量に足す</span><span class="strat__count">10</span></li>
       <li class="strat"><span class="strat__n">2</span><span class="strat__body">LF モデルが<strong>予測したラベル</strong>を足す</span><span class="strat__count">3</span></li>
-      <li class="strat"><span class="strat__n">3</span><span class="strat__body">ハイブリッド — 学習は実測、推論は予測</span><span class="strat__count">2</span></li>
+      <li class="strat"><span class="strat__n">3</span><span class="strat__body">ハイブリッド — 学習は実測 推論は予測</span><span class="strat__count">2</span></li>
       <li class="strat"><span class="strat__n">4</span><span class="strat__body">LF モデルの <strong>embedding</strong> を足す</span><span class="strat__count">10</span></li>
       <li class="strat"><span class="strat__n">5</span><span class="strat__body">LF で事前学習して通常どおり fine-tune</span><span class="strat__count">0</span></li>
       <li class="strat"><span class="strat__n">6</span><span class="strat__body">LF で事前学習し <strong>readout だけ</strong> fine-tune</span><span class="strat__count">26</span></li>
@@ -288,8 +288,8 @@
     </table>
     <p>論文と違うのは主に 2 点でした。</p>
     <ul>
-      <li><strong>生ラベルが使えない</strong> — test に実測がないので、<span class="strat-ref">1</span>と<span class="strat-ref">3</span>は最初から選べません。</li>
-      <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上、今回は 10,875 化合物です。</li>
+      <li><strong>生ラベルが使えない</strong> — test に実測がないので <span class="strat-ref">1</span>と<span class="strat-ref">3</span>は最初から選べない</li>
+      <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上 今回は 10,875 化合物</li>
     </ul>
     <p>
       残るなかから採用したのが <span class="strat-ref coral">2</span> と <span class="strat-ref coral">4</span> です。
@@ -398,8 +398,10 @@
     </p>
     <ul>
       <li><strong>tabular core</strong> — 記述子と pred log2fc を並べた 2,103 次元をそのまま渡す</li>
-      <li><strong>frozen embed</strong> — log2fc で事前学習した encoder を凍結し、その embedding を渡す</li>
-      <li><strong>Boltz trunk</strong> — Boltz-2 の内部表現を渡す。log2fc が入らない唯一の系統</li>
+      <li><strong>frozen embed</strong> — log2fc で事前学習した encoder を凍結し その embedding を渡す</li>
+      <li><strong>Boltz trunk</strong> — Boltz-2 の内部表現を渡す
+        <ul><li>log2fc が入らない唯一の系統</li></ul>
+      </li>
     </ul>
     <p>
       readout head は全メンバー <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a></strong> で、
@@ -626,11 +628,12 @@
     <h4>Foundation encoders: KERMT &amp; MoLFormer</h4>
     <p>同じレシピを、より大きな事前学習済み backbone に適用したものです。</p>
     <ul>
-      <li><strong><a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a></strong> — graph transformer。
-        log2fc で継続事前学習して 3,200 次元の embedding を得ます。embedding 系では 2 番手（0.448、重み 0.111）。</li>
-      <li><strong><a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer</a></strong> — SMILES transformer
-        （DeepChem MoLFormer-c3）。log2fc に対して LoRA で事前学習し、凍結した 768 次元の [CLS] ベクトルを使います
-        （0.475、重み 0.040）。</li>
+      <li><strong><a href="https://github.com/NVIDIA-BioNeMo/KERMT">KERMT</a></strong> — graph transformer
+        <ul><li>log2fc で継続事前学習して 3,200 次元の embedding を取得 embedding 系では 2 番手（0.448 / 重み 0.111）</li></ul>
+      </li>
+      <li><strong><a href="https://huggingface.co/DeepChem/MoLFormer-c3-1.1B">MoLFormer</a></strong> — SMILES transformer（DeepChem MoLFormer-c3）
+        <ul><li>log2fc に LoRA で事前学習し 凍結した 768 次元の [CLS] ベクトルを使用（0.475 / 重み 0.040）</li></ul>
+      </li>
     </ul>
     <p>
       同じレシピを通しても採用に至らなかった backbone もあります。<strong>ChemBERTa</strong> は OOF 0.53 前後、
@@ -710,13 +713,16 @@
       メンバーを足すのではなく、出力を後から一次式で補正することにしました。
     </p>
     <ul>
-      <li><strong>重みを作る</strong> — Morgan fingerprint で Train / Test を判別する分類器を作り、
-        密度比 P(test|x) / (1 − P(test|x)) を化合物ごとの重みにします。[1/3, 3] にクリップするのが必須で、
-        分類器が強すぎると少数の Test 似の化合物に引っ張られます。</li>
-      <li><strong>直線を引く</strong> — その重みで、OOF 予測 4,140 件と正解ラベルから一次式をフィットします
-        （5-fold nested CV で検証）。傾きが正なので並び順は壊れず、スケールと中心だけが動きます。</li>
-      <li><strong>Test に当てる</strong> — 同じ一次式を Test 予測にそのまま適用します。
-        使ったのは Test 化合物の<strong>構造だけ</strong>で、正解ラベルは一切見ていません。</li>
+      <li><strong>重みを作る</strong> — Morgan fingerprint で Train / Test を判別する分類器を作り
+        密度比 P(test|x) / (1 − P(test|x)) を化合物ごとの重みに
+        <ul><li>[1/3, 3] へのクリップが必須 分類器が強すぎると少数の Test 似の化合物に引っ張られる</li></ul>
+      </li>
+      <li><strong>直線を引く</strong> — その重みで OOF 予測 4,140 件と正解ラベルから一次式をフィット（5-fold nested CV で検証）
+        <ul><li>傾きが正なので並び順は壊れず スケールと中心だけが動く</li></ul>
+      </li>
+      <li><strong>Test に当てる</strong> — 同じ一次式を Test 予測にそのまま適用
+        <ul><li>使ったのは Test 化合物の<strong>構造だけ</strong>で 正解ラベルは一切見ていない</li></ul>
+      </li>
     </ul>
 
     <h3>How much did it buy? <span class="badge post">post-challenge</span></h3>
@@ -766,14 +772,18 @@
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
     <ul>
-      <li><strong>potent-46</strong> — Test は強い誘導剤の analog set。その帯の見本として、
-        Train から pEC50 ≥ 6 かつ counter assay に対する選択性 1.5 以上の 46 件を採用</li>
-      <li><strong>gate</strong> — Test 化合物ごとに potent-46 への Morgan 最近傍 Tanimoto を測り、
-        近いものだけ開く
-        <ul><li>0.40 未満で 0、0.55 以上で 1、その間は線形。硬い閾値だと境界で予測が跳ねる</li></ul>
+      <li><strong>potent-46</strong> — Test は強い誘導剤の analog set
+        <ul><li>その帯の見本として Train から pEC50 ≥ 6 かつ counter assay に対する選択性 1.5 以上の 46 件を採用</li></ul>
       </li>
-      <li><strong>寄せる量</strong> — top500 メンバーと素のブレンドの差を 0.35 だけ加算。
-        置き換えではないので、gate が閉じている化合物は id51 のまま</li>
+      <li><strong>gate</strong> — Test 化合物ごとに potent-46 への Morgan 最近傍 Tanimoto を測り 近いものだけ開く
+        <ul>
+          <li>0.40 未満で 0 / 0.55 以上で 1 / その間は線形</li>
+          <li>硬い閾値だと境界で予測が跳ねる</li>
+        </ul>
+      </li>
+      <li><strong>寄せる量</strong> — top500 メンバーと素のブレンドの差を 0.35 だけ加算
+        <ul><li>置き換えではないので gate が閉じている化合物は id51 のまま</li></ul>
+      </li>
     </ul>
     <p>
       id55 のあとも試しています（Optuna で調整したメンバー入れ替え id56、緩めた potent gate id57、
@@ -805,17 +815,16 @@
     </figure>
     <p>Phase 2 では、おもに次の 3 つの操作を行いました。</p>
     <ul>
-      <li><strong>AS1 ラベルでの再学習</strong> — 公開された AS1 を学習データに足して top500 を
-        学習し直し、その予測を anchor に 0.45 混ぜた
-        <ul><li>AS1 の追加はほとんどのメンバーで AS2 を改善せず、混ぜた分だけ誤差が入った</li></ul>
+      <li><strong>AS1 ラベルでの再学習</strong> — 公開された AS1 を学習データに足して top500 を学習し直し
+        その予測を anchor に 0.45 混合
+        <ul><li>AS1 の追加はほとんどのメンバーで AS2 を改善せず 混ぜた分だけ誤差が入った</li></ul>
       </li>
-      <li><strong>高活性 gate</strong> — 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> と
-        公開 PXR 活性から pairrank のランキングモデルを作成（ペアで学習する Boltz-2 の
-        affinity head に倣った設計）
+      <li><strong>高活性 gate</strong> — 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> と公開 PXR 活性から
+        pairrank のランキングモデルを作成（ペアで学習する Boltz-2 の affinity head に倣った設計）
         <ul>
           <li>検出は AUC 約 0.88 と良好</li>
-          <li><em>どれ</em>を動かすかが分かっても、<em>どれだけ</em>動かすかは分からない</li>
-          <li>幅を外した損が、ランキングで稼いだ分を超えた</li>
+          <li><em>どれ</em>を動かすかが分かっても <em>どれだけ</em>動かすかは分からない</li>
+          <li>幅を外した損が ランキングで稼いだ分を超えた</li>
         </ul>
       </li>
       <li><strong>低活性側は外すリスクが大きいと判断して回避</strong>
@@ -849,20 +858,28 @@
       技術的に効いたのは 3 つ、そしてもう 1 つは、深追いしなかったことです。
     </p>
     <ul>
-      <li><strong>Transfer learning</strong> — 少ない Train を、多い log2fc で補う
+      <li><strong>Transfer learning</strong> — 少ない Train を 多い log2fc で補う
         <ul>
-          <li>生のラベルより、全件で使える pred log2fc のほうが強い</li>
-          <li>直接 fine-tune ではなく、凍結した encoder の embedding</li>
+          <li>生のラベルより 全件で使える pred log2fc のほうが強い</li>
+          <li>直接 fine-tune ではなく 凍結した encoder の embedding</li>
         </ul>
       </li>
-      <li><strong>TabPFN as readout</strong> — 特徴量の作り方は違っても、9 メンバーすべて
-        最後に読むのは TabPFN
-        <ul><li>readout を固定したので、表現の良し悪しをそのまま比べられた</li></ul>
+      <li><strong>TabPFN as readout</strong> — 特徴量の作り方は違っても
+        9 メンバーすべて最後に読むのは TabPFN
+        <ul><li>readout を固定したので 表現の良し悪しをそのまま比べられた</li></ul>
       </li>
-      <li><strong>Calibration</strong> — メンバーを足すより、出力を後から直すほうが効いた
-        <ul><li>補正は OOF の予測と真値で学習。Test はラベルではなく構造だけを重み付けに使う</li></ul>
+      <li><strong>Calibration</strong> — メンバーを足すより 出力を後から直すほうが効いた
+        <ul>
+          <li>補正は OOF の予測と真値で学習</li>
+          <li>Test はラベルではなく構造だけを重み付けに使う</li>
+        </ul>
       </li>
-      <li><strong>Knowing when to stop</strong> — Phase 1 は動かさなかったのが吉、Phase 2 は動かしたのが裏目</li>
+      <li><strong>Knowing when to stop</strong> — 動かすかどうかの判断そのもの
+        <ul>
+          <li>Phase 1 は動かさなかったのが吉</li>
+          <li>Phase 2 は動かしたのが裏目</li>
+        </ul>
+      </li>
     </ul>
     <p>
       個人的な話をすると、これは私にとって初めてのコンペで、95 中 4 位は始める前に期待していた以上の結果でした。
@@ -883,8 +900,8 @@
   <section id="links">
     <h2>Reproducibility and links</h2>
     <ul>
-      <li>作業リポジトリ（コード、特徴量パイプライン、日々のログ）: <a href="https://github.com/N283T/pxr-iduction-challenge">N283T/pxr-iduction-challenge</a></li>
-      <li>Phase 1 の研究ログ（日次、一部日本語）: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
+      <li>作業リポジトリ（コード / 特徴量パイプライン / 日々のログ）: <a href="https://github.com/N283T/pxr-iduction-challenge">N283T/pxr-iduction-challenge</a></li>
+      <li>Phase 1 の研究ログ（日次 / 一部日本語）: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/100">issue #100</a></li>
       <li>Phase 2 の研究ログ: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/208">issue #208</a></li>
       <li>コンペ後の AS2 答え合わせログ: <a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a></li>
       <li>チャレンジページ: <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">openadmet/pxr-challenge</a></li>
