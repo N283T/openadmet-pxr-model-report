@@ -105,7 +105,7 @@
     <h2>0. TL;DR</h2>
     <ul>
       <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。SMILES から PXR 誘導活性 (pEC50) を予測するタスクで、MAE は interim（AS1 + AS2）が <strong>0.4059</strong>、最終の Phase 2（AS2）が <strong>0.4113</strong> でした。</li>
-      <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った <code>log2fc</code> の読み出しが補助データとして含まれており、pEC50 ラベルが 4,140 件なのに対して、log2fc は 10,875 化合物で測られています。<strong>その log2fc を予測した値が、単独で最強の特徴量</strong>になりました。</li>
+      <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った <code>log2fc</code> の読み出しが補助データとして含まれており、pEC50 ラベルが 4,140 件なのに対して、log2fc は 10,870 化合物で測られています。<strong>その log2fc を予測した値が、単独で最強の特徴量</strong>になりました。</li>
       <li>その信号を中心に、<a href="#ensemble"><strong>9 メンバーの Caruana ensemble</strong></a> を組みました。メンバーは<a href="#members">大きく 3 種類</a>（tabular core、frozen embedding、Boltz-2 structural）で、どれも <strong>TabPFN</strong> を readout head に使っています。</li>
       <li>アンサンブルから先で明確に効いたのは、affine <a href="#calibration"><strong>calibration</strong></a> 1 つだけでした。Phase 1 終盤の tail gate と <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
     </ul>
@@ -216,9 +216,9 @@
             <tr><th>Dataset</th><th>Compounds</th><th class="c">SMILES</th><th class="c">pEC50</th><th class="c">Emax</th><th class="c">counter assay</th><th class="c aux">log2fc 8.25 µM</th><th class="c aux">log2fc 33 µM</th></tr>
           </thead>
           <tbody>
-            <tr><th>Train</th><td class="num">4,140</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="part">2,860</span></td><td class="c aux"><span class="part">2,722</span></td><td class="c aux"><span class="part">2,659</span></td></tr>
+            <tr><th>Train</th><td class="num">4,140</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="part">2,859</span></td><td class="c aux"><span class="part">2,722</span></td><td class="c aux"><span class="part">2,659</span></td></tr>
             <tr><th>Test</th><td class="num">513</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c aux"><span class="no">✗</span></td><td class="c aux"><span class="no">✗</span></td></tr>
-            <tr><th>AUX data</th><td class="num">10,875</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="part">2,359</span></td><td class="c aux"><span class="part">10,747</span></td><td class="c aux"><span class="part">9,523</span></td></tr>
+            <tr><th>AUX data</th><td class="num">10,870</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="no">✗</span></td><td class="c"><span class="part">2,703</span></td><td class="c aux"><span class="part">10,747</span></td><td class="c aux"><span class="part">9,523</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -282,13 +282,13 @@
       <thead><tr><th>Fidelity</th><th>今回の対応物</th><th>件数</th></tr></thead>
       <tbody>
         <tr><th>high-fidelity</th><td>学習の pEC50</td><td class="val">4,140 件</td></tr>
-        <tr><th>low-fidelity</th><td>単一濃度の log2fc</td><td class="val">10,875 化合物</td></tr>
+        <tr><th>low-fidelity</th><td>単一濃度の log2fc</td><td class="val">10,870 化合物</td></tr>
       </tbody>
     </table>
     <p>論文と違うのは主に 2 点でした。</p>
     <ul>
       <li><strong>生ラベルが使えない</strong> — test に実測がないので、<span class="strat-ref">1</span>と<span class="strat-ref">3</span>は最初から選べません。</li>
-      <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上、今回は 10,875 化合物です。</li>
+      <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上、今回は 10,870 化合物です。</li>
     </ul>
     <p>
       残るなかから採用したのが <span class="strat-ref coral">2</span> と <span class="strat-ref coral">4</span> です。
