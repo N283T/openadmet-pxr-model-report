@@ -211,6 +211,19 @@ pre {
 pre code { background: none; border: 0; padding: 0; font-size: .84em; line-height: 1.55; }
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 
+/* Language switch (English page <-> Japanese page) */
+.lang-switch {
+  font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .02em;
+  color: var(--muted); text-decoration: none; border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+}
+.lang-switch:hover { color: var(--ink); border-color: var(--color-blue); }
+
+/* Japanese typography: tighter punctuation, a little more leading. */
+html[lang="ja"] body { font-feature-settings: "palt" 1; }
+html[lang="ja"] p, html[lang="ja"] li { line-height: 1.9; }
+html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { line-height: 1.5; }
+
 /* Member roster table (aliases) */
 .roster-table {
   width: 100%; min-width: 560px; border-collapse: collapse;

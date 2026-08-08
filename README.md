@@ -5,6 +5,7 @@ Technical report for a **4th-of-95** Track 1 Activity submission to the
 (blinded pEC50 prediction for PXR compounds, 2026-04-01 – 2026-07-01).
 
 - 📊 **Interactive report (GitHub Pages):** published from [`docs/`](docs/)
+- 🇯🇵 **Japanese translation:** [`docs/ja/`](docs/ja/) (HTML only; the Markdown report stays English)
 - 📄 **Markdown report:** [MODEL_REPORT.md](MODEL_REPORT.md)
 
 ## Results
@@ -20,6 +21,7 @@ Technical report for a **4th-of-95** Track 1 Activity submission to the
 MODEL_REPORT.md            full post-challenge technical report
 docs/                      GitHub Pages site (interactive charts)
   index.html               the report, with 7 charts from real data
+  ja/index.html            Japanese translation, sharing the same assets and data
   assets/css, assets/js    styling and ECharts rendering
   assets/vendor            vendored ECharts (self-contained, no CDN)
   assets/data/*.json       aggregated chart data

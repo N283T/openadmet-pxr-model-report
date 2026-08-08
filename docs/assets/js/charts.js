@@ -3,7 +3,9 @@
 (function () {
   "use strict";
 
-  var DATA = "assets/data/";
+  /* Data lives next to the English page; translated pages in a subdirectory
+     set window.PXR_DATA_BASE to point back at it. */
+  var DATA = window.PXR_DATA_BASE || "assets/data/";
   var charts = {}; // id -> echarts instance
   var cache = {};
 
