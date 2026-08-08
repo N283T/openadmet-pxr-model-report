@@ -458,19 +458,21 @@
       重みが最も大きい 2 メンバーは、1 つの特徴量スタックを共有しています。
       補完的なブロックを連結した、<strong>約 2,103 次元の tabular 行列</strong>です。
     </p>
-    <table class="spec-table">
-      <thead><tr><th>Block</th><th>Dims</th><th>What it is</th></tr></thead>
-      <tbody>
-        <tr><th><a href="https://mordred-descriptor.github.io/documentation/master/">Mordred</a></th><td class="val">1,515</td><td>2D molecular descriptors</td></tr>
-        <tr><th><a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a></th><td class="val">300</td><td>ChemProp-MPNN foundation fingerprint</td></tr>
-        <tr><th><a href="https://rdkit.org/docs/index.html">RDKit</a></th><td class="val">217</td><td>standard RDKit descriptors</td></tr>
-        <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
-        <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
-        <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
-        <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
-      </tbody>
-    </table>
-    <p class="metrics-key">この 2 本の predicted log2fc 列は、Strategy の章で扱った pred log2fc と同じものです。この 2 メンバーが単独モデルとして最強である理由でもあります。</p>
+    <figure class="chart-figure">
+      <table class="spec-table">
+        <thead><tr><th>Block</th><th>Dims</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><th><a href="https://mordred-descriptor.github.io/documentation/master/">Mordred</a></th><td class="val">1,515</td><td>2D molecular descriptors</td></tr>
+          <tr><th><a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a></th><td class="val">300</td><td>ChemProp-MPNN foundation fingerprint</td></tr>
+          <tr><th><a href="https://rdkit.org/docs/index.html">RDKit</a></th><td class="val">217</td><td>standard RDKit descriptors</td></tr>
+          <tr><th>Boltz-2 tier-1</th><td class="val">44</td><td>pocket-level pLDDT / PAE / PDE re-aggregations</td></tr>
+          <tr><th>Boltz-2 tier-0</th><td class="val">19</td><td>pose, confidence, and affinity scalars</td></tr>
+          <tr><th>pose-<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a></th><td class="val">6</td><td>H-bond / hydration on the Boltz pose</td></tr>
+          <tr><th>predicted log2fc</th><td class="val">2</td><td>the pred log2fc columns from Strategy (8.25 and 33 µM)</td></tr>
+        </tbody>
+      </table>
+      <figcaption>Table 4: tabular core が共有する 2,103 次元の内訳。predicted log2fc の 2 列は Strategy の章で扱ったものと同じで、この 2 メンバーが単独最強である理由でもあります。</figcaption>
+    </figure>
 
     <h4>CheMeleon</h4>
     <p>
@@ -478,15 +480,34 @@
       それでもスタックに加えると明確に効き、同じ tabular core の MAE が 0.443 から 0.421 まで改善しました。
       手作りの 2D 記述子では拾いきれない、学習済みの分子グラフ由来の事前知識を補っているのだと思います。
     </p>
+    <div class="aside">
+      <p>
+        ただし、この 300 次元は<strong>実装ミスの産物</strong>です。CheMeleon 本体の D-MPNN は隠れ 2,048 次元で、
+        本来はそちらを使うつもりでした。特徴量を作るスクリプトが checkpoint の message passing 部分だけを読み、
+        後段の regression FFN を未学習のまま新規に作って埋め込みを取り出していたため、
+        chemprop の FFN 既定幅である 300 次元が入っていました。
+      </p>
+      <p>
+        つまり上の 0.443 → 0.421 は、事前学習を通していない 300 次元で得た改善です。
+        2,048 次元での再検証は別途進めていて、<strong>OOF は改善するものの Test はさほど変わらない</strong>感触ですが、
+        数値が出たらここに追記します。
+      </p>
+    </div>
     <h4>Boltz-2 features</h4>
     <p>
-      <strong>Boltz-2</strong> ブロックは 2 階層あります。<strong>tier-0</strong> は Boltz 自身のスカラー出力、
-      すなわち affinity の値、結合確率、各種の信頼度スコア（pTM、ipTM、ligand-ipTM、複合体 pLDDT）です。
-      <strong>tier-1</strong> は、Boltz が出すトークン単位の生の信頼度テンソル（pLDDT、PAE、PDE）を
-      ポケット単位の統計量へ再集約したもので、たとえば <code>pde_pocket_ligand_min</code> は
-      構造由来の特徴量の中でも有用なほうでした。これら Boltz tabular 特徴量の詳細は、
-      別途付録としてまとめるかもしれません。
+      Boltz-2 由来のブロックは 3 種類、合わせて 69 次元です。
     </p>
+    <div class="table-scroll">
+      <table class="roster-table">
+        <thead><tr><th>Block</th><th class="num">Dims</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><th>tier-0</th><td class="num">19</td><td>Boltz が出力する affinity・結合確率・confidence のスカラー値</td></tr>
+          <tr><th>tier-1</th><td class="num">44</td><td>トークン単位の confidence テンソル（pLDDT / PAE / PDE）を pocket や ligand 単位に再集約した統計量</td></tr>
+          <tr><th>pose-Jazzy</th><td class="num">6</td><td>Boltz の pose 上で計算したリガンドの水素結合・水和自由エネルギー</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="metrics-key">tier-1 のなかでは <code>pde_pocket_ligand_min</code> が、構造由来の特徴量として有用なほうでした。</p>
     <h4>top-500 selection</h4>
     <p>
       <strong>tabular-full</strong> は 2,103 特徴量をそのまま TabPFN に渡します。
