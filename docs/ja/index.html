@@ -79,20 +79,20 @@
       どこで間違えたのかを順に追っていきます。
     </p>
     <div class="result-cards">
-      <div class="result-card">
-        <span class="rc-label">Phase 1</span>
+      <div class="result-card muted">
+        <span class="rc-label">Phase 1 final</span>
+        <span class="rc-rank">Rank 8</span>
+        <span class="rc-metric">MAE 0.4071 · AS1</span>
+      </div>
+      <div class="result-card muted">
+        <span class="rc-label">Interim</span>
         <span class="rc-rank">Rank 4</span>
-        <span class="rc-metric">MAE 0.4059</span>
+        <span class="rc-metric">MAE 0.4059 · AS1 + AS2</span>
       </div>
       <div class="result-card">
         <span class="rc-label">Phase 2</span>
         <span class="rc-rank">Rank 4</span>
-        <span class="rc-metric">MAE 0.4113</span>
-      </div>
-      <div class="result-card muted">
-        <span class="rc-label">Field</span>
-        <span class="rc-rank">of 95</span>
-        <span class="rc-metric">Tier 1</span>
+        <span class="rc-metric">MAE 0.4113 · AS2</span>
       </div>
     </div>
     <p class="hero-links">
@@ -104,7 +104,7 @@
   <section id="tldr">
     <h2>0. TL;DR</h2>
     <ul>
-      <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。SMILES から PXR 誘導活性 (pEC50) を予測するタスクで、MAE は Phase 1 が <strong>0.4059</strong>、Phase 2 が <strong>0.4113</strong> でした。</li>
+      <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。SMILES から PXR 誘導活性 (pEC50) を予測するタスクで、MAE は interim（AS1 + AS2）が <strong>0.4059</strong>、最終の Phase 2（AS2）が <strong>0.4113</strong> でした。</li>
       <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った <code>log2fc</code> の読み出しが補助データとして含まれており、pEC50 ラベルが 4,140 件なのに対して、log2fc は 10,875 化合物で測られています。<strong>その log2fc を予測した値が、単独で最強の特徴量</strong>になりました。</li>
       <li>その信号を中心に、<a href="#ensemble"><strong>9 メンバーの Caruana ensemble</strong></a> を組みました。メンバーは<a href="#members">大きく 3 種類</a>（tabular core、frozen embedding、Boltz-2 structural）で、どれも <strong>TabPFN</strong> を readout head に使っています。</li>
       <li>アンサンブルから先で明確に効いたのは、affine <a href="#calibration"><strong>calibration</strong></a> 1 つだけでした。Phase 1 終盤の tail gate と <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
@@ -145,8 +145,7 @@
     <h2>2. Results</h2>
     <p>
       この課題のスコアは、主に <strong>3 回</strong>出ています。live leaderboard は提出のたびに
-      更新されるので、あとから動かない結果と言えるのはこの 3 つです。採点対象が変わるたびに
-      順位も動きました。最終的な立ち位置は 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアです。
+      更新されるので、あとから動かない結果と言えるのはこの 3 つです。
     </p>
     <table class="spec-table">
       <thead>
@@ -192,7 +191,7 @@
       </div>
     </div>
 
-    <p class="metrics-key">MAE と RAE は小さいほど良く、R²・Spearman ρ・Kendall τ は大きいほど良い指標です。3 つの採点は対象の化合物集合が違うため、数値をそのまま比較することはできません。順位を付けているのは MAE だけで、他の指標の順位はリーダーボードの値から数えたものです。</p>
+    <p class="metrics-key">順位を付けているのは MAE だけで、他の指標の順位はリーダーボードの値から数えたものです。</p>
     <p class="metrics-key">最終リーダーボードの全体は、チャレンジの <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face Space</a>（Leaderboard タブ）で確認できます。主催者による記事は <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1 の結果</a>と<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">コンペ終了後のまとめ</a>です。</p>
   </section>
 
