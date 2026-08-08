@@ -47,37 +47,29 @@
     });
   }
 
-  // ---- Individual chart builders (return ECharts option) ----
-
-  // Ensemble member Caruana weights (horizontal bars, colored by family).
-  function optWeights(d, p) {
-    var famColor = { tabular: p.blue, embed: p.teal, structural: p.coral };
-    var m = d.members;
-    var cats = m.map(function (x) { return x.alias; });
-    var data = m.map(function (x) {
-      return { value: x.weight, itemStyle: { color: famColor[x.family] || p.blue, borderRadius: [0, 4, 4, 0] } };
-    });
-    return {
-      textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 8, right: 44, top: 10, bottom: 30, containLabel: true },
-      tooltip: {
-        trigger: "item", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
-        formatter: function (o) {
-          var x = m[o.dataIndex];
-          return x.label + "<br/>Caruana weight <b>" + x.weight.toFixed(3) + "</b><br/>" +
-            x.role + "<br/>single-model OOF MAE " + x.oofMae.toFixed(3);
-        },
-      },
-      xAxis: Object.assign({ type: "value", name: "Caruana weight", min: 0,
-        nameLocation: "middle", nameGap: 26, nameTextStyle: { color: p.muted, fontSize: 11 } }, axisStyle(p)),
-      yAxis: Object.assign({ type: "category", inverse: true, data: cats }, axisStyle(p)),
-      series: [{
-        type: "bar", data: data, barWidth: "62%",
-        label: { show: true, position: "right", color: p.muted, fontSize: 11,
-          formatter: function (o) { return o.value.toFixed(3); } },
-      }],
-    };
+  // The nine members, drawn from the same JSON the charts use so the table and
+  // the numbers cannot drift apart. Rows come sorted by Caruana weight.
+  function renderMemberTable() {
+    var body = document.querySelector("[data-member-rows]");
+    if (!body) return;
+    var famClass = { tabular: "fam-tabular", embed: "fam-embed", structural: "fam-structural" };
+    var famLabel = { tabular: "tabular core", embed: "frozen embed", structural: "Boltz trunk" };
+    getJSON("ensemble_members.json").then(function (d) {
+      body.innerHTML = d.members.map(function (m) {
+        var strat = m.strategy
+          ? '<span class="strat-ref' + (m.strategy === 2 ? " coral" : "") + '">' + m.strategy + "</span>"
+          : '<span class="no-strat">—</span>';
+        return "<tr><th>" + m.alias + "</th>" +
+          "<td>" + m.label + "</td>" +
+          '<td><span class="' + famClass[m.family] + '">' + famLabel[m.family] + "</span></td>" +
+          '<td class="c">' + strat + "</td>" +
+          '<td class="num">' + m.oofMae.toFixed(3) + "</td>" +
+          '<td class="num">' + m.weight.toFixed(3) + "</td></tr>";
+      }).join("");
+    }).catch(function (e) { console.error(e); });
   }
+
+  // ---- Individual chart builders (return ECharts option) ----
 
   // Label-coverage heatmap: which compound group carries which measured label.
   function optCoverage(d, p) {
@@ -307,7 +299,6 @@
   var SPECS = [
     { el: "chart-coverage", file: "coverage.json", build: optCoverage },
     { el: "chart-featcorr", file: "feature_corr.json", build: optFeatureCorr },
-    { el: "chart-weights", file: "ensemble_members.json", build: optWeights },
     { el: "chart-membercorr", file: "member_corr.json", build: optMemberCorr },
     { el: "chart-ksweep", file: "topk_sweep.json", build: optKSweep },
     { el: "chart-lgbmgain", file: "lgbm_gain.json", build: optLgbmGain },
@@ -530,6 +521,7 @@
       });
     });
     renderFeatureScatter(p);
+    renderMemberTable();
   }
 
   function setupTheme() {

@@ -409,22 +409,12 @@
     <div class="table-scroll">
       <table class="roster-table">
         <thead>
-          <tr><th>Alias</th><th>Encoder / features</th><th>Family</th><th>log2fc</th></tr>
+          <tr><th>Alias</th><th>Encoder / features</th><th>Family</th><th class="c">Strategy</th><th class="num">OOF MAE</th><th class="num">Weight</th></tr>
         </thead>
-        <tbody>
-          <tr><th>tabular-full</th><td>CheMeleon + 2D + Boltz + pred (full, 2103d)</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>tabular-top500</th><td>same feature stack, LightGBM-gain top-500</td><td><span class="fam-tabular">tabular core</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>ChemProp</th><td>ChemProp D-MPNN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>KERMT</th><td>KERMT graph-transformer, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>Boltz-pocket</th><td>Boltz-2 trunk, pooled over the core pocket</td><td><span class="fam-structural">Boltz trunk</span></td><td class="c"><span class="no">✗</span></td></tr>
-          <tr><th>MoLFormer</th><td>MoLFormer-c3, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>Boltz-allpairs</th><td>Boltz-2 trunk, pooled over all protein-ligand pairs</td><td><span class="fam-structural">Boltz trunk</span></td><td class="c"><span class="no">✗</span></td></tr>
-          <tr><th>GatedGCN</th><td>GatedGCN, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
-          <tr><th>AttentiveFP</th><td>AttentiveFP, log2fc-pretrained embed</td><td><span class="fam-embed">frozen embed</span></td><td class="c"><span class="yes">✓</span></td></tr>
-        </tbody>
+        <tbody data-member-rows></tbody>
       </table>
     </div>
-    <p class="metrics-key">どのメンバーも representation の読み出しには TabPFN を使います。log2fc 信号を持たないのは Boltz-2 trunk 由来の 2 メンバーだけで、これらは純粋に予測構造から作られています。</p>
+    <p class="metrics-key">Caruana 重みの大きい順。Strategy は 3 章の 6 通りの番号で、Boltz trunk の 2 つはそのどれでもありません（log2fc を使わないため）。OOF MAE はそのメンバー単独の値です。</p>
     <p>
       メンバーの比較には、<strong>UMAP クラスタ分割</strong>による out-of-fold (OOF) 予測を使いました
       （化学的なクラスタを fold をまたいで分割しないので、検証側の化合物が Train 側の近傍にならないようにしています）。
@@ -439,12 +429,8 @@
       重みは bagging した選択回数から決まるので、単一のメンバーが支配的になることはなく、
       強いが相関の高い系統にアンサンブルが偏りすぎるのを防げます。
     </p>
-    <figure class="chart-figure">
-      <div id="chart-weights" class="chart" style="height:340px"></div>
-      <figcaption>Figure 4: 本番 9 メンバーの Caruana 重み。色は系統（青 = tabular core、ティール = frozen embedding、コーラル = Boltz trunk）です。CheMeleon + 2D + Boltz + pred の tabular 2 メンバーで重みの約 60% を占め、残りをその他が分け合います。ホバーすると各メンバーの役割と単独 OOF MAE が出ます。</figcaption>
-    </figure>
     <p>
-      では、これらのメンバーは実際どれくらい独立なのでしょうか。Figure 5 は <em>test</em> 予測どうしの相関で、
+      では、これらのメンバーは実際どれくらい独立なのでしょうか。Figure 4 は <em>test</em> 予測どうしの相関で、
       答えは「あまり独立ではない」です。<strong>すべてが強く相関しており</strong>（r は 0.81〜0.98、平均 0.88）、
       tabular core 2 つはほぼ重複（0.98）、Boltz-2 の 2 つも同様（0.97）で、
       化学系のメンバーはどれも他と 0.85 を超えています。つまりこのアンサンブルは、独立な視点を混ぜるものというより
@@ -452,7 +438,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-membercorr" class="chart" style="height:440px"></div>
-      <figcaption>Figure 5: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。ほぼ重複しているブロック（tabular core 2 つ、Boltz-2 trunk 2 つ）と、Boltz 対化学系の相関がやや低い角が目を引きます。これは test 側で行った事後確認であり、Caruana の選択器が見ていた out-of-fold 側ではありません。</figcaption>
+      <figcaption>Figure 4: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。ほぼ重複しているブロック（tabular core 2 つ、Boltz-2 trunk 2 つ）と、Boltz 対化学系の相関がやや低い角が目を引きます。これは test 側で行った事後確認であり、Caruana の選択器が見ていた out-of-fold 側ではありません。</figcaption>
     </figure>
     <p>
       この test 側で見ると、Boltz trunk の 2 メンバーが最も decorrelated に見えます（化学系メンバーに対して 0.81〜0.88）。
@@ -477,7 +463,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-member-mae" class="chart" style="height:460px"></div>
-      <figcaption>Figure 6: メンバー別の平均絶対誤差（良い順）。棒は Test MAE（AS1 + AS2）と Train の out-of-fold MAE です。</figcaption>
+      <figcaption>Figure 5: メンバー別の平均絶対誤差（良い順）。棒は Test MAE（AS1 + AS2）と Train の out-of-fold MAE です。</figcaption>
     </figure>
 
     <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
@@ -526,7 +512,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 7: TabPFN に残す上位 gain 特徴量の数を変えたときの out-of-fold MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
+      <figcaption>Figure 6: TabPFN に残す上位 gain 特徴量の数を変えたときの out-of-fold MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
@@ -535,7 +521,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>Figure 8: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
+      <figcaption>Figure 7: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
     </figure>
     <p>
       個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred log2fc の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
@@ -749,7 +735,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 9: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 8: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
@@ -805,7 +791,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 10: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
     </figure>
     <p>
       ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
@@ -880,7 +866,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 11: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 10: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
     <table class="metric-table">
       <thead>

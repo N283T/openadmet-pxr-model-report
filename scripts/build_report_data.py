@@ -194,6 +194,10 @@ COVERAGE_LABEL_NAMES = ["pEC50", "Emax", "Counter", "log2fc"]
 COVERAGE_LABELS = ["pec50", "emax", "counter", "log2fc"]
 
 
+# Which of the paper's six augmentation strategies a member applies. The Boltz
+# trunk pair is outside them: no low-fidelity signal is involved at all.
+MEMBER_STRATEGY = {"tabular": 2, "embed": 4, "structural": None}
+
 # Human-readable labels for the production ensemble members.
 # Production ensemble members (canonical list from the Track-1 strategy report):
 # label, Caruana weight, single-model out-of-fold MAE, role, and family (for color).
@@ -344,6 +348,7 @@ def build_ensemble_members(src: Path) -> None:
     for m in ENSEMBLE_MEMBERS:
         entry = {k: v for k, v in m.items() if k != "key"}
         entry["weight"] = round(float(weight_by_key[m["key"]]), 3)
+        entry["strategy"] = MEMBER_STRATEGY[m["family"]]
         members.append(entry)
     members.sort(key=lambda x: x["weight"], reverse=True)
     _write("ensemble_members.json", {"members": members})

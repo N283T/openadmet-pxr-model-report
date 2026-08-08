@@ -344,7 +344,9 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 .roster-table .no { color: var(--color-coral); font-weight: 800; }
 /* Partial coverage: the count of rows that carry the column, not all of them. */
 .roster-table .part { color: var(--muted); font-variant-numeric: tabular-nums; }
-.roster-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.roster-table td.num, .roster-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.roster-table .no-strat { color: var(--muted); }
+.roster-table td .strat-ref { margin-right: 0; }
 /* The log2fc columns are the signal the whole approach leans on, so they read as
    one coral-tinted group rather than as two more columns that happen to exist. */
 .roster-table td.aux { background: color-mix(in srgb, var(--color-coral) 15%, transparent); }
