@@ -415,41 +415,38 @@
     </div>
     <p class="metrics-key">Caruana 重みの大きい順。Strategy は 3 章の 6 通りの番号で、Boltz trunk の 2 つはそのどれでもありません（log2fc を使わないため）。OOF MAE はそのメンバー単独の値です。</p>
     <p>
-      メンバーの比較には、<strong>UMAP クラスタ分割</strong>による out-of-fold (OOF) 予測を使いました
-      （化学的なクラスタを fold をまたいで分割しないので、検証側の化合物が Train 側の近傍にならないようにしています）。
-      分割方法はいくつか試しましたが、選び方はさほど効きませんでした。
-      リーダーボード上で決定的に優れたものはなかったので、安全な標準として UMAP 分割に固定し、それ以上は詰めていません。
-      ここでの分割は公正な比較のための道具であって、それ自体が結果ではありません。
-    </p>
-    <p>
-      メンバーの統合には <strong>Caruana forward selection</strong>
+      CV 分割は <strong>UMAP クラスタ分割</strong>です。いくつか試したなかで public LB に最も近かったというだけで、
+      分割として優れているわけではありません。メンバーの統合には <strong>Caruana forward selection</strong>
       (<a href="https://dl.acm.org/doi/10.1145/1015330.1015432">Caruana et&nbsp;al., ICML 2004</a>) を使いました。
-      OOF 誤差を最も減らすメンバーを繰り返し追加していく貪欲法です。
-      重みは bagging した選択回数から決まるので、単一のメンバーが支配的になることはなく、
-      強いが相関の高い系統にアンサンブルが偏りすぎるのを防げます。
+      提出したのはこのアンサンブルそのものではなく、出力に post-hoc な calibration と gate を重ねたものです
+      （<a href="#calibration">6 章</a>）。
     </p>
+
+    <h3>How independent are the members? <span class="badge post">post-challenge</span></h3>
     <p>
-      では、これらのメンバーは実際どれくらい独立なのでしょうか。Figure 4 は <em>test</em> 予測どうしの相関で、
-      答えは「あまり独立ではない」です。<strong>すべてが強く相関しており</strong>（r は 0.81〜0.98、平均 0.88）、
-      tabular core 2 つはほぼ重複（0.98）、Boltz-2 の 2 つも同様（0.97）で、
-      化学系のメンバーはどれも他と 0.85 を超えています。つまりこのアンサンブルは、独立な視点を混ぜるものというより
-      <strong>buffer</strong> です。強いが相関の高いメンバー（とくに top500）が予測を支配してしまうのを防いでいます。
+      答えは「あまり独立ではない」です。<strong>全 36 ペアが 0.81〜0.98、平均 0.88</strong>。
+      tabular core 2 つはほぼ重複（0.98）、Boltz trunk の 2 つも同様（0.97）で、
+      化学系のメンバーはどれも他と 0.85 を超えています。log2fc より強い手がかりが無く、
+      使える情報がそもそも限られている、ということでもあります。
     </p>
     <figure class="chart-figure">
       <div id="chart-membercorr" class="chart" style="height:440px"></div>
-      <figcaption>Figure 4: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。ほぼ重複しているブロック（tabular core 2 つ、Boltz-2 trunk 2 つ）と、Boltz 対化学系の相関がやや低い角が目を引きます。これは test 側で行った事後確認であり、Caruana の選択器が見ていた out-of-fold 側ではありません。</figcaption>
+      <figcaption>Figure 4: メンバーの test 予測どうしの相関行列（Caruana 重み順）。濃いほど相関が高いことを表します。重みを決めたのは OOF 誤差なので、これは採点対象で後から取った別スライスの数字です。</figcaption>
     </figure>
     <p>
-      この test 側で見ると、Boltz trunk の 2 メンバーが最も decorrelated に見えます（化学系メンバーに対して 0.81〜0.88）。
-      単独では弱いのに重みを得ているのはこのためだ、と読みたくなるところです。ところが、それは検証に耐えませんでした。
-      重みを決めたのは <strong>out-of-fold</strong> 誤差に対する Caruana selection であり、
-      同じ相関を OOF 側で計算し直すと差はほぼ消えます。9 メンバーは
-      <strong>0.90〜0.99、平均 0.93</strong> に収まり、Boltz は top500 に対して 0.90、
-      tabular-full に対して 0.94 まで上がり、Boltz 同士は 0.99 になります。
-      選択器が実際に見ていた側では、Boltz は他のメンバーより有意に独立とは言えません。
-      上で述べた buffer としての読み方は変わりませんが、「最も decorrelated なメンバー」という物語のほうは、test 側だけに現れた見かけです。
-      （重みを決めた本番の OOF 予測は保存されていないため、ここではディスクに残っていた cross-fit の OOF 予測 4,393 行を使っています。
-      決定的な再実行ではなく、開発中の生成物である点にご注意ください。）
+      注意点として、これは <strong>test 予測（AS1 + AS2）どうしの相関</strong>で、Caruana が重みを決めるときに
+      見ていた OOF の相関ではありません。test 側では Boltz trunk が最も decorrelated に見えます
+      （化学系に対して 0.81〜0.88）が、OOF で計算し直すと <strong>0.90〜0.99、平均 0.93</strong> になり、
+      その差はほぼ消えます。<a href="#members">5.3</a> の「Boltz は独立だから重みを得た」という読み方は、
+      test 側だけに現れた見かけです。<sup>*</sup>
+    </p>
+    <p class="metrics-key"><sup>*</sup> 重みを決めた本番の OOF 予測は残っていません。上の OOF 側の数字は、ディスクに残っていた cross-fit の OOF 予測 4,393 行から再計算したもので、決定的な確認ではありません。</p>
+    <p>
+      それでもアンサンブルが効いている理由は、独立な視点を混ぜているからではなく
+      <strong>buffer</strong> として働いているからです。重みの小さいメンバーを外すと系統シェアが 0.94 まで上がり、
+      public LB は 0.006 悪化しました。強いが相関の高いメンバー（とくに top500）が予測を支配するのを止めているわけです。
+      同時にこれは頭打ちの理由でもありました。新しいモデルを作っても高相関で弾かれるか、入れても悪化するターンが続き、
+      軸足を calibration と gate の工夫へ移すことになります。
     </p>
   </section>
 
