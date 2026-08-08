@@ -449,14 +449,9 @@
   <section id="members">
     <h2>5. The members</h2>
     <p>
-      9 つのメンバーは 3 つのグループに分かれます。この章では、先ほどの別名を使って系統ごとに中身を開けていきます。
-      まずは各メンバー単独の性能から。Train に対する out-of-fold と、ブラインド解除後の Test（AS1 + AS2）の比較です。
-      tabular のペアが先頭で、2 本の棒の差が汎化の物語にあたります。多くのメンバーではテスト側の棒がわずかに悪い程度です。
+      3 つの family を、エイリアスを使って順に開けていきます。単独 OOF MAE と重みは
+      <a href="#ensemble">4 章の表</a>のとおりです。
     </p>
-    <figure class="chart-figure">
-      <div id="chart-member-mae" class="chart" style="height:460px"></div>
-      <figcaption>Figure 5: メンバー別の平均絶対誤差（良い順）。棒は Test MAE（AS1 + AS2）と Train の out-of-fold MAE です。</figcaption>
-    </figure>
 
     <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
     <p>
@@ -504,7 +499,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
-      <figcaption>Figure 6: TabPFN に残す上位 gain 特徴量の数を変えたときの out-of-fold MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
+      <figcaption>Figure 5: TabPFN に残す上位 gain 特徴量の数を変えたときの out-of-fold MAE（左軸・青）と Spearman ρ（右軸・ティール）。どちらも 500〜600 付近が最適（MAE 最小、Spearman 最大）を示しています。2,103 すべてを残す場合（破線）は悪化し、300 程度まで圧縮しすぎても信号を失います。</figcaption>
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
@@ -513,7 +508,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-lgbmgain" class="chart" style="height:280px"></div>
-      <figcaption>Figure 7: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
+      <figcaption>Figure 6: 特徴量ファミリー別の LightGBM gain シェア（フルスタックに対して）。predicted log2fc の 2 列で gain の約 74% を占め、幅の大半は Mordred と CheMeleon が供給しています。</figcaption>
     </figure>
     <p>
       個々の特徴量まで拡大すると、同じ話がもっと鮮明になります。pred log2fc の 2 列が大差をつけて 1 位と 2 位（gain の 52% と 22%）で、
@@ -727,7 +722,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 8: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 7: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（out-of-fold MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
@@ -783,7 +778,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 8: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
     </figure>
     <p>
       ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
@@ -858,7 +853,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 10: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 9: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
     <table class="metric-table">
       <thead>
