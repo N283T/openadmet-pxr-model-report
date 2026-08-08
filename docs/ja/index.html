@@ -104,10 +104,10 @@
   <section id="tldr">
     <h2>0. TL;DR</h2>
     <ul>
-      <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。構造情報だけからヒト PXR の活性化 (pEC50) を予測するタスクで、MAE は Phase 1 が <strong>0.4059</strong>、Phase 2 が <strong>0.4113</strong> でした。</li>
-      <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った安価な <code>log2fc</code> の読み出しがさりげなく含まれており、<strong>その log2fc を予測した値が単独で最強の特徴量</strong>になりました。記述子を大量に積んだスタック 1 つ分の仕事を、この 1 本でこなしてしまいます。</li>
-      <li>その信号を中心に、frozen embedding と tabular のモデルを <strong>TabPFN</strong> で読み出す <a href="#ensemble"><strong>9 メンバーの Caruana ensemble</strong></a> を組みました。<a href="#members">Boltz-2</a> が席を得たのは、予測構造や affinity スコアが効いたからではなく（どちらもノイズが多すぎました）、学習済みの representation として役に立ったからです。</li>
-      <li>アンサンブルから先で明確に効いたのは、アフィン <a href="#calibration"><strong>calibration</strong></a> 1 つだけでした。Phase 1 終盤の tail gate と <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
+      <li>OpenADMET PXR Challenge Track 1 (Activity) で <strong>95 チーム中 4 位</strong>（Tier 1）。SMILES から PXR 誘導活性 (pEC50) を予測するタスクで、MAE は Phase 1 が <strong>0.4059</strong>、Phase 2 が <strong>0.4113</strong> でした。</li>
+      <li>勝負を決めたのは <a href="#strategy"><strong>multi-fidelity transfer learning</strong></a>（<a href="https://www.nature.com/articles/s41467-024-45566-8">Buterez et al. 2024</a> に基づく）という発想です。配布データには単一濃度で測った <code>log2fc</code> の読み出しが補助データとして含まれており、pEC50 ラベルが 4,140 件なのに対して、log2fc は 10,875 化合物で測られています。<strong>その log2fc を予測した値が、単独で最強の特徴量</strong>になりました。</li>
+      <li>その信号を中心に、<a href="#ensemble"><strong>9 メンバーの Caruana ensemble</strong></a> を組みました。メンバーは<a href="#members">大きく 3 種類</a>（tabular core、frozen embedding、Boltz-2 structural）で、どれも <strong>TabPFN</strong> を readout head に使っています。</li>
+      <li>アンサンブルから先で明確に効いたのは、affine <a href="#calibration"><strong>calibration</strong></a> 1 つだけでした。Phase 1 終盤の tail gate と <a href="#phase2">Phase 2</a> でやったことは、ほとんどがノイズか改悪です。どこで手を止めるかを見極められたことが、振り返れば良い判断のひとつでした。</li>
     </ul>
   </section>
 
@@ -145,12 +145,24 @@
     <h2>2. Results</h2>
     <p>
       最終結果の要点だけをまとめます。フェーズごとの詳細な分析はここでは扱いません。
-      この提出は採点対象 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアに入りました。
+      この課題のスコアは <strong>3 回</strong>出ています。Phase 1 の期間中ずっと動いていた
+      live leaderboard（AS1 のみ）、Phase 1 終了後に AS1 + AS2 で採点し直した中間発表、
+      そして最終順位を決める Phase 2（AS2 のみ）です。採点範囲が変わるたびに順位も動きました。
+      最終的な立ち位置は 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアです。
     </p>
 
     <div class="phase-block">
-      <h3>Phase 1</h3>
-      <p class="phase-eval">評価対象は AS1 + AS2（ブラインドされた 513 化合物すべて）、参加 338 チーム。</p>
+      <h3>Phase 1 live leaderboard <span class="badge">AS1 only</span></h3>
+      <p class="phase-eval">Phase 1 の期間中に見えていた public leaderboard。採点対象は Analog Set 1 の 253 化合物だけで、しかもどの化合物が AS1 なのかは伏せられていました。</p>
+      <div class="stat-strip">
+        <div class="stat"><span class="stat-l">Final rank</span><span class="stat-v">8</span><span class="stat-r">MAE 順</span></div>
+      </div>
+      <p class="metrics-key">この板が最後に示したのは順位だけで、スコアは公表されていません（手元のスナップショットも 05-16 が最後で、提出は 05-25 まで続きました）。8 位は主催者の中間発表記事にある Final Live Leaderboard Rank 表の値です。</p>
+    </div>
+
+    <div class="phase-block">
+      <h3>Interim <span class="badge">AS1 + AS2</span></h3>
+      <p class="phase-eval">Phase 1 の最終提出を、ブラインドされた 513 化合物すべて（AS1 + AS2）で採点し直したもの。参加 338 チーム。</p>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4059</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5359</span><span class="stat-r">rank <b>4</b></span></div>
@@ -158,11 +170,12 @@
         <div class="stat"><span class="stat-l">Spearman ρ</span><span class="stat-v">0.8343</span><span class="stat-r">rank <b>3</b></span></div>
         <div class="stat"><span class="stat-l">Kendall τ</span><span class="stat-v">0.6459</span><span class="stat-r">rank <b>4</b></span></div>
       </div>
+      <p class="metrics-key">モデルは Phase 1 の最後に出したまま、何も変えていません。採点範囲が 253 件から 513 件に広がっただけで、live leaderboard の 8 位から 4 位に上がりました。</p>
     </div>
 
     <div class="phase-block">
       <h3>Phase 2 <span class="badge">final standing</span></h3>
-      <p class="phase-eval">評価対象はブラインドのままの Analog Set 2（260 化合物）、参加 95 チーム。</p>
+      <p class="phase-eval">評価対象はブラインドのままの Analog Set 2（260 化合物）、参加 95 チーム。Phase 2 に leaderboard はありません。</p>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4113</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5703</span><span class="stat-r">rank <b>4</b></span></div>
@@ -172,7 +185,7 @@
       </div>
     </div>
 
-    <p class="metrics-key">MAE と RAE は小さいほど良く、R²・Spearman ρ・Kendall τ は大きいほど良い指標です。2 つのフェーズは評価対象の化合物集合が違うため、数値をそのまま比較することはできません。</p>
+    <p class="metrics-key">MAE と RAE は小さいほど良く、R²・Spearman ρ・Kendall τ は大きいほど良い指標です。3 つの採点は対象の化合物集合が違うため、数値をそのまま比較することはできません。順位を付けているのは MAE だけで、他の指標の順位はリーダーボードの値から数えたものです。</p>
     <p class="metrics-key">最終リーダーボードの全体は、チャレンジの <a href="https://huggingface.co/spaces/openadmet/pxr-challenge">Hugging Face Space</a>（Leaderboard タブ）で確認できます。主催者による記事は <a href="https://openadmet.ghost.io/woah-were-halfway-there/">Phase 1 の結果</a>と<a href="https://openadmet.ghost.io/its-the-end-of-the-pxr-challenge-as-we-know-it-and-i-feel-fine/">コンペ終了後のまとめ</a>です。</p>
   </section>
 
@@ -857,8 +870,8 @@
     <p>
       実際に勝負を決めたのはモデルではなく、フレーミングでした。
       <strong>multi-fidelity transfer learning</strong>（Buterez et al. 2024 に基づく）にたどり着けたことが、
-      この提出が機能した理由そのものです。チャレンジのデータには、単一濃度の安価な log2fc 読み出しが
-      さりげなく含まれており、それを予測できるように学習することで、低 fidelity の信号が
+      この提出が機能した理由そのものです。チャレンジのデータには、単一濃度の log2fc 読み出しが
+      補助データとして含まれており、それを予測できるように学習することで、低 fidelity の信号が
       手持ちで最強の特徴量に変わりました。持ち帰る価値のある教訓をいくつか挙げます。
     </p>
     <ul>
