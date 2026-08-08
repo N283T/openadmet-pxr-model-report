@@ -392,19 +392,18 @@
       <figcaption>Figure 3: システム全体。特徴量の作り方で 3 つの family に分かれ、readout はどれも TabPFN です。</figcaption>
     </figure>
     <p>
-      最終的なシステムは、<strong>9 メンバーのアンサンブル</strong>です。
+      最終的なシステムは <strong>9 メンバーのアンサンブル</strong>です。メンバー間で違うのは
+      <strong>特徴量の作り方</strong>だけで、大きく 3 種類に分かれます。
     </p>
     <ul>
-      <li>メンバー間で違うのは<strong>特徴量の作り方</strong>だけです。</li>
-      <li>作り方は大きく <strong>3 種類</strong>に分かれます。
-        <ul>
-          <li><strong>tabular core</strong> — 記述子と pred log2fc を並べた 2,103 次元をそのまま渡す</li>
-          <li><strong>frozen embed</strong> — log2fc で事前学習した encoder を凍結し、その embedding を渡す</li>
-          <li><strong>Boltz trunk</strong> — Boltz-2 の内部表現を渡す。log2fc が入らない唯一の系統</li>
-        </ul>
-      </li>
-      <li>readout head は全メンバー <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a></strong> です。</li>
+      <li><strong>tabular core</strong> — 記述子と pred log2fc を並べた 2,103 次元をそのまま渡す</li>
+      <li><strong>frozen embed</strong> — log2fc で事前学習した encoder を凍結し、その embedding を渡す</li>
+      <li><strong>Boltz trunk</strong> — Boltz-2 の内部表現を渡す。log2fc が入らない唯一の系統</li>
     </ul>
+    <p>
+      readout head は全メンバー <strong><a href="https://github.com/PriorLabs/tabpfn">TabPFN</a></strong> で、
+      違うのはその手前だけです。
+    </p>
     <p>9 つのメンバーと、以降で使う短い別名は次のとおりです。</p>
     <div class="table-scroll">
       <table class="roster-table">
