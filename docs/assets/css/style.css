@@ -216,9 +216,6 @@ h2::before { content: "\2726"; color: var(--color-coral); font-size: 0.68em; }
 h3 { font-size: 1.02rem; margin: 0 0 6px; font-family: var(--font-display); }
 p { margin: 0 0 14px; }
 ul, ol { margin: 0 0 14px; padding-left: 22px; }
-/* The paper's six augmentation strategies; the numbers are referenced by name
-   in the prose and in the tables below, so keep them visible and aligned. */
-.strategy-list li::marker { font-family: var(--font-display); font-weight: 700; color: var(--color-blue); }
 li { margin-bottom: 6px; }
 a { color: var(--color-blue); text-underline-offset: 2px; }
 strong { font-weight: 700; }
@@ -232,6 +229,48 @@ pre {
 }
 pre code { background: none; border: 0; padding: 0; font-size: .84em; line-height: 1.55; }
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
+
+/* ============================================================
+   Buterez et al.: the paper card and its six strategies
+   ============================================================ */
+.paper-card {
+  border: 1px solid var(--line); border-left: 4px solid var(--color-coral);
+  border-radius: 12px; padding: 14px 18px; margin: 4px 0 18px; background: var(--surface);
+}
+:root[data-theme="dark"] .paper-card { background: #3b4263; }
+.paper-card__title { font-family: var(--font-display); font-weight: 700; margin: 0 0 4px; line-height: 1.45; }
+.paper-card__meta { margin: 0; font-size: .84rem; color: var(--muted); }
+
+/* The six strategies read as a set, so they sit in a grid rather than a list.
+   The circled numbers are drawn rather than typed: the report vendors a subset
+   font, and the enclosed-numeral glyphs are not in it. */
+.strat-grid {
+  list-style: none; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin: 0 0 8px; padding: 0;
+}
+.strat {
+  display: flex; align-items: center; gap: 10px; margin: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px;
+}
+:root[data-theme="dark"] .strat { background: #3b4263; }
+.strat__n, .strat-ref {
+  flex: 0 0 auto; display: inline-grid; place-items: center;
+  width: 23px; height: 23px; border-radius: 999px;
+  background: var(--color-blue); color: #fff;
+  font-family: var(--font-display); font-weight: 800; font-size: .78rem; line-height: 1;
+}
+.strat__body { flex: 1; font-size: .9rem; line-height: 1.5; }
+.strat__count {
+  flex: 0 0 auto; font-family: var(--font-display); font-weight: 700; font-size: .95rem;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+/* The two the report went on to use. */
+.strat.is-picked { border-color: var(--color-coral); }
+.strat.is-picked .strat__n { background: var(--color-coral); }
+.strat.is-picked .strat__count { color: var(--color-coral); }
+.strat-ref { vertical-align: -.2em; margin-right: 7px; }
+.strat-ref.coral { background: var(--color-coral); }
+@media (max-width: 640px) { .strat-grid { grid-template-columns: 1fr; } }
 
 /* Language switch (English page <-> Japanese page) */
 .lang-switch {
@@ -451,7 +490,7 @@ html[lang="ja"] .lede, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h
 
 #strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
 #members h3 { font-size: 1.16rem; margin: 28px 0 8px; color: var(--ink); }
-#members h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
+h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--color-blue); margin: 20px 0 4px; }
 .metric-table td.bk { text-align: left; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .metric-table thead th.bk { text-align: left; }
 

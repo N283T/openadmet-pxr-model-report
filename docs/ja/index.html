@@ -190,9 +190,8 @@
   <section id="strategy">
     <h2>3. Strategy</h2>
     <p>
-      戦略の土台にしたのは Buterez et&nbsp;al. の
-      <a href="https://www.nature.com/articles/s41467-024-45566-8"><em>"Transfer learning with graph neural networks for improved molecular property prediction in the multi-fidelity setting"</em>（Nature Communications, 2024）</a>
-      です。振り返ると、この論文にたどり着けたことが、この順位に届いた最大の理由のひとつでした。
+      戦略の土台にしたのは Buterez et&nbsp;al. の multi-fidelity 転移学習の論文です。
+      振り返ると、これにたどり着けたことが、この順位に届いた最大の理由のひとつでした。
     </p>
 
     <h3>The auxiliary data</h3>
@@ -232,39 +231,47 @@
       そのまま書き出したリサーチ用プロンプトを Claude Code に作らせ、補助信号を活かす方法を尋ねました。
       そのプロンプトを ChatGPT Deep Research にかけて出てきたのが Buterez et&nbsp;al. です。
     </p>
+    <div class="paper-card">
+      <p class="paper-card__title"><a href="https://www.nature.com/articles/s41467-024-45566-8">Transfer learning with graph neural networks for improved molecular property prediction in the multi-fidelity setting</a></p>
+      <p class="paper-card__meta">David Buterez et al.（Cambridge / AstraZeneca）· Nature Communications, 2024 · <a href="https://doi.org/10.1038/s41467-024-45566-8">DOI: 10.1038/s41467-024-45566-8</a></p>
+    </div>
+
+    <h4>What the paper compares</h4>
     <p>
-      論文が扱うのは <strong>multi-fidelity</strong> な状況、つまり high-fidelity (HF) な測定が少数しかない一方で、
-      low-fidelity (LF) 測定が大量にある場合です。その LF をどう活かすかを 6 通り比較していて、
-      括弧内は 51 ケース中で最良だった回数です。
+      扱っているのは <strong>multi-fidelity</strong> な状況です。安くて大量でノイズの多い一次スクリーニング
+      (<strong>low-fidelity</strong>, LF) と、その一部だけが進む用量反応 (<strong>high-fidelity</strong>, HF)
+      があり、予測したいのは HF のほう。この <strong>LF をどう使うか</strong>を 6 通り比較しています。
     </p>
-    <ol class="strategy-list">
-      <li>生の LF ラベルを特徴量に足す（10）</li>
-      <li>LF モデルが<strong>予測したラベル</strong>を足す（3）</li>
-      <li>ハイブリッド — 学習は実測、推論は予測（2）</li>
-      <li>LF モデルの <strong>embedding</strong> を足す（10）</li>
-      <li>LF で事前学習して通常どおり fine-tune（0）</li>
-      <li>LF で事前学習し <strong>readout だけ</strong> fine-tune（26）</li>
+    <ol class="strat-grid">
+      <li class="strat"><span class="strat__n">1</span><span class="strat__body">生の LF ラベルを特徴量に足す</span><span class="strat__count">10</span></li>
+      <li class="strat"><span class="strat__n">2</span><span class="strat__body">LF モデルが<strong>予測したラベル</strong>を足す</span><span class="strat__count">3</span></li>
+      <li class="strat"><span class="strat__n">3</span><span class="strat__body">ハイブリッド — 学習は実測、推論は予測</span><span class="strat__count">2</span></li>
+      <li class="strat"><span class="strat__n">4</span><span class="strat__body">LF モデルの <strong>embedding</strong> を足す</span><span class="strat__count">10</span></li>
+      <li class="strat"><span class="strat__n">5</span><span class="strat__body">LF で事前学習して通常どおり fine-tune</span><span class="strat__count">0</span></li>
+      <li class="strat"><span class="strat__n">6</span><span class="strat__body">LF で事前学習し <strong>readout だけ</strong> fine-tune</span><span class="strat__count">26</span></li>
     </ol>
+    <p class="metrics-key">右端の数字は、51 ケース中でその戦略が最良だった回数です。</p>
     <p>
-      生ラベルを足すだけで MAE が 10〜40% 下がり、embedding はそれをさらに最大 10% 上回る、というのが論文の結論です。
+      生ラベルを足すだけで MAE が 10〜40% 下がり、embedding はそれをさらに最大 10% 上回る、というのが結論です。
       ただし効くのは adaptive readout があるときだけで、表現を使った 41 勝のうち 40 がそちら側でした。
     </p>
+
+    <h4>Adapting it</h4>
     <p>
-      今回のデータはこの設定にそのまま乗ります。HF が学習の pEC50 4,140 件、LF が単一濃度の log2fc
-      10,875 化合物です。論文と違うのは 2 点だけでした。
+      ここからが今回の話です。配布データはこの設定にそのまま乗りました。HF が学習の pEC50 4,140 件、
+      LF が単一濃度の log2fc 10,875 化合物です。論文と違うのは主に 2 点でした。
     </p>
     <ul>
-      <li><strong>生ラベルが使えない</strong> — test に実測がないので、1 と 3 は最初から選べません。</li>
+      <li><strong>生ラベルが使えない</strong> — test に実測がないので、<span class="strat-ref">1</span>と<span class="strat-ref">3</span>は最初から選べません。</li>
       <li><strong>LF が桁違いに少ない</strong> — 論文は 100 万件以上、今回は 10,875 化合物です。</li>
     </ul>
-    <p>採用したのは <strong>2 と 4</strong> です。</p>
-    <table class="spec-table">
-      <thead><tr><th>Strategy</th><th>How we applied it</th></tr></thead>
-      <tbody>
-        <tr><th>2 · LF model's prediction</th><td><code>log2fc_8p25_pred</code> / <code>log2fc_33_pred</code> を特徴量に足す</td></tr>
-        <tr><th>4 · LF embedding</th><td>log2fc で事前学習した encoder の frozen embedding を渡す</td></tr>
-      </tbody>
-    </table>
+    <p>
+      残るなかから採用したのが <span class="strat-ref coral">2</span> と <span class="strat-ref coral">4</span> です。
+    </p>
+    <ol class="strat-grid">
+      <li class="strat is-picked"><span class="strat__n">2</span><span class="strat__body">予測値 <code>log2fc_8p25_pred</code> / <code>log2fc_33_pred</code> を特徴量に足す</span></li>
+      <li class="strat is-picked"><span class="strat__n">4</span><span class="strat__body">log2fc で事前学習した encoder の frozen embedding を渡す</span></li>
+    </ol>
     <p>
       そのうえで、論文には出てこない <strong>TabPFN</strong> を下流に置きました。
       同じ ChemProp (D-MPNN) で揃えた比較がこれです。
@@ -273,9 +280,9 @@
       <table class="metric-table">
         <thead><tr><th>Downstream</th><th>OOF MAE</th><th>Spearman</th></tr></thead>
         <tbody>
-          <tr class="hi"><th>4 の embedding を TabPFN で読む</th><td>0.437</td><td>0.807</td></tr>
-          <tr><th>6 · adaptive readout を学習（論文の一押し）</th><td>0.482</td><td>0.758</td></tr>
-          <tr><th>5 · 凍結せず直接 fine-tune</th><td>0.507</td><td>0.755</td></tr>
+          <tr class="hi"><th><span class="strat-ref coral">4</span>の embedding を TabPFN で読む</th><td>0.437</td><td>0.807</td></tr>
+          <tr><th><span class="strat-ref">6</span>adaptive readout を学習（論文の一押し）</th><td>0.482</td><td>0.758</td></tr>
+          <tr><th><span class="strat-ref">5</span>凍結せず直接 fine-tune</th><td>0.507</td><td>0.755</td></tr>
         </tbody>
       </table>
     </div>
