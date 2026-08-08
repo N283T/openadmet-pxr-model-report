@@ -766,16 +766,15 @@
 <pre><code>id55 = id51 + 0.35 * soft_gate(nn_tanimoto_to_potent46 &gt;= 0.40)
              * (seed10_top500 - ens_caruana_bag20)</code></pre>
     <ul>
-      <li><strong>potent-46</strong> — Train のうち pEC50 ≥ 6 で、かつ counter assay に対する選択性
-        （pEC50 − counter pEC50）が 1.5 以上ある 46 化合物です。強く、しかも非特異的でない、
-        という条件で、狙いたい帯の見本になります。</li>
-      <li><strong>gate</strong> — Test 化合物ごとに、potent-46 に対する Morgan fingerprint の
-        最近傍 Tanimoto を測ります。0.40 未満では 0、0.55 以上で 1、その間は線形に上がる soft gate です。
-        硬い閾値にしないのは、境界付近の化合物が入るか外れるかで予測が跳ねるのを避けるためで、
-        実際に効くのは Test 513 件のうち一部だけです。</li>
-      <li><strong>寄せる量</strong> — gate が開いているところで、seed 拡張版の top500 メンバーと
-        素の Caruana ブレンドの差を 0.35 だけ足します。top500 に<strong>置き換える</strong>のではなく、
-        その方向へ 3 割ほど寄せる強さです。gate が 0 の化合物は id51 のままで、まったく動きません。</li>
+      <li><strong>potent-46</strong> — Test は強い誘導剤の analog set として作られています。
+        その帯の見本として、Train から pEC50 ≥ 6 かつ counter assay に対する選択性 1.5 以上の
+        46 件を取りました。</li>
+      <li><strong>gate</strong> — Test 化合物ごとに potent-46 への Morgan 最近傍 Tanimoto を測り、
+        近いものだけ開きます。
+        <ul><li>0.40 未満で 0、0.55 以上で 1、その間は線形。硬い閾値だと境界で予測が跳ねます</li></ul>
+      </li>
+      <li><strong>寄せる量</strong> — top500 メンバーと素のブレンドの差を 0.35 だけ足します。
+        置き換えではないので、gate が閉じている化合物は id51 のままです。</li>
     </ul>
     <p>
       「top500 の入れ替え」と「potent-46 の持ち上げ」は 2 つの編集ではなく、この 1 項です。
