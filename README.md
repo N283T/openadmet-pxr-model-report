@@ -8,6 +8,13 @@ Technical report for a **4th-of-95** Track 1 Activity submission to the
 - 🇯🇵 **Japanese version:** <https://n283t.github.io/openadmet-pxr-model-report/ja/> — source in [`docs/ja/`](docs/ja/)
 - 📄 **Markdown report:** [MODEL_REPORT.md](MODEL_REPORT.md) (English only)
 
+## The model
+
+![Nine-member ensemble in three families: a tabular core of descriptors and predicted log2fc, frozen embeddings from encoders pretrained on log2fc, and pooled Boltz-2 trunk representations. Every member is read out by TabPFN, and Caruana forward selection turns them into one prediction.](docs/assets/img/model-overview.svg)
+
+Members fall into three families by how their features are built, and the readout
+is TabPFN in every case. The walkthrough is in [MODEL_REPORT.md](MODEL_REPORT.md).
+
 ## Results
 
 Scores came out at three points. The live leaderboard moved with every
