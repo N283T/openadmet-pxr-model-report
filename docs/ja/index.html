@@ -790,71 +790,47 @@
   </section>
 
   <section id="phase2">
-    <h2>8. Phase 1 → Phase 2</h2>
+    <h2>8. Phase 1 &rarr; Phase 2</h2>
     <p>
-      anchor に戻って Phase 1 を終えたことは、当時は及び腰に見えました。
-      public LBでは 8 位前後で、明らかに良い public スコアを出しているチームが複数あり、
-      おそらくまだ調整を続けていたはずです。しかしその板こそ、追いかけないと決めたばかりのノイズの多い代理指標でした。
-      そしてブラインドの最終採点では、その自制が報われて <strong>95 中 4 位</strong>です。
-      public LBに過剰適合しなかったことは、振り返れば Phase 1 の良い判断のひとつでした。
+      Phase 1 は、LB に合わせに行くのをやめて anchor をそのまま出し直して終えました。
+      当時は及び腰に見えましたが、ブラインドの最終採点は <strong>95 中 4 位</strong>。
+      public LB に過剰適合しなかったことが、Phase 1 の良い判断のひとつでした。
     </p>
     <p>
-      Phase 2 では、同じ勘を働かせようにも安全に押せる場所がほとんどありませんでした。
-      Phase 2 の Activity は完全にブラインドで、舵にできる public LBがなく、
-      いま分かっている AS2 のラベルで見ると、我々が加えた変更はすべて予測を悪い方向へ動かしていました。
-      Phase 1 の anchor（id55、id60 として再提出）は AS2 で 0.4075。
-      Phase 2 の変更はそこから一つずつ離れていき、提出した id63 では 0.4123 まで悪化しています。
+      Phase 2 は完全にブラインドで、舵にできる public LB がありません。
+      答え合わせで見ると、<strong>加えた変更はすべて予測を悪い方向へ動かしていました</strong>。
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 11: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 11: ブラインド解除後のラベルで測った AS2 MAE。Phase 1 の anchor 0.4075 から、提出した id63 は 0.4123 まで悪化しています。破線は優勝スコア 0.4061、ティールは作ったものの提出しなかった候補です。</figcaption>
     </figure>
-    <table class="metric-table">
-      <thead>
-        <tr><th>id</th><th>What it added</th><th>AS2 MAE</th><th>Δ vs id60</th></tr>
-      </thead>
-      <tbody>
-        <tr class="hi"><th>id60 (=id55)</th><td>Phase 1 anchor</td><td>0.4075</td><td>baseline</td></tr>
-        <tr><th>id61</th><td>AS1 labels + top500 AS1-aug blend (α 0.40)</td><td>0.4121</td><td>+0.0046</td></tr>
-        <tr><th>id62</th><td>+ ChEMBL pairrank high-activity gate</td><td>0.4115</td><td>+0.0040</td></tr>
-        <tr class="hi"><th>id63</th><td>+ composite pairrank/ChemProp gate, α 0.45 (final)</td><td>0.4123</td><td>+0.0048</td></tr>
-      </tbody>
-    </table>
-    <p class="metrics-key">ブラインド解除後のラベルで測った AS2 MAE。Phase 2 には照合できる public LBがありませんでした。anchor から離れる操作は、どれも誤差を増やしています。</p>
-    <p>何が悪かったのか、おおむね順番に並べると次のとおりです。</p>
+    <p>何が悪かったのか。</p>
     <ul>
-      <li><strong>公開された AS1 ラベルで再学習し、top500 の AS1 追加学習モデルをブレンドしたこと。</strong> AS2 の予測を新しいモデル側へ引っ張りましたが、ほとんどのメンバーでは AS1 再学習が AS2 をほとんど改善しておらず、結果としてブレンドは主に誤差を持ち込みました。</li>
-      <li><strong>tail を捕まえるための gate モデル群。</strong> 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> / 公開 PXR 活性データから、pairrank のランキングモデルと分類モデルを作りました。ペアワイズのランキングで学習する Boltz-2 の affinity head に着想を得たものです。高活性化合物の検出自体はうまくいきました（AUC 約 0.88）が、難しいのはそこではありませんでした。<em>どの</em>化合物を動かすべきかが分かっても、<em>どれだけ</em>動かすべきかは分かりません。そして幅を外したコストは、ランキングで稼いだ分より大きかったのです。</li>
-      <li><strong>低活性側の tail に手を出さなかったこと —— これだけは正解でした。</strong> 低い側へのシフトは、外した化合物に当たったときの誤差が大きくなります。だから一度も適用しませんでした。解答が公開されて、その自制が正しかったと確認できました。</li>
+      <li><strong>AS1 ラベルでの再学習</strong> — 公開された AS1 を足して top500 を学習し直し、
+        そちらへブレンドしました。ところが AS1 の追加はほとんどのメンバーで AS2 を改善しておらず、
+        ブレンドは誤差だけを持ち込みました。</li>
+      <li><strong>高活性 gate</strong> — 外部の <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a> と
+        公開 PXR 活性から pairrank のランキングモデルを作りました（ペアで学習する Boltz-2 の
+        affinity head に倣った設計です）。検出は AUC 約 0.88 と良かったのですが、難所はそこではありません。
+        <ul><li><em>どれ</em>を動かすかが分かっても、<em>どれだけ</em>動かすかは分かりません。幅を外した損が、ランキングで稼いだ分を超えました</li></ul>
+      </li>
+      <li><strong>低活性側に触らなかったこと</strong> — 外したときの損が大きいので見送りました。
+        これだけは正解だったと、解答が公開されて確認できました。</li>
     </ul>
     <p>
-      これらをまとめたものが、提出した候補 id63 です。
-      <code>id63 = AS1 rows filled with released labels; AS2 = the id55/id60 anchor blended 0.45 toward an AS1-augmented top500 model, plus a ChEMBL pairrank high-activity gate (+0.15) and a composite pairrank/ChemProp gate (+0.15), with no low-side shift</code>。
-      結果として、AS2 に対するこれらの操作はすべて逆方向でした。
-    </p>
-    <p>
-      身も蓋もなく言えば、Phase 1 の anchor 以降、AS2 に対してできたことはすべて事態を悪くしました。
-      始める前は逆だと思っていたにもかかわらず、です。公開された AS1 ラベルを取り込むのは
-      悪くなりようがないと感じたので、ブレンド比をわざわざ 0.40 から 0.45 へ上げてすらいます。
-      <em>何もしない</em>のが正解だった、というのは当時の我々に判断できることではありませんでした。
-    </p>
-    <p>
-      そしてこれは両刃です。提出しなかった候補
-      <code>id55shape_t10top500_t40_soft_g35</code> は、真の AS2 ラベルで <strong>0.4056</strong> に達しており、
-      優勝スコアの 0.4061 をわずかに下回ります。つまり後から見れば、これを出していれば 1 位でした。
-      値を動かしすぎており、自前の preflight チェックを通らなかったため、これは見送っています。
-      逆の極端として、保守的な id60 の anchor（0.4075）をそのまま維持するだけでも、実際に提出したものより良かったはずです。
-      少しだけ足す、が 3 択のうち最悪でした。そして提出時点では、勝ち筋の賭けと負け筋の賭けを見分ける方法はありませんでした。
-      ブラインドのコンペで難しいのは、そこです。
+      そして両刃です。提出しなかった候補 <code>id55shape_t10top500_t40_soft_g35</code> は
+      AS2 で <strong>0.4056</strong>、優勝の 0.4061 を下回っていました。動かす値が多く、
+      自前の preflight を通らなかったので見送っています。逆に、id60 を維持するだけでも
+      提出した id63 より良い。<strong>少しだけ足す、が 3 択で最悪</strong>でした。
+      LB がない以上、勝ち筋と負け筋を提出時点で見分ける方法はありません。ブラインドで難しいのはそこです。
     </p>
     <div class="aside">
       <p>
-        コンペ後に走らせた完全な解答照合
-        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) は、この点をさらに際立たせます。
-        LB を一度も見ずに組んだ機械的な anchor-residual stacker ですら、テスト全体で
-        約 <strong>0.405</strong> に着地し、importance calibration 版アンサンブル（0.407）も、
-        Phase 2 で実際に提出したものも上回りました。ある地点から先では、上乗せした仕掛けは
-        得るものより失うもののほうが大きかったわけです。やらないという規律のほうが、二重の意味で優れたモデルでした。
+        コンペ後の完全な解答照合
+        (<a href="https://github.com/N283T/pxr-iduction-challenge/issues/222">issue #222</a>) では、
+        LB を一度も見ずに組んだ anchor-residual stacker がテスト全体で約 <strong>0.405</strong> に着地し、
+        importance calibration 版アンサンブル（0.407）も Phase 2 の提出もすべて上回りました。
+        ある地点から先は、上乗せした仕掛けのほうが損でした。
       </p>
     </div>
   </section>
