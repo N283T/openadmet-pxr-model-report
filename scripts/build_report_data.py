@@ -9,15 +9,25 @@
 # ///
 """Build the JSON chart data for the PXR model-report GitHub Pages site.
 
-This script reads the *local, un-committed* challenge working repo and emits
-small aggregated / per-point JSON files under ``docs/assets/data/``. Only the
-data actually needed to render the report charts is exported; raw feature
-matrices, checkpoints and full prediction pools stay out of the public repo.
+This script emits small aggregated / per-point JSON files under
+``docs/assets/data/``. Only the data actually needed to render the report charts
+is exported; raw feature matrices, checkpoints and full prediction pools stay
+out of the public repo.
+
+Measured data comes from the challenge's working **database** — compounds,
+assays, leaderboard rows — because it is the state the models were built
+against. The parquets the challenge later distributed are a newer revision with
+some compounds removed, so they no longer match the runs described here.
+
+What still comes from the working repo, because the database does not hold it:
+the per-model submission CSVs and member weights, the LightGBM gain audit, the
+Boltz pooling report, and the Phase 2 answer-key replays.
 
 Usage:
-    ./scripts/build_report_data.py [--src /path/to/pxr-iduction-challenge]
+    ./scripts/build_report_data.py [--src /path/to/pxr-iduction-challenge] [--dsn ...]
 
-The source repo defaults to a sibling checkout. Nothing here reaches the network.
+The source repo defaults to a sibling checkout and the database to the local
+cluster. Nothing here reaches the network.
 """
 
 from __future__ import annotations
@@ -98,16 +108,56 @@ CONC_8P25 = 8.251e-6  # 8.25 uM
 CONC_33 = 3.30e-5  # 33 uM
 # Single-concentration rows sit a hair off the nominal molarity, so match within
 # a percent rather than on equality.
-OBS_LOG2FC_SQL = """
-    SELECT compound_id,
-           avg(log2_fc_estimate) FILTER (
-               WHERE abs(concentration_m - %(c8)s) <= %(c8)s * 0.02) AS obs_log2fc_8p25,
-           avg(log2_fc_estimate) FILTER (
-               WHERE abs(concentration_m - %(c33)s) <= %(c33)s * 0.02) AS obs_log2fc_33
-      FROM single_concentration
-     WHERE log2_fc_estimate IS NOT NULL
-     GROUP BY compound_id
+# One row per training compound: the label, the descriptors and Boltz-2 columns
+# the correlation strip reads, and the observed log2fc at each concentration.
+# Everything joins on compound_id.
+TRAIN_FEATURES_SQL = """
+    WITH obs AS (
+        SELECT compound_id,
+               avg(log2_fc_estimate) FILTER (
+                   WHERE abs(concentration_m - %(c8)s) <= %(c8)s * 0.02) AS obs_8p25,
+               avg(log2_fc_estimate) FILTER (
+                   WHERE abs(concentration_m - %(c33)s) <= %(c33)s * 0.02) AS obs_33
+          FROM single_concentration
+         WHERE log2_fc_estimate IS NOT NULL
+         GROUP BY compound_id
+    )
+    SELECT a.compound_id, a.pec50,
+           o.obs_8p25, o.obs_33,
+           b.affinity_pred_value, b.confidence_score, b.iptm,
+           d.logp, d.amw, d.num_aromatic_rings, d.hbd, d.num_rotatable_bonds
+      FROM train_activity a
+      LEFT JOIN obs o USING (compound_id)
+      LEFT JOIN compound_boltz2 b USING (compound_id)
+      LEFT JOIN compound_descriptors d USING (compound_id)
 """
+# Group sizes and per-label counts for the coverage grid. "aux" is a compound
+# with a single-concentration row that is neither train nor test.
+COVERAGE_SQL = """
+    WITH tr AS (SELECT DISTINCT compound_id FROM train_activity),
+         te AS (SELECT DISTINCT compound_id FROM test_activity),
+         sc AS (SELECT DISTINCT compound_id FROM single_concentration
+                 WHERE log2_fc_estimate IS NOT NULL),
+         aux AS (SELECT compound_id FROM sc
+                 EXCEPT SELECT compound_id FROM tr
+                 EXCEPT SELECT compound_id FROM te),
+         ct AS (SELECT DISTINCT compound_id FROM counter_assay WHERE pec50 IS NOT NULL)
+    SELECT 'train' AS grp, (SELECT count(*) FROM tr) AS n,
+           (SELECT count(*) FROM train_activity WHERE pec50 IS NOT NULL) AS pec50,
+           (SELECT count(*) FROM train_activity WHERE emax_estimate IS NOT NULL) AS emax,
+           (SELECT count(*) FROM ct JOIN tr USING (compound_id)) AS counter,
+           (SELECT count(*) FROM sc JOIN tr USING (compound_id)) AS log2fc
+    UNION ALL
+    SELECT 'test', (SELECT count(*) FROM te), 0, 0,
+           (SELECT count(*) FROM ct JOIN te USING (compound_id)),
+           (SELECT count(*) FROM sc JOIN te USING (compound_id))
+    UNION ALL
+    SELECT 'aux', (SELECT count(*) FROM aux), 0, 0,
+           (SELECT count(*) FROM ct JOIN aux USING (compound_id)),
+           (SELECT count(*) FROM sc JOIN aux USING (compound_id))
+"""
+# The public-leaderboard row for each submission id.
+LB_SUBMISSIONS_SQL = "SELECT id, lb_mae, lb_spearman FROM lb_submissions"
 # Representative features for the correlation heatmap.
 # (full label, short column header, master/pred column, family).
 # Columns are grouped by family (log2fc, then Boltz, then descriptors) and sorted
@@ -120,11 +170,11 @@ OBS_LOG2FC_SQL = """
 FEATURE_CORR = [
     ("Predicted log2fc (8.25 µM)", "pred 8.25µM", "log2fc_8p25_pred", "log2fc"),
     ("Predicted log2fc (33 µM)", "pred 33µM", "log2fc_33_pred", "log2fc"),
-    ("Observed log2fc (8.25 µM)", "obs 8.25µM", "obs_log2fc_8p25", "log2fc"),
-    ("Observed log2fc (33 µM)", "obs 33µM", "obs_log2fc_33", "log2fc"),
-    ("Boltz-2 affinity", "Boltz aff.", "b2_affinity_pred", "boltz"),
-    ("Boltz-2 confidence", "Boltz conf.", "b2_confidence", "boltz"),
-    ("Boltz-2 ipTM", "Boltz ipTM", "b2_iptm", "boltz"),
+    ("Observed log2fc (8.25 µM)", "obs 8.25µM", "obs_8p25", "log2fc"),
+    ("Observed log2fc (33 µM)", "obs 33µM", "obs_33", "log2fc"),
+    ("Boltz-2 affinity", "Boltz aff.", "affinity_pred_value", "boltz"),
+    ("Boltz-2 confidence", "Boltz conf.", "confidence_score", "boltz"),
+    ("Boltz-2 ipTM", "Boltz ipTM", "iptm", "boltz"),
     ("logP", "logP", "logp", "desc"),
     ("Mol. weight", "MW", "amw", "desc"),
     ("Aromatic rings", "arom. rings", "num_aromatic_rings", "desc"),
@@ -140,12 +190,8 @@ COVERAGE_GROUPS = [
     ("Blinded test", "test"),
     ("Single-conc-only aux", "aux"),
 ]
-COVERAGE_LABELS = [
-    ("pEC50", "train_pec50"),
-    ("Emax", "train_emax"),
-    ("Counter", "counter_pec50"),
-    ("log2fc", "single_max_log2_fc"),
-]
+COVERAGE_LABEL_NAMES = ["pEC50", "Emax", "Counter", "log2fc"]
+COVERAGE_LABELS = ["pec50", "emax", "counter", "log2fc"]
 
 
 # Human-readable labels for the production ensemble members.
@@ -411,12 +457,7 @@ def build_boltz_pooling(src: Path) -> None:
 
 # Phase-1 calibration-and-gate journey, read from the LB submission ledger.
 # (lb_submission id, short axis label, full label, is-anchor).
-CALIB_LEDGER = (
-    "track1_activity",
-    "analysis",
-    "oof_proxy_diagnostics",
-    "lb_submission_direction_table.csv",
-)
+CALIB_ANCHOR_ID = 55  # id55, the Phase 1 anchor every delta is measured against
 CALIB_JOURNEY = [
     (13, "raw", "Caruana ensemble (raw)", False),
     (19, "calibrated", "+ affine calibration", False),
@@ -429,11 +470,12 @@ CALIB_JOURNEY = [
 ]
 
 
-def build_calibration_journey(src: Path) -> None:
+def build_calibration_journey(dsn: str) -> None:
     """Public-LB MAE across the Phase-1 calibration + tail-gate milestones."""
-    df = pd.read_csv(src.joinpath(*CALIB_LEDGER))
+    df = query(dsn, LB_SUBMISSIONS_SQL)
     mae_by_id = df.drop_duplicates("id").set_index("id")["lb_mae"]
-    delta_by_id = df.drop_duplicates("id").set_index("id")["delta_lb_mae_vs_id55"]
+    # The ledger carried this column; against the anchor it is just a difference.
+    delta_by_id = mae_by_id - mae_by_id[CALIB_ANCHOR_ID]
     milestones = []
     for sub_id, short, label, anchor in CALIB_JOURNEY:
         if sub_id not in mae_by_id.index:
@@ -544,37 +586,32 @@ def build_lgbm_gain(src: Path) -> None:
     _write("lgbm_gain.json", {"families": families})
 
 
-def observed_log2fc(dsn: str) -> pd.DataFrame:
-    """Per-compound observed log2fc at each concentration, keyed by compound_id."""
+def query(dsn: str, sql: str, params: dict | None = None) -> pd.DataFrame:
+    """Run one read-only query and hand back a frame."""
     with psycopg.connect(dsn) as conn, conn.cursor() as cur:
-        cur.execute(OBS_LOG2FC_SQL, {"c8": CONC_8P25, "c33": CONC_33})
+        cur.execute(sql, params or {})
         columns = [c.name for c in cur.description]
-        rows = cur.fetchall()
-    return pd.DataFrame(rows, columns=columns).set_index("compound_id")
+        return pd.DataFrame(cur.fetchall(), columns=columns)
 
 
-def build_coverage(src: Path) -> None:
+def train_frame(dsn: str) -> pd.DataFrame:
+    """Everything the feature figures need per training compound, on compound_id."""
+    frame = query(dsn, TRAIN_FEATURES_SQL, {"c8": CONC_8P25, "c33": CONC_33})
+    return frame.set_index("compound_id")
+
+
+def build_coverage(dsn: str) -> None:
     """Which compound group carries which measured label (counts + group sizes)."""
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
-    tr = m["in_train"].fillna(False)
-    te = m["in_test"].fillna(False)
-    si = m["in_single"].fillna(False)
-    masks = {"train": tr, "test": te, "aux": si & ~tr & ~te}
+    counts = query(dsn, COVERAGE_SQL).set_index("grp")
     groups = []
     matrix = []
-    for gname, gkey in COVERAGE_GROUPS:
-        mask = masks[gkey]
-        groups.append({"name": gname, "n": int(mask.sum())})
-        matrix.append(
-            [int((mask & m[col].notna()).sum()) for _, col in COVERAGE_LABELS]
-        )
+    for name, key in COVERAGE_GROUPS:
+        row = counts.loc[key]
+        groups.append({"name": name, "n": int(row["n"])})
+        matrix.append([int(row[column]) for column in COVERAGE_LABELS])
     _write(
         "coverage.json",
-        {
-            "groups": groups,
-            "labels": [label for label, _ in COVERAGE_LABELS],
-            "matrix": matrix,
-        },
+        {"groups": groups, "labels": COVERAGE_LABEL_NAMES, "matrix": matrix},
     )
 
 
@@ -589,48 +626,32 @@ def _scatter_block(x: pd.Series, y: pd.Series, key: str, label: str) -> dict:
 
 def build_feature_scatter(src: Path, dsn: str) -> None:
     """Four log2fc panels vs training pEC50: observed and predicted, at 8.25 and 33 uM."""
-    features = []
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
-    # Observed log2fc per concentration, from the database on compound_id.
-    obs = observed_log2fc(dsn)
-    mt = m[m["in_train"].fillna(False)]
-    for key, label, col in (
-        ("obs_8p25", "Observed log2fc · 8.25 µM", "obs_log2fc_8p25"),
-        ("obs_33", "Observed log2fc · 33 µM", "obs_log2fc_33"),
-    ):
-        features.append(
-            _scatter_block(
-                mt["compound_id"].map(obs[col]), mt["train_pec50"], key, label
-            )
-        )
-    # Predicted log2fc per concentration, joined to pEC50 by compound_id.
+    frame = train_frame(dsn)
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
-    mp = m[m["in_train"].fillna(False)].merge(
-        pred, left_on="compound_id", right_index=True, how="inner"
-    )
-    for key, label, col in (
-        ("pred_8p25", "Predicted log2fc · 8.25 µM", "log2fc_8p25_pred"),
-        ("pred_33", "Predicted log2fc · 33 µM", "log2fc_33_pred"),
-    ):
-        features.append(_scatter_block(mp[col], mp["train_pec50"], key, label))
+    frame = frame.join(pred, how="left")
+    features = [
+        _scatter_block(frame[column], frame["pec50"], key, label)
+        for key, label, column in (
+            ("obs_8p25", "Observed log2fc · 8.25 µM", "obs_8p25"),
+            ("obs_33", "Observed log2fc · 33 µM", "obs_33"),
+            ("pred_8p25", "Predicted log2fc · 8.25 µM", "log2fc_8p25_pred"),
+            ("pred_33", "Predicted log2fc · 33 µM", "log2fc_33_pred"),
+        )
+    ]
     _write("feature_vs_pec50.json", {"features": features})
 
 
 def build_feature_corr(src: Path, dsn: str) -> None:
-    """Rank representative features by their single Pearson correlation with training pEC50."""
-    m = pd.read_parquet(src.joinpath(*MASTER_PARQUET))
+    """Rank representative features by their single correlation with training pEC50."""
+    frame = train_frame(dsn)
     pred = pd.read_parquet(src.joinpath(*PLOG2FC_PARQUET))
-    m = m.merge(pred, left_on="compound_id", right_index=True, how="left")
-    # Observed log2fc, one column per concentration, straight from the database
-    # on compound_id — no name or SMILES matching anywhere in the join.
-    obs = observed_log2fc(dsn)
-    for col in ("obs_log2fc_8p25", "obs_log2fc_33"):
-        m[col] = m["compound_id"].map(obs[col])
-    m = m[m["in_train"].fillna(False)]
-    y = pd.to_numeric(m["train_pec50"], errors="coerce")
+    frame = frame.join(pred, how="left")
+    y = pd.to_numeric(frame["pec50"], errors="coerce")
     feats = []
-    for label, short, col, family in FEATURE_CORR:
-        d = pd.DataFrame({"x": pd.to_numeric(m[col], errors="coerce"), "y": y}).dropna()
+    for label, short, column, family in FEATURE_CORR:
+        d = pd.DataFrame(
+            {"x": pd.to_numeric(frame[column], errors="coerce"), "y": y}
+        ).dropna()
         if len(d) < 20:
             continue
         feats.append(
@@ -675,13 +696,13 @@ def main() -> None:
     logger.info("source repo: %s", src)
     logger.info("database: %s", dsn)
     build_ensemble_members(src)
-    build_coverage(src)
+    build_coverage(dsn)
     build_topk_sweep(src)
     build_lgbm_gain(src)
     build_member_corr(src)
     build_model_cards(src)
     build_boltz_pooling(src)
-    build_calibration_journey(src)
+    build_calibration_journey(dsn)
     build_phase2_as2(src)
     build_feature_scatter(src, dsn)
     build_feature_corr(src, dsn)
