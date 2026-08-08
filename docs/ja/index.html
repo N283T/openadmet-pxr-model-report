@@ -519,7 +519,7 @@
     </figure>
     <p>
       選択に LightGBM を使うと、解釈可能性も少し手に入ります。gain を見れば、何に依存していたかが分かるからです。
-      gain の<strong>約 4 分の 3</strong> は 2 本の predicted log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（Figure 7）。
+      gain の<strong>約 4 分の 3</strong> は 2 本の predicted log2fc 列に集中し、残りが Mordred と CheMeleon に薄く広がっています（Figure 6）。
       要するにこの選択器がやっているのは「pred log2fc の 2 列を残し、あとは記述子で空間を埋める」ことです。
     </p>
     <figure class="chart-figure">
@@ -656,56 +656,29 @@
       一切使いません。構造予測器の上に建っている representation モデル、と読んでください。
     </p>
     <p>
-      この 2 メンバーには、アンサンブルの中で最も込み入った経緯があります。
-      当初の計画は <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> の予測構造と affinity head を
-      そのまま使うことでした。PXR（UniProt O75469、434 残基）を各リガンドと co-fold し、
-      ポーズか affinity スコアから活性を読む、という筋書きです。正直に言えば、どちらも単独では使い物になりませんでした。
-      ポーズも affinity スカラーも、PXR の活性を担うにはノイズが多すぎたのです
-      （この affinity スカラーは、tabular core の中の弱い 1 列としてのみ生き残っています。
-      <a href="#strategy">Strategy</a> の章を参照）。
-      とはいえ全化合物の co-fold にはすでに約 4 日分の計算を費やしており、
-      しかも実行時に <code>--write_embeddings</code> を付けていたので、
-      trunk の representation がディスク上に残っていました。捨てるくらいならということで、
-      「Boltz は構造予測器としてより <strong>representation</strong> として有用なのではないか」という問いに変わったわけです。
+      当初は <a href="https://github.com/jwohlwend/boltz">Boltz-2</a> の予測構造と affinity head を
+      そのまま使うつもりでした。PXR（UniProt O75469、434 残基）を各リガンドと co-fold し、
+      ポーズか affinity スコアから活性を読む、という筋書きです。実際にはどちらも期待したほどではなく、
+      affinity スカラーは tabular core の弱い 1 列として残るにとどまりました。
+      そこで、<strong>representation として使う方法</strong>を考えることになります。
     </p>
     <p>
-      そこでポーズや affinity head の代わりに、Boltz 内部の <strong>trunk representation</strong>
-      （トークン単位の single テンソル <code>s</code> と、トークン対のテンソル <code>z</code>）を取り出し、
-      化合物あたり <strong>1,024 次元</strong>の固定長ベクトルにプーリングして TabPFN に渡します。
-      このベクトルは 4 ブロックからなります。
+      取り出すのは trunk の 2 つのテンソル、トークン単位の <code>s</code> とトークン対の <code>z</code> です。
+      これを化合物あたり <strong>1,024 次元</strong>にプーリングして TabPFN に渡します。
+      <code>s</code> はタンパク質側とリガンド側をそれぞれ平均した要約、
+      <code>z</code> は残基 × 原子の相互作用ブロックで、信号の大半はこちらにあります。
+      2 メンバーの違いは <code>z</code> に入れる範囲だけで、固定 13 残基の core pocket か、434 残基すべてかです。
     </p>
-    <div class="vblocks">
-      <div class="vblock-row">
-        <span class="vblock-name">pocket</span>
-        <div class="vblock-bar">
-          <div class="vblock-seg vb-sprot" style="flex:384">s_prot_mean<small>384d</small></div>
-          <div class="vblock-seg vb-slig" style="flex:384">s_lig_mean<small>384d</small></div>
-          <div class="vblock-seg vb-zmean" style="flex:128">z_if_mean<small>128d</small></div>
-          <div class="vblock-seg vb-zmax" style="flex:128">z_if_max<small>128d</small></div>
-        </div>
-      </div>
-      <div class="vblock-row">
-        <span class="vblock-name">allpairs</span>
-        <div class="vblock-bar">
-          <div class="vblock-seg vb-sprot" style="flex:384">s_prot_mean<small>384d</small></div>
-          <div class="vblock-seg vb-slig" style="flex:384">s_lig_mean<small>384d</small></div>
-          <div class="vblock-seg vb-zmean" style="flex:128">z_xp_mean<small>128d</small></div>
-          <div class="vblock-seg vb-zmax" style="flex:128">z_xp_max<small>128d</small></div>
-        </div>
-      </div>
-      <p class="vblocks-note">Same <code>s</code> blocks (768d); only the <code>z</code> pooling mask changes.</p>
-    </div>
-    <ul>
-      <li><strong>s (single)</strong> はトークン単位の要約です。<code>s_prot_mean</code> は Boltz の single ベクトルを PXR の 434 残基トークンにわたって平均し、<code>s_lig_mean</code> はリガンドの原子トークンにわたって平均します。タンパク質側とリガンド側をそれぞれ単独で記述したものです。</li>
-      <li><strong>z (pair)</strong> は残基 × 原子の相互作用ブロックです。<code>z_mean</code> と <code>z_max</code> が trunk のタンパク質-リガンド対セルをプーリングします。ポケットとリガンドの相互作用が宿るのはここで、信号の大半もここにあります。</li>
-      <li><strong>pocket と allpairs</strong> は <code>s</code> ブロックが同一で、<code>z</code> に入れる対セルの範囲だけが違います。固定 13 残基の core pocket（<code>z_if</code>）か、434 残基すべて（<code>z_xp</code>）か、いずれもリガンド原子との対です。実際には誤差はほとんど動きませんでした。</li>
-    </ul>
+    <figure class="chart-figure">
+      <img class="figure-img" src="../assets/img/boltz-pooling.svg" alt="Boltz trunk のプーリング" />
+      <figcaption>Figure 7: trunk の <code>s</code> と <code>z</code> を 1,024 次元に落とすまで。<code>s</code> ブロック（768 次元）は 2 メンバーで共通で、変わるのは <code>z</code> のプーリング範囲だけです。</figcaption>
+    </figure>
     <p>
       どうプーリングするかは、それ自体が小さな探索でした。どのトークンを、どのテンソルで縮約するかを 20 通り以上試しています。
     </p>
     <figure class="chart-figure">
       <div id="chart-boltz-pool" class="chart" style="height:320px"></div>
-      <figcaption>Figure 7: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（OOF MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
+      <figcaption>Figure 8: Boltz trunk を 1 本のベクトルに落とすプーリング方法の比較（OOF MAE）。コーラルの 2 本がアンサンブルに残したプーリングです。密集した帯を見分けるため、軸は 0.45 から始めています。</figcaption>
     </figure>
     <p>
       目を引く点が 2 つあります。まず、どの残基でプーリングするかはほとんど効きません。
@@ -761,7 +734,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-calib-journey" class="chart" style="height:340px"></div>
-      <figcaption>Figure 8: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
+      <figcaption>Figure 9: Phase 1 の calibration と gate の各マイルストーンにおける public リーダーボード MAE（軸は 0.40 から）。明確な下げは calibration による 1 段で、seed 拡張メンバーが小さめの 2 段目を作り、以降は横ばいです。コーラルの id55 が anchor です。</figcaption>
     </figure>
     <p>
       ここでいう calibration とは、アンサンブル自身の出力に対する事後回帰のことです。
@@ -836,7 +809,7 @@
     </p>
     <figure class="chart-figure">
       <div id="chart-phase2-as2" class="chart" style="height:340px"></div>
-      <figcaption>Figure 9: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
+      <figcaption>Figure 10: 真の AS2 MAE（解答ラベル）。Phase 1 の anchor から Phase 2 の各提出まで。Phase 2 の変更（コーラル）はすべて id60 を上回って（＝悪化して）しまいました。優勝スコアは 0.4061（破線）です。ティールの棒は、作ったものの提出しなかった候補です。</figcaption>
     </figure>
     <table class="metric-table">
       <thead>
