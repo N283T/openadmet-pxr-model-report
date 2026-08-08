@@ -532,6 +532,18 @@ h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color:
 .cov-table td.cov0 { color: var(--muted); font-weight: 500; }
 
 .scatter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+/* The predicted panels are the point of the figure; the observed ones are what
+   they are being compared against. Boxing the pair says which is which before
+   the caption does. Every panel carries the same border and padding so that all
+   four canvases come out the same size — ECharts measures the content box — and
+   only the highlighted pair has them coloured in. */
+.scatter-grid .chart {
+  border: 1px solid transparent; border-radius: 12px; padding: 8px 8px 4px;
+}
+.scatter-grid .is-pick {
+  border-color: var(--color-coral);
+  background: color-mix(in srgb, var(--color-coral) 5%, transparent);
+}
 @media (max-width: 640px) { .scatter-grid { grid-template-columns: 1fr; } }
 
 .chart-figure { margin: 22px 0 4px; }
