@@ -215,7 +215,10 @@ h2 { font-size: 1.55rem; margin: 0 0 16px; letter-spacing: -0.01em; display: fle
 h2::before { content: "\2726"; color: var(--color-coral); font-size: 0.68em; }
 h3 { font-size: 1.02rem; margin: 0 0 6px; font-family: var(--font-display); }
 p { margin: 0 0 14px; }
-ul { margin: 0 0 14px; padding-left: 22px; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; }
+/* The paper's six augmentation strategies; the numbers are referenced by name
+   in the prose and in the tables below, so keep them visible and aligned. */
+.strategy-list li::marker { font-family: var(--font-display); font-weight: 700; color: var(--color-blue); }
 li { margin-bottom: 6px; }
 a { color: var(--color-blue); text-underline-offset: 2px; }
 strong { font-weight: 700; }
