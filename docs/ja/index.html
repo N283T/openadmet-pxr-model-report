@@ -502,19 +502,16 @@
         <tbody>
           <tr><th>tier-0</th><td class="num">19</td><td>Boltz が出力する affinity・結合確率・confidence のスカラー値</td></tr>
           <tr><th>tier-1</th><td class="num">44</td><td>トークン単位の confidence テンソル（pLDDT / PAE / PDE）を pocket や ligand 単位に再集約した統計量</td></tr>
-          <tr><th>pose-Jazzy</th><td class="num">6</td><td>Boltz の pose 上で計算したリガンドの水素結合・水和自由エネルギー</td></tr>
+          <tr><th>pose-Jazzy</th><td class="num">6</td><td>Boltz の pose 上で計算したリガンドの水素結合・水和自由エネルギー（<a href="https://jazzy.readthedocs.io/en/latest/">Jazzy</a>）</td></tr>
         </tbody>
       </table>
     </div>
     <h4>top-500 selection</h4>
     <p>
-      <strong>tabular-full</strong> は 2,103 特徴量をそのまま TabPFN に渡します。
-      <strong>tabular-top500</strong> は、fold ごとに LightGBM gain で
-      <strong>上位 500 特徴量を選択</strong>してから渡します。
-      幅広く一部ノイズを含むスタックを圧縮すると効果があり、out-of-fold 誤差は
-      K = 500〜600 あたりで底を打ち、2,103 次元すべてに向かって再び上がります（Figure 6）。
-      K = 500 に固定したのは、MAE が 500〜600 でほぼ横ばいだったなか、Spearman が 500 で最良だったからです。
-      同点なら順位精度で決める、という判断でした。
+      TabPFN は入力の次元数に敏感なので、2,103 列をそのまま渡すのが最善とは限りません。
+      <strong>tabular-top500</strong> は fold ごとに LightGBM gain で上位 500 列だけを選んで渡します
+      （<strong>tabular-full</strong> はそのまま渡す方）。K を振ると 500〜600 で底を打ち、
+      MAE が横ばいだったので Spearman が最良の 500 に決めました。
     </p>
     <figure class="chart-figure">
       <div id="chart-ksweep" class="chart" style="height:320px"></div>
@@ -534,7 +531,8 @@
       それ以降は単独で 0.4% に届く特徴量すらありません。裾は CheMeleon の各次元と、
       <code>SLogP</code>・<code>qed</code>・pose-Jazzy の水和項といった解釈しやすい記述子の混成です。
     </p>
-    <div class="table-scroll">
+    <figure class="chart-figure">
+      <div class="table-scroll">
       <table class="metric-table">
         <thead><tr><th>Feature</th><th class="bk">Family</th><th>Gain share</th></tr></thead>
         <tbody>
@@ -552,8 +550,9 @@
           <tr><th>chemeleon_240</th><td class="bk">CheMeleon</td><td>0.12%</td></tr>
         </tbody>
       </table>
-    </div>
-    <p class="metrics-key">fold ごとの LightGBM gain による個別特徴量の上位（全 gain に占める割合）。これは gain ベースの選択であり、SHAP による寄与度分解ではありません。</p>
+      </div>
+      <figcaption>Table 5: fold ごとの LightGBM gain による個別特徴量の上位（全 gain に占める割合）。gain ベースの選択であって、SHAP のような寄与度分解ではありません。</figcaption>
+    </figure>
     <h4>Why both?</h4>
     <p>
       <strong>tabular-full と tabular-top500 の両方</strong>を残しているのには理由があります。
