@@ -144,16 +144,23 @@
   <section id="results">
     <h2>2. Results</h2>
     <p>
-      最終結果の要点だけをまとめます。フェーズごとの詳細な分析はここでは扱いません。
-      この課題のスコアは <strong>3 回</strong>出ています。Phase 1 の期間中ずっと動いていた
-      live leaderboard（AS1 のみ）、Phase 1 終了後に AS1 + AS2 で採点し直した中間発表、
-      そして最終順位を決める Phase 2（AS2 のみ）です。採点範囲が変わるたびに順位も動きました。
-      最終的な立ち位置は 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアです。
+      この課題のスコアは、主に <strong>3 回</strong>出ています。live leaderboard は提出のたびに
+      更新されるので、あとから動かない結果と言えるのはこの 3 つです。採点対象が変わるたびに
+      順位も動きました。最終的な立ち位置は 95 チーム中 <strong>4 位</strong>、有意差の最上位ティアです。
     </p>
+    <table class="spec-table">
+      <thead>
+        <tr><th>Result</th><th>Scored on</th><th>Leaderboard</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>Phase 1 final</th><td class="val">AS1 (253)</td><td>live</td><td>live leaderboard の最終スコア</td></tr>
+        <tr><th>Interim</th><td class="val">AS1 + AS2 (513)</td><td>one-off</td><td>モデルは Phase 1 final と同じ</td></tr>
+        <tr><th>Phase 2</th><td class="val">AS2 (260)</td><td>none</td><td>AS1 のラベルは Phase 1 終了時に公開済み</td></tr>
+      </tbody>
+    </table>
 
     <div class="phase-block">
-      <h3>Phase 1 live leaderboard <span class="badge">AS1 only</span><span class="phase-rank">rank <b>8</b></span></h3>
-      <p class="phase-eval">Phase 1 の期間中に見えていた public leaderboard。採点対象は Analog Set 1 の 253 化合物のみ。</p>
+      <h3>Phase 1 final <span class="badge">AS1 only</span><span class="phase-rank">rank <b>8</b></span></h3>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4071</span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5115</span></div>
@@ -165,7 +172,6 @@
 
     <div class="phase-block">
       <h3>Interim <span class="badge">AS1 + AS2</span><span class="phase-rank">rank <b>4</b> / 338</span></h3>
-      <p class="phase-eval">Phase 1 の最終提出を、ブラインドされた 513 化合物すべて（AS1 + AS2）で採点し直したもの。</p>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4059</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5359</span><span class="stat-r">rank <b>4</b></span></div>
@@ -177,7 +183,6 @@
 
     <div class="phase-block">
       <h3>Phase 2 <span class="badge">final standing</span><span class="phase-rank">rank <b>4</b> / 95</span></h3>
-      <p class="phase-eval">評価対象はブラインドのままの Analog Set 2（260 化合物）。Phase 2 に leaderboard はありません。</p>
       <div class="stat-strip">
         <div class="stat"><span class="stat-l">MAE</span><span class="stat-v">0.4113</span><span class="stat-r">rank <b>4</b></span></div>
         <div class="stat"><span class="stat-l">RAE</span><span class="stat-v">0.5703</span><span class="stat-r">rank <b>4</b></span></div>
