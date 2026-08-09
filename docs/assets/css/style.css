@@ -144,7 +144,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
   border-bottom: 1px solid var(--line);
 }
 .header-inner { display: flex; align-items: center; gap: 16px; height: 58px; }
-.brand { font-family: var(--font-display); font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
 .header-links { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .header-links a { display: inline-flex; align-items: center; color: var(--muted); text-decoration: none; transition: color 0.15s ease, transform 0.15s ease; }
 .header-links a:hover { color: var(--color-coral); transform: translateY(-1px); }
@@ -154,6 +153,71 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
   border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 15px; flex: none;
 }
 .theme-toggle:hover { border-color: var(--color-coral); }
+
+/* Header menu (hamburger that drops the table of contents down). Unlike the
+   .section-nav rail further down this file, it is offered at every width.
+   Everything here stays on the themed --ink / --surface pair rather than the
+   raw palette tokens: --color-ink and --color-peach do not flip with the dark
+   theme, so text painted in them goes unreadable once the surface darkens. */
+.nav-menu-wrap { position: relative; }
+.nav-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; padding: 0; flex: none;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.nav-toggle:hover { border-color: var(--color-coral); }
+/* Only the border picks up the accent; the bars keep --ink, since the × they
+   form is the state indicator and coral on white is far under 3:1. */
+.nav-toggle[aria-expanded="true"] { border-color: var(--color-coral); }
+.nav-bars { position: relative; width: 17px; height: 12px; }
+.nav-bars span {
+  position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px;
+  background: currentColor; transition: transform 0.22s ease, opacity 0.15s ease;
+}
+.nav-bars span:nth-child(1) { top: 0; }
+.nav-bars span:nth-child(2) { top: 5px; }
+.nav-bars span:nth-child(3) { top: 10px; }
+.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+
+/* The panel hangs off a sticky header, so it never scrolls out of the way:
+   without a max-height its lower entries are unreachable on short viewports. */
+.nav-menu {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 30;
+  width: max-content; min-width: 220px; max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 78px);
+  max-height: calc(100dvh - 78px);
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 10px; border: 1px solid var(--line); border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--color-ink) 18%, transparent);
+}
+.nav-menu[hidden] { display: none; }
+.nm-title {
+  margin: 2px 10px 8px; font-family: var(--font-display); font-weight: 800;
+  font-size: 0.8rem; letter-spacing: .04em; color: var(--muted);
+}
+.nm-sep { height: 1px; margin: 8px 6px; border: 0; background: var(--line); }
+.nm-link {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 10px; border-radius: 10px;
+  font-size: 0.95rem; line-height: 1.4; color: var(--ink); text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+/* Both states tint the surface and leave the label on --ink, so the text keeps
+   its contrast in either theme. Current is bold as well as tinted — never
+   colour alone. */
+.nm-link:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
+.nm-num {
+  flex: none; width: 1.1em;
+  font-family: var(--font-display); font-weight: 700; font-size: 0.86rem;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.nm-link.is-active { background: color-mix(in srgb, var(--color-blue) 16%, transparent); font-weight: 700; }
+.nm-link:hover .nm-num, .nm-link.is-active .nm-num { color: var(--ink); }
 
 /* Section nav (fixed on-page map with scroll-spy, wide screens only) */
 .section-nav { display: none; }
@@ -569,6 +633,6 @@ figcaption { color: var(--muted); font-size: .88rem; margin-top: 10px; padding: 
   .hero { padding-top: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn, .feature-cell, .result-card, .chart { transition: none; }
+  .btn, .feature-cell, .result-card, .chart, .nav-bars span { transition: none; }
   .btn:hover, .feature-cell:hover { transform: none; }
 }
