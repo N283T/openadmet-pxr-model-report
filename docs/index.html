@@ -47,7 +47,7 @@
       </button>
       <nav id="nav-menu" class="nav-menu" aria-label="Table of contents" hidden>
         <p class="nm-title">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</p>
-        <a class="nm-link nm-top" href="#top"><span class="nm-num">↑</span><span>Top</span></a>
+        <a class="nm-link" href="#top"><span class="nm-num" aria-hidden="true">↑</span><span>Top</span></a>
         <hr class="nm-sep" />
         <a class="nm-link" href="#tldr" data-sn="tldr"><span class="nm-num">0</span><span>TL;DR</span></a>
         <a class="nm-link" href="#data" data-sn="data"><span class="nm-num">1</span><span>The challenge</span></a>
@@ -942,7 +942,8 @@
 <script src="assets/vendor/echarts.min.js"></script>
 <script src="assets/js/charts.js"></script>
 <script>
-  // Header menu: open, close on Escape / outside click / a chosen section.
+  // Header menu, a disclosure: the panel holds plain in-page links, so no menu
+  // roles — they would promise arrow-key navigation this does not implement.
   (function () {
     var btn = document.getElementById("nav-toggle");
     var menu = document.getElementById("nav-menu");
@@ -954,20 +955,33 @@
       menu.hidden = false;
       btn.setAttribute("aria-expanded", "true");
       document.addEventListener("keydown", onKey);
+      // Capture phase, so a click anywhere dismisses before that click acts on
+      // its own target. Registering here cannot catch the opening click: its
+      // own capture pass through document is already over.
       document.addEventListener("click", onOutside, true);
     }
+    // refocus asks for the button back, but only if focus is still ours to
+    // move: Escape listens on the whole document, and a reader who tabbed out
+    // of the panel should not be yanked back to the header by it.
     function close(refocus) {
+      var held = menu.contains(document.activeElement) || document.activeElement === btn;
       menu.hidden = true;
       btn.setAttribute("aria-expanded", "false");
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("click", onOutside, true);
-      if (refocus) btn.focus();
+      if (refocus && held) btn.focus();
     }
     btn.addEventListener("click", function () { if (isOpen()) close(true); else open(); });
+    // Any link, the Top one included — all of them leave the panel behind.
     menu.addEventListener("click", function (e) { if (e.target.closest("a")) close(false); });
   })();
 
-  // Scroll-spy over both maps of the page: the header menu and the dot rail.
+  // Scroll-spy driving both maps of the page: the header menu and the
+  // .section-nav rail. OFFSET is the fold line under the sticky header — a
+  // section counts as current once its top crosses it, so retune this if the
+  // header height changes. currentId() stops at the first section still below
+  // the line, which assumes targets stays in document order; both maps list
+  // the sections in page order, and reordering either would break the spy.
   (function () {
     var OFFSET = 110;
     var links = [].slice.call(document.querySelectorAll(".nm-link[data-sn], .sn-link"));
@@ -1000,6 +1014,11 @@
         if (!el) return;
         e.preventDefault();
         setActive(l.getAttribute("data-sn"));
+        // preventDefault costs us the fragment's focus move, and the header
+        // menu hides itself right after, which would drop focus to <body> and
+        // restart tabbing at the top of the document. Hand it to the section.
+        el.setAttribute("tabindex", "-1");
+        el.focus({ preventScroll: true });
         el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
         history.replaceState(null, "", "#" + l.getAttribute("data-sn"));
       });
