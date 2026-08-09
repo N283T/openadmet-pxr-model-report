@@ -99,42 +99,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
 /* ============================================================
-   Background decoration (pastel blobs + dot grid in the gutters)
-   ============================================================ */
-.bg-decor {
-  position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
-  color: var(--ink);
-  --decor-safe: 32rem;
-  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(50% - var(--decor-safe)),
-    transparent calc(50% - var(--decor-safe)), transparent calc(50% + var(--decor-safe)), #000 calc(50% + var(--decor-safe)));
-  mask-image: linear-gradient(to right, #000 0, #000 calc(50% - var(--decor-safe)),
-    transparent calc(50% - var(--decor-safe)), transparent calc(50% + var(--decor-safe)), #000 calc(50% + var(--decor-safe)));
-  background:
-    radial-gradient(circle 9rem at 98% 4%, color-mix(in srgb, var(--color-coral) 95%, transparent) 0 8.8rem, transparent 8.84rem),
-    radial-gradient(circle 7rem at 1% 22%, color-mix(in srgb, var(--color-blue) 88%, transparent) 0 6.8rem, transparent 6.84rem),
-    radial-gradient(circle 6rem at 96% 72%, color-mix(in srgb, var(--color-teal) 88%, transparent) 0 5.8rem, transparent 5.84rem),
-    radial-gradient(circle 4.5rem at 7% 90%, color-mix(in srgb, var(--color-peach) 100%, transparent) 0 4.4rem, transparent 4.44rem);
-}
-.bg-decor::before {
-  content: ""; position: absolute; inset: 0;
-  background-image: radial-gradient(currentColor 1.1px, transparent 1.3px);
-  background-size: 20px 20px;
-  color: color-mix(in srgb, var(--ink) 17%, transparent);
-  -webkit-mask-image: radial-gradient(circle at 50% -10%, black, transparent 78%);
-  mask-image: radial-gradient(circle at 50% -10%, black, transparent 78%);
-}
-.bg-decor::after {
-  content: ""; position: absolute; inset: 0;
-  background:
-    radial-gradient(circle 5rem at 10% 58%, transparent 0 3.98rem, color-mix(in srgb, var(--color-coral) 88%, transparent) 4rem 4.5rem, transparent 4.52rem),
-    radial-gradient(circle 3.5rem at 90% 32%, transparent 0 2.68rem, color-mix(in srgb, var(--color-teal) 88%, transparent) 2.7rem 3.1rem, transparent 3.12rem);
-}
-:root[data-theme="dark"] .bg-decor { opacity: 0.85; }
-@media (max-width: 720px) {
-  .bg-decor, .bg-decor::before, .bg-decor::after { background: none; display: none; }
-}
-
-/* ============================================================
    Header
    ============================================================ */
 .site-header {
@@ -227,16 +191,22 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
     position: fixed; top: 118px; left: calc(50% + 31rem); z-index: 20;
   }
 }
+/* Sat at 14px in --muted, which reads as faint at the far edge of a wide
+   screen. Nudged up and darkened part of the way to --ink, still short of the
+   body text so the rail stays secondary. */
 .sn-link {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 14px; color: var(--muted); text-decoration: none;
+  display: flex; align-items: center; gap: 11px;
+  font-size: 15px; color: color-mix(in srgb, var(--muted) 55%, var(--ink));
+  text-decoration: none;
   transition: color 0.15s ease;
 }
 .sn-link span:last-child { white-space: nowrap; }
 .sn-link:hover { color: var(--color-coral); }
 .sn-dot { flex: none; height: 1px; width: 16px; background: var(--line); transition: all 0.2s ease; }
 .sn-link:hover .sn-dot { background: var(--color-coral); }
-.sn-link.is-active { color: var(--ink); }
+/* Current is weighted as well as darkened; the rest of the rail is close
+   enough in colour now that the shift alone would be easy to miss. */
+.sn-link.is-active { color: var(--ink); font-weight: 700; }
 .sn-link.is-active .sn-dot { width: 24px; height: 2px; background: var(--color-coral); }
 
 /* ============================================================
