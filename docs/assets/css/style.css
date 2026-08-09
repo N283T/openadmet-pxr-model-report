@@ -566,8 +566,16 @@ html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
   box-shadow: 0 6px 18px color-mix(in srgb, var(--color-blue) 12%, transparent);
 }
 :root[data-theme="dark"] .phase-block { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
-.phase-block h3 { font-size: 1.12rem; margin: 0 0 4px; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+/* Wraps between its items now that the badges inside it will not break: with
+   the row still nowrap, keeping the pills whole would push them off the card
+   on a phone. */
+.phase-block h3 { font-size: 1.12rem; margin: 0 0 4px; color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* A pill has to stay on one line or it stops reading as a pill: "post-challenge"
+   was breaking at its hyphen into a two-line lozenge, and the phase headings
+   were splitting "AS1 + AS2 (513)" across three. The label moves to the next
+   line whole instead. inline-block so the padding belongs to one box. */
 .badge {
+  display: inline-block; white-space: nowrap;
   font-family: var(--font-display); font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
   color: #fff; background: var(--color-coral); padding: 3px 9px; border-radius: 999px;
 }
