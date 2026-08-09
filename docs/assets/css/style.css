@@ -256,6 +256,17 @@ h1::after {
 .rc-label { font-family: var(--font-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .rc-rank { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--color-blue); }
 .rc-metric { font-size: .92rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The three ranks are a comparison, so they stay a row on a phone rather than
+   stacking into three unrelated cards. min-width: 0 lets them share the width
+   the 150px floor would otherwise refuse to give up, and the type comes down
+   to fit what is left. */
+@media (max-width: 560px) {
+  .result-cards { gap: 8px; }
+  .result-card { flex: 1; min-width: 0; padding: 12px 9px; gap: 2px; }
+  .rc-label { font-size: 9.5px; letter-spacing: .03em; }
+  .rc-rank { font-size: 1.3rem; }
+  .rc-metric { font-size: .72rem; }
+}
 .btn {
   display: inline-block; font-family: var(--font-display); font-weight: 600;
   background: var(--color-blue); color: #fff; text-decoration: none;
@@ -605,6 +616,11 @@ html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
 .metrics-key { color: var(--muted); font-size: .84rem; margin: 6px 0 8px; }
 @media (max-width: 620px) {
   .stat-strip { grid-template-columns: repeat(3, 1fr); }
+  /* Three across leaves 75px inside a cell and "Spearman ρ" wanted 79px, so
+     the ρ dropped to a line of its own. Tighter padding and type buy it back;
+     nowrap then keeps the symbol with the name it belongs to. */
+  .stat { padding: 11px 6px; }
+  .stat-l { font-size: .64rem; letter-spacing: .02em; white-space: nowrap; }
 }
 
 #strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
