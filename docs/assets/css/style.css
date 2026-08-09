@@ -103,6 +103,21 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 ::selection { background: var(--color-peach); color: var(--color-ink); }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
+/* Nothing declared a focus ring, so every control relied on the user agent's.
+   That passes today only because color-scheme is set for both themes and the
+   browsers invert their default accordingly -- a pass we do not control, and
+   one WCAG 2.2's 2.4.11 does not promise.
+   --ink and not --color-blue: measured against every surface a ring can land
+   on, blue falls to 1.91:1 on a dark .note and coral to 1.88:1 on a light one,
+   while ink holds 3.59:1 at its worst and 11.26:1 at its best.
+   :focus-visible rather than :focus, so it answers the keyboard and leaves
+   mouse clicks alone. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 /* ============================================================
    Header
    ============================================================ */
@@ -256,6 +271,17 @@ h1::after {
 .rc-label { font-family: var(--font-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .rc-rank { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--color-blue); }
 .rc-metric { font-size: .92rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The three ranks are a comparison, so they stay a row on a phone rather than
+   stacking into three unrelated cards. min-width: 0 lets them share the width
+   the 150px floor would otherwise refuse to give up, and the type comes down
+   to fit what is left. */
+@media (max-width: 560px) {
+  .result-cards { gap: 8px; }
+  .result-card { flex: 1; min-width: 0; padding: 12px 9px; gap: 2px; }
+  .rc-label { font-size: 9.5px; letter-spacing: .03em; }
+  .rc-rank { font-size: 1.3rem; }
+  .rc-metric { font-size: .72rem; }
+}
 .btn {
   display: inline-block; font-family: var(--font-display); font-weight: 600;
   background: var(--color-blue); color: #fff; text-decoration: none;
@@ -392,8 +418,13 @@ html[lang="ja"] body { font-feature-settings: "palt" 1; }
 html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
 
 /* Member roster table (aliases) */
+/* 560px was under what these tables need: the widest of them wants 947px, so
+   at 560 the descriptive columns collapsed to roughly a word per line and the
+   tallest row reached 181px on a phone, while still scrolling sideways. 680
+   halves that with no extra scrolling, since the widest table already forces
+   688px on its own. Inert above 680px of container, where width: 100% wins. */
 .roster-table {
-  width: 100%; min-width: 560px; border-collapse: collapse;
+  width: 100%; min-width: 680px; border-collapse: collapse;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--color-blue) 10%, transparent);
 }
@@ -561,8 +592,16 @@ html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
   box-shadow: 0 6px 18px color-mix(in srgb, var(--color-blue) 12%, transparent);
 }
 :root[data-theme="dark"] .phase-block { background-color: #3b4263; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
-.phase-block h3 { font-size: 1.12rem; margin: 0 0 4px; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+/* Wraps between its items now that the badges inside it will not break: with
+   the row still nowrap, keeping the pills whole would push them off the card
+   on a phone. */
+.phase-block h3 { font-size: 1.12rem; margin: 0 0 4px; color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* A pill has to stay on one line or it stops reading as a pill: "post-challenge"
+   was breaking at its hyphen into a two-line lozenge, and the phase headings
+   were splitting "AS1 + AS2 (513)" across three. The label moves to the next
+   line whole instead. inline-block so the padding belongs to one box. */
 .badge {
+  display: inline-block; white-space: nowrap;
   font-family: var(--font-display); font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
   color: #fff; background: var(--color-coral); padding: 3px 9px; border-radius: 999px;
 }
@@ -592,6 +631,11 @@ html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
 .metrics-key { color: var(--muted); font-size: .84rem; margin: 6px 0 8px; }
 @media (max-width: 620px) {
   .stat-strip { grid-template-columns: repeat(3, 1fr); }
+  /* Three across leaves 75px inside a cell and "Spearman ρ" wanted 79px, so
+     the ρ dropped to a line of its own. Tighter padding and type buy it back;
+     nowrap then keeps the symbol with the name it belongs to. */
+  .stat { padding: 11px 6px; }
+  .stat-l { font-size: .64rem; letter-spacing: .02em; white-space: nowrap; }
 }
 
 #strategy h3 { font-size: 1.16rem; margin: 26px 0 8px; color: var(--ink); }
@@ -631,7 +675,11 @@ h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color:
    its own panels, so it needs no frame and sits on either theme. */
 .figure-img { display: block; width: 100%; height: auto; }
 /* Charts sit directly on the page, no card chrome. */
-.chart { width: 100%; }
+/* min-width: 0 because the scatter charts are grid items, where the default
+   min-width: auto refuses to shrink below the content. echarts leaves a sized
+   wrapper inside, so on a narrowing window the container was held open at its
+   old width, and resize() then measured that stale width and kept it. */
+.chart { width: 100%; min-width: 0; }
 .chart + .chart { margin-top: 6px; }
 figcaption { color: var(--muted); font-size: .88rem; margin-top: 10px; padding: 0 4px; }
 

@@ -263,8 +263,13 @@
     var sb = bounds(spear.map(function (x) { return x[1]; }).concat([d.fullSpearman]));
     return {
       textStyle: { color: p.ink, fontFamily: p.font },
-      grid: { left: 20, right: 20, top: 36, bottom: 44, containLabel: true },
-      legend: { data: ["OOF MAE", "Spearman ρ"], textStyle: { color: p.ink }, top: 6 },
+      grid: { left: 20, right: 20, top: 30, bottom: 44, containLabel: true },
+      /* Both axes are named, and ECharts puts a value axis's name at its top
+         end -- the same strip a legend above the plot wants. Neither series
+         comes near the top of its range, so the legend drops inside the plot
+         and the names keep the corners to themselves. */
+      legend: { data: ["OOF MAE", "Spearman ρ"], textStyle: { color: p.ink },
+        top: 34, left: "center", itemGap: 18 },
       tooltip: {
         trigger: "axis", backgroundColor: p.surface, borderColor: p.line, textStyle: { color: p.ink },
         formatter: function (ps) {
