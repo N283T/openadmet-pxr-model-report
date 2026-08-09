@@ -52,9 +52,18 @@
         <a class="nm-link" href="#data" data-sn="data"><span class="nm-num">1</span><span>The challenge</span></a>
         <a class="nm-link" href="#results" data-sn="results"><span class="nm-num">2</span><span>Results</span></a>
         <a class="nm-link" href="#strategy" data-sn="strategy"><span class="nm-num">3</span><span>Strategy</span></a>
+        <a class="nm-link nm-sub" href="#aux-data" data-sn="aux-data"><span>The auxiliary data</span></a>
+        <a class="nm-link nm-sub" href="#buterez" data-sn="buterez"><span>Finding Buterez et al.</span></a>
+        <a class="nm-link nm-sub" href="#pred-log2fc" data-sn="pred-log2fc"><span>Predicted log2fc</span></a>
+        <a class="nm-link nm-sub" href="#log2fc-alone" data-sn="log2fc-alone"><span>pred log2fc alone</span></a>
         <a class="nm-link" href="#ensemble" data-sn="ensemble"><span class="nm-num">4</span><span>The ensemble</span></a>
+        <a class="nm-link nm-sub" href="#member-independence" data-sn="member-independence"><span>Member independence</span></a>
         <a class="nm-link" href="#members" data-sn="members"><span class="nm-num">5</span><span>The members</span></a>
+        <a class="nm-link nm-sub" href="#tabular-core" data-sn="tabular-core"><span>5.1 Tabular core</span></a>
+        <a class="nm-link nm-sub" href="#frozen-embed" data-sn="frozen-embed"><span>5.2 Frozen embeddings</span></a>
+        <a class="nm-link nm-sub" href="#boltz-trunk" data-sn="boltz-trunk"><span>5.3 Boltz trunk</span></a>
         <a class="nm-link" href="#calibration" data-sn="calibration"><span class="nm-num">6</span><span>Calibration</span></a>
+        <a class="nm-link nm-sub" href="#calib-gain" data-sn="calib-gain"><span>What it bought</span></a>
         <a class="nm-link" href="#gates" data-sn="gates"><span class="nm-num">7</span><span>Gates</span></a>
         <a class="nm-link" href="#phase2" data-sn="phase2"><span class="nm-num">8</span><span>Phase 1 &rarr; Phase 2</span></a>
         <a class="nm-link" href="#conclusion" data-sn="conclusion"><span class="nm-num">9</span><span>Conclusion</span></a>
@@ -76,15 +85,25 @@
 </header>
 
 <nav class="section-nav" aria-label="このページの内容">
+  <a class="sn-link" href="#top"><span class="sn-dot"></span><span>Top</span></a>
   <a class="sn-link" href="#tldr" data-sn="tldr"><span class="sn-dot"></span><span>TL;DR</span></a>
   <a class="sn-link" href="#data" data-sn="data"><span class="sn-dot"></span><span>Challenge</span></a>
   <a class="sn-link" href="#results" data-sn="results"><span class="sn-dot"></span><span>Results</span></a>
   <a class="sn-link" href="#strategy" data-sn="strategy"><span class="sn-dot"></span><span>Strategy</span></a>
+  <a class="sn-link sn-sub" href="#aux-data" data-sn="aux-data" hidden><span class="sn-dot"></span><span>Aux data</span></a>
+  <a class="sn-link sn-sub" href="#buterez" data-sn="buterez" hidden><span class="sn-dot"></span><span>Buterez</span></a>
+  <a class="sn-link sn-sub" href="#pred-log2fc" data-sn="pred-log2fc" hidden><span class="sn-dot"></span><span>pred log2fc</span></a>
+  <a class="sn-link sn-sub" href="#log2fc-alone" data-sn="log2fc-alone" hidden><span class="sn-dot"></span><span>log2fc alone</span></a>
   <a class="sn-link" href="#ensemble" data-sn="ensemble"><span class="sn-dot"></span><span>Ensemble</span></a>
+  <a class="sn-link sn-sub" href="#member-independence" data-sn="member-independence" hidden><span class="sn-dot"></span><span>Independence</span></a>
   <a class="sn-link" href="#members" data-sn="members"><span class="sn-dot"></span><span>Members</span></a>
+  <a class="sn-link sn-sub" href="#tabular-core" data-sn="tabular-core" hidden><span class="sn-dot"></span><span>5.1 Tabular</span></a>
+  <a class="sn-link sn-sub" href="#frozen-embed" data-sn="frozen-embed" hidden><span class="sn-dot"></span><span>5.2 Embeds</span></a>
+  <a class="sn-link sn-sub" href="#boltz-trunk" data-sn="boltz-trunk" hidden><span class="sn-dot"></span><span>5.3 Boltz</span></a>
   <a class="sn-link" href="#calibration" data-sn="calibration"><span class="sn-dot"></span><span>Calibration</span></a>
+  <a class="sn-link sn-sub" href="#calib-gain" data-sn="calib-gain" hidden><span class="sn-dot"></span><span>Gain</span></a>
   <a class="sn-link" href="#gates" data-sn="gates"><span class="sn-dot"></span><span>Gates</span></a>
-  <a class="sn-link" href="#phase2" data-sn="phase2"><span class="sn-dot"></span><span>Phase 1 → 2</span></a>
+  <a class="sn-link" href="#phase2" data-sn="phase2"><span class="sn-dot"></span><span>Phase 1 &rarr; 2</span></a>
   <a class="sn-link" href="#conclusion" data-sn="conclusion"><span class="sn-dot"></span><span>Conclusion</span></a>
   <a class="sn-link" href="#links" data-sn="links"><span class="sn-dot"></span><span>Links</span></a>
 </nav>
@@ -216,7 +235,7 @@
       振り返ると、これにたどり着けたことが、この順位に届いた最大の理由のひとつでした。
     </p>
 
-    <h3>The auxiliary data</h3>
+    <h3 id="aux-data">The auxiliary data</h3>
     <p>
       最初は Train の pEC50 ラベルだけから特徴量とモデルを作っていました。しかし
       pEC50 のラベルは <strong>4,140</strong> 件しかなく、精度はすぐ頭打ちになります。
@@ -247,7 +266,7 @@
       <figcaption>Table 2: 配布データの内訳。✓ は全件にあるもの、数字はその件数にだけあるもの、✗ はそのデータには無いものです。アッセイ全体のファネルは、<a href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/">Phase 1 のブログ記事</a>にある OpenADMET 自身のデータセット構築図が詳しいです。</figcaption>
     </figure>
 
-    <h3>Finding Buterez et al.</h3>
+    <h3 id="buterez">Finding Buterez et al.</h3>
     <p>
       頭打ちを破るために、状況（pEC50 が乏しいこと、補助アッセイが潤沢にあること、擬似ラベル化が失敗していること）を
       そのまま書き出したリサーチ用プロンプトを Claude Code に作らせ、補助信号を活かす方法を尋ねました。
@@ -376,7 +395,7 @@
       アッセイ由来の信号を採点対象の化合物まで届かせられるのは、予測した形だけです。
     </p>
 
-    <h3>How far does pred log2fc alone get? <span class="badge post">post-challenge</span></h3>
+    <h3 id="log2fc-alone">How far does pred log2fc alone get? <span class="badge post">post-challenge</span></h3>
     <p>
       信号の大きさを測るために、あえて単純なモデルをいくつか Train の pEC50 で学習し、
       ブラインドが解除された Test（AS1 + AS2）で採点しました（Table&nbsp;5）。比較先は、
@@ -447,7 +466,7 @@
       提出したのはこのアンサンブルそのものではなく、出力に post-hoc な calibration と gate を重ねたものです（<a href="#calibration">6. Calibration</a>）。
     </p>
 
-    <h3>How independent are the members? <span class="badge post">post-challenge</span></h3>
+    <h3 id="member-independence">How independent are the members? <span class="badge post">post-challenge</span></h3>
     <p>
       答えは「あまり独立ではない」です。<strong>全 36 ペアが 0.81〜0.98、平均 0.88</strong>（Figure&nbsp;4）。
       同じ log2fc を共有するメンバー同士が高いのは当然として、
@@ -478,7 +497,7 @@
       <a href="#ensemble">4 章の表</a>のとおりです。
     </p>
 
-    <h3>5.1 Tabular core (tabular-full, tabular-top500)</h3>
+    <h3 id="tabular-core">5.1 Tabular core (tabular-full, tabular-top500)</h3>
     <p>
       重みが最も大きい 2 メンバーは、1 つの特徴量スタックを共有しています。
       補完的なブロックを連結した、<strong>約 2,103 次元の tabular 行列</strong>です。
@@ -615,7 +634,7 @@
       </figure>
     </div>
 
-    <h3>5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
+    <h3 id="frozen-embed">5.2 Frozen embeddings (ChemProp, KERMT, MoLFormer, GatedGCN, AttentiveFP)</h3>
     <p>
       この 5 つは、戦略 <span class="strat-ref coral">4</span> を backbone を替えて横展開したものです。
       log2fc で事前学習した encoder を凍結し、取り出した固定長ベクトルを TabPFN に渡す（<a href="#adapting">Adapting it</a>）。encoder を pEC50 で fine-tune しないほうが良かったことは、
@@ -676,7 +695,7 @@
       増幅され、<a href="#ensemble">4 章</a>のとおり LB が悪化します。重みが小さいことは、外して安全であることを意味しません。
     </p>
 
-    <h3>5.3 Boltz trunk (Boltz-pocket, Boltz-allpairs)</h3>
+    <h3 id="boltz-trunk">5.3 Boltz trunk (Boltz-pocket, Boltz-allpairs)</h3>
     <p>
       この 2 つが使うのは Boltz-2 の <strong>trunk</strong>、つまり内部の学習済み
       <strong>representation</strong> で、予測構造は使いません。
@@ -748,7 +767,7 @@
       </li>
     </ul>
 
-    <h3>How much did it buy? <span class="badge post">post-challenge</span></h3>
+    <h3 id="calib-gain">How much did it buy? <span class="badge post">post-challenge</span></h3>
     <p>
       提出履歴の中では、calibration の効果とメンバー改善が混ざって見えます。そこで最終アンサンブル重みで
       raw と calibrated を<strong>同じ 1 回の実行から</strong>出し直しました（unblinded Test 513 件、Table&nbsp;11）。
@@ -986,23 +1005,40 @@
 
   // Scroll-spy driving both maps of the page: the header menu and the
   // .section-nav rail. OFFSET is the fold line under the sticky header — a
-  // section counts as current once its top crosses it, so retune this if the
-  // header height changes. currentId() stops at the first section still below
+  // heading counts as current once its top crosses it, so retune this if the
+  // header height changes. currentId() stops at the first target still below
   // the line, which assumes targets stays in document order; both maps list
-  // the sections in page order, and reordering either would break the spy.
+  // the page in order, and reordering either would break the spy.
+  //
+  // Targets are two deep: sections and the sub-headings inside them. The menu
+  // lists every sub-heading at once, while the rail shows only the ones
+  // belonging to the section you are in — it is fixed and would otherwise run
+  // past the bottom of the window.
   (function () {
     var OFFSET = 110;
-    var links = [].slice.call(document.querySelectorAll(".nm-link[data-sn], .sn-link"));
+    var links = [].slice.call(document.querySelectorAll(".nm-link[data-sn], .sn-link[data-sn]"));
+    var railSubs = [].slice.call(document.querySelectorAll(".sn-sub[data-sn]"));
     var seen = {};
     var targets = [];
+    var parentOf = {};
     links.forEach(function (l) {
       var id = l.getAttribute("data-sn");
       var el = document.getElementById(id);
-      if (el && !seen[id]) { seen[id] = true; targets.push(el); }
+      if (!el || seen[id]) return;
+      seen[id] = true;
+      targets.push(el);
+      // A sub-heading lives inside its section; a section is its own parent.
+      var sec = el.closest("section[id]");
+      parentOf[id] = sec && sec.id !== id ? sec.id : id;
     });
     if (!targets.length) return;
     function setActive(id) {
-      links.forEach(function (l) { l.classList.toggle("is-active", l.getAttribute("data-sn") === id); });
+      var top = parentOf[id] || id;
+      links.forEach(function (l) {
+        var t = l.getAttribute("data-sn");
+        l.classList.toggle("is-active", t === id || t === top);
+      });
+      railSubs.forEach(function (l) { l.hidden = parentOf[l.getAttribute("data-sn")] !== top; });
     }
     function currentId() {
       var id = targets[0].id;
