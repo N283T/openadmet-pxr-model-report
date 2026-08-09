@@ -392,8 +392,13 @@ html[lang="ja"] body { font-feature-settings: "palt" 1; }
 html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
 
 /* Member roster table (aliases) */
+/* 560px was under what these tables need: the widest of them wants 947px, so
+   at 560 the descriptive columns collapsed to roughly a word per line and the
+   tallest row reached 181px on a phone, while still scrolling sideways. 680
+   halves that with no extra scrolling, since the widest table already forces
+   688px on its own. Inert above 680px of container, where width: 100% wins. */
 .roster-table {
-  width: 100%; min-width: 560px; border-collapse: collapse;
+  width: 100%; min-width: 680px; border-collapse: collapse;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--color-blue) 10%, transparent);
 }
