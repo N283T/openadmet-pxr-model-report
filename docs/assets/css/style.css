@@ -103,6 +103,21 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 ::selection { background: var(--color-peach); color: var(--color-ink); }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
+/* Nothing declared a focus ring, so every control relied on the user agent's.
+   That passes today only because color-scheme is set for both themes and the
+   browsers invert their default accordingly -- a pass we do not control, and
+   one WCAG 2.2's 2.4.11 does not promise.
+   --ink and not --color-blue: measured against every surface a ring can land
+   on, blue falls to 1.91:1 on a dark .note and coral to 1.88:1 on a light one,
+   while ink holds 3.59:1 at its worst and 11.26:1 at its best.
+   :focus-visible rather than :focus, so it answers the keyboard and leaves
+   mouse clicks alone. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 /* ============================================================
    Header
    ============================================================ */
@@ -660,7 +675,11 @@ h4 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color:
    its own panels, so it needs no frame and sits on either theme. */
 .figure-img { display: block; width: 100%; height: auto; }
 /* Charts sit directly on the page, no card chrome. */
-.chart { width: 100%; }
+/* min-width: 0 because the scatter charts are grid items, where the default
+   min-width: auto refuses to shrink below the content. echarts leaves a sized
+   wrapper inside, so on a narrowing window the container was held open at its
+   old width, and resize() then measured that stale width and kept it. */
+.chart { width: 100%; min-width: 0; }
 .chart + .chart { margin-top: 6px; }
 figcaption { color: var(--muted); font-size: .88rem; margin-top: 10px; padding: 0 4px; }
 
