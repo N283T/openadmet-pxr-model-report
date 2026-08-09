@@ -75,6 +75,11 @@
   --font-mono: "PlemolJP", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --maxw: 960px;
+  /* The header is sticky, so its height decides where the rail hangs, how tall
+     the menu panel may be, where a jump has to stop to clear the bar, and
+     where the scroll-spy draws its fold line. All five read from here rather
+     than repeating a number that has already gone stale once. */
+  --header-h: 68px;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -107,14 +112,19 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
   backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--line);
 }
-.header-inner { display: flex; align-items: center; gap: 16px; height: 58px; }
-.header-links { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+/* Full bleed: the controls sit against the window, not against the content
+   column, so .header-inner brings its own padding instead of using .wrap. */
+.header-inner {
+  display: flex; align-items: center; gap: 16px;
+  height: var(--header-h); padding: 0 20px;
+}
+.header-links { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .header-links a { display: inline-flex; align-items: center; color: var(--muted); text-decoration: none; transition: color 0.15s ease, transform 0.15s ease; }
 .header-links a:hover { color: var(--color-coral); transform: translateY(-1px); }
 .header-links svg { display: block; }
 .theme-toggle {
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 15px; flex: none;
+  border-radius: 12px; width: 44px; height: 44px; cursor: pointer; font-size: 17px; flex: none;
 }
 .theme-toggle:hover { border-color: var(--color-coral); }
 
@@ -123,37 +133,39 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
    Everything here stays on the themed --ink / --surface pair rather than the
    raw palette tokens: --color-ink and --color-peach do not flip with the dark
    theme, so text painted in them goes unreadable once the surface darkens. */
-.nav-menu-wrap { position: relative; }
+/* Stretched to the full bar so the panel's top: 100% means "below the header"
+   rather than "below the button", which left it tucked under the bar. */
+.nav-menu-wrap { position: relative; align-self: stretch; display: flex; align-items: center; }
 .nav-toggle {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; padding: 0; flex: none;
+  width: 44px; height: 44px; padding: 0; flex: none;
   background: var(--surface); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
   transition: border-color 0.15s ease;
 }
 .nav-toggle:hover { border-color: var(--color-coral); }
 /* Only the border picks up the accent; the bars keep --ink, since the × they
    form is the state indicator and coral on white is far under 3:1. */
 .nav-toggle[aria-expanded="true"] { border-color: var(--color-coral); }
-.nav-bars { position: relative; width: 17px; height: 12px; }
+.nav-bars { position: relative; width: 20px; height: 14px; }
 .nav-bars span {
   position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px;
   background: currentColor; transition: transform 0.22s ease, opacity 0.15s ease;
 }
 .nav-bars span:nth-child(1) { top: 0; }
-.nav-bars span:nth-child(2) { top: 5px; }
-.nav-bars span:nth-child(3) { top: 10px; }
-.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.nav-bars span:nth-child(2) { top: 6px; }
+.nav-bars span:nth-child(3) { top: 12px; }
+.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
 .nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(2) { opacity: 0; }
-.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+.nav-toggle[aria-expanded="true"] .nav-bars span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* The panel hangs off a sticky header, so it never scrolls out of the way:
    without a max-height its lower entries are unreachable on short viewports. */
 .nav-menu {
   position: absolute; top: calc(100% + 10px); left: 0; z-index: 30;
   width: max-content; min-width: 220px; max-width: calc(100vw - 40px);
-  max-height: calc(100vh - 78px);
-  max-height: calc(100dvh - 78px);
+  max-height: calc(100vh - var(--header-h) - 20px);
+  max-height: calc(100dvh - var(--header-h) - 20px);
   overflow-y: auto; overscroll-behavior: contain;
   padding: 10px; border: 1px solid var(--line); border-radius: 16px;
   background: var(--surface);
@@ -193,7 +205,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 @media (min-width: 1300px) {
   .section-nav {
     display: flex; flex-direction: column; gap: 10px;
-    position: fixed; top: 118px; left: calc(50% + 31rem); z-index: 20;
+    position: fixed; top: calc(var(--header-h) + 60px); left: calc(50% + 31rem); z-index: 20;
     /* Only one section's children are ever open, so the rail tops out at 16
        rows. This is the backstop for a short window: the rail is fixed, so
        anything past the fold would otherwise be unreachable. */
@@ -264,16 +276,16 @@ h1::after {
    they were the only jump targets; the sub-headings in the nav and the table
    anchors linked from the prose need it too. They need more of it: a section
    has 40px of padding to push its h2 down, and a bare h3 has none, so the
-   same 72px would leave it hard against the header. Both stay under the
-   scroll-spy's 110px fold line, or arriving somewhere would fail to mark it.
-   main#top carries it too: main starts below the header, so without it the
-   Top link stops 59px down the page with the hero flush against the bar,
-   rather than at the top of the document. */
-main [id], main#top { scroll-margin-top: 96px; }
+   header height alone would leave it hard against the bar. Both stay under
+   the scroll-spy's fold line (--header-h + 52px), or arriving somewhere would
+   fail to mark it. main#top carries it too: main starts below the header, so
+   without it the Top link stops one header down the page with the hero flush
+   against the bar, rather than at the top of the document. */
+main [id], main#top { scroll-margin-top: calc(var(--header-h) + 38px); }
 main section { padding: 40px 0; }
 /* Qualified so it outweighs the attribute selector above, which would
    otherwise move every section jump 24px further down the page. */
-main section[id] { scroll-margin-top: 72px; }
+main section[id] { scroll-margin-top: calc(var(--header-h) + 14px); }
 main section + section { border-top: 1px solid var(--line); }
 h2 { font-size: 1.55rem; margin: 0 0 16px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.5rem; }
 h2::before { content: "\2726"; color: var(--color-coral); font-size: 0.68em; }
