@@ -256,7 +256,6 @@ h1::after {
 .rc-label { font-family: var(--font-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .rc-rank { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--color-blue); }
 .rc-metric { font-size: .92rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.hero-links { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn {
   display: inline-block; font-family: var(--font-display); font-weight: 600;
   background: var(--color-blue); color: #fff; text-decoration: none;
