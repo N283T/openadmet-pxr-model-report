@@ -259,7 +259,21 @@ h1::after {
 /* ============================================================
    Sections
    ============================================================ */
-main section { padding: 40px 0; scroll-margin-top: 72px; }
+/* The header is sticky, so anything scrolled to by id has to stop clear of it
+   or it lands underneath. This covered sections only, which was enough while
+   they were the only jump targets; the sub-headings in the nav and the table
+   anchors linked from the prose need it too. They need more of it: a section
+   has 40px of padding to push its h2 down, and a bare h3 has none, so the
+   same 72px would leave it hard against the header. Both stay under the
+   scroll-spy's 110px fold line, or arriving somewhere would fail to mark it.
+   main#top carries it too: main starts below the header, so without it the
+   Top link stops 59px down the page with the hero flush against the bar,
+   rather than at the top of the document. */
+main [id], main#top { scroll-margin-top: 96px; }
+main section { padding: 40px 0; }
+/* Qualified so it outweighs the attribute selector above, which would
+   otherwise move every section jump 24px further down the page. */
+main section[id] { scroll-margin-top: 72px; }
 main section + section { border-top: 1px solid var(--line); }
 h2 { font-size: 1.55rem; margin: 0 0 16px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.5rem; }
 h2::before { content: "\2726"; color: var(--color-coral); font-size: 0.68em; }
