@@ -41,7 +41,28 @@
 <div class="bg-decor" aria-hidden="true"></div>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="#top">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</a>
+    <div class="nav-menu-wrap">
+      <button id="nav-toggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Table of contents" title="Table of contents">
+        <span class="nav-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+      <nav id="nav-menu" class="nav-menu" aria-label="Table of contents" hidden>
+        <p class="nm-title">PXR&nbsp;·&nbsp;Track&nbsp;1&nbsp;Activity</p>
+        <a class="nm-link nm-top" href="#top"><span class="nm-num">↑</span><span>Top</span></a>
+        <hr class="nm-sep" />
+        <a class="nm-link" href="#tldr" data-sn="tldr"><span class="nm-num">0</span><span>TL;DR</span></a>
+        <a class="nm-link" href="#data" data-sn="data"><span class="nm-num">1</span><span>The challenge</span></a>
+        <a class="nm-link" href="#results" data-sn="results"><span class="nm-num">2</span><span>Results</span></a>
+        <a class="nm-link" href="#strategy" data-sn="strategy"><span class="nm-num">3</span><span>Strategy</span></a>
+        <a class="nm-link" href="#ensemble" data-sn="ensemble"><span class="nm-num">4</span><span>The ensemble</span></a>
+        <a class="nm-link" href="#members" data-sn="members"><span class="nm-num">5</span><span>The members</span></a>
+        <a class="nm-link" href="#calibration" data-sn="calibration"><span class="nm-num">6</span><span>Calibration</span></a>
+        <a class="nm-link" href="#gates" data-sn="gates"><span class="nm-num">7</span><span>Gates</span></a>
+        <a class="nm-link" href="#phase2" data-sn="phase2"><span class="nm-num">8</span><span>Phase 1 &rarr; Phase 2</span></a>
+        <a class="nm-link" href="#conclusion" data-sn="conclusion"><span class="nm-num">9</span><span>Conclusion</span></a>
+        <hr class="nm-sep" />
+        <a class="nm-link" href="#links" data-sn="links"><span class="nm-num"></span><span>Reproducibility and links</span></a>
+      </nav>
+    </div>
     <nav class="header-links" aria-label="Resources">
       <a class="lang-switch" href="ja/" hreflang="ja" aria-label="日本語版" title="日本語版">JP</a>
       <a href="https://github.com/N283T/pxr-iduction-challenge" target="_blank" rel="noopener" aria-label="Code on GitHub" title="Code on GitHub">
@@ -921,15 +942,42 @@
 <script src="assets/vendor/echarts.min.js"></script>
 <script src="assets/js/charts.js"></script>
 <script>
-  // Section nav scroll-spy: highlight the section currently under the fold line.
+  // Header menu: open, close on Escape / outside click / a chosen section.
+  (function () {
+    var btn = document.getElementById("nav-toggle");
+    var menu = document.getElementById("nav-menu");
+    if (!btn || !menu) return;
+    function isOpen() { return btn.getAttribute("aria-expanded") === "true"; }
+    function onKey(e) { if (e.key === "Escape" || e.key === "Esc") close(true); }
+    function onOutside(e) { if (!menu.contains(e.target) && !btn.contains(e.target)) close(false); }
+    function open() {
+      menu.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      document.addEventListener("keydown", onKey);
+      document.addEventListener("click", onOutside, true);
+    }
+    function close(refocus) {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("click", onOutside, true);
+      if (refocus) btn.focus();
+    }
+    btn.addEventListener("click", function () { if (isOpen()) close(true); else open(); });
+    menu.addEventListener("click", function (e) { if (e.target.closest("a")) close(false); });
+  })();
+
+  // Scroll-spy over both maps of the page: the header menu and the dot rail.
   (function () {
     var OFFSET = 110;
-    var nav = document.querySelector(".section-nav");
-    if (!nav) return;
-    var links = [].slice.call(nav.querySelectorAll(".sn-link"));
-    var targets = links
-      .map(function (l) { return document.getElementById(l.getAttribute("data-sn")); })
-      .filter(Boolean);
+    var links = [].slice.call(document.querySelectorAll(".nm-link[data-sn], .sn-link"));
+    var seen = {};
+    var targets = [];
+    links.forEach(function (l) {
+      var id = l.getAttribute("data-sn");
+      var el = document.getElementById(id);
+      if (el && !seen[id]) { seen[id] = true; targets.push(el); }
+    });
     if (!targets.length) return;
     function setActive(id) {
       links.forEach(function (l) { l.classList.toggle("is-active", l.getAttribute("data-sn") === id); });
