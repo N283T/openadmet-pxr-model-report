@@ -182,6 +182,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
 }
 .nm-link.is-active { background: color-mix(in srgb, var(--color-blue) 16%, transparent); font-weight: 700; }
 .nm-link:hover .nm-num, .nm-link.is-active .nm-num { color: var(--ink); }
+/* Sub-sections carry no number, and indent to where the parent's label starts
+   (10px padding + 1.1em number + 10px gap). The panel scrolls, so unlike the
+   rail it can afford to list every one of them at once. */
+.nm-sub { padding-left: 36px; font-size: 0.88rem; color: var(--muted); }
+.nm-sub.is-active { color: var(--ink); }
 
 /* Section nav (fixed on-page map with scroll-spy, wide screens only) */
 .section-nav { display: none; }
@@ -189,6 +194,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
   .section-nav {
     display: flex; flex-direction: column; gap: 10px;
     position: fixed; top: 118px; left: calc(50% + 31rem); z-index: 20;
+    /* Only one section's children are ever open, so the rail tops out at 16
+       rows. This is the backstop for a short window: the rail is fixed, so
+       anything past the fold would otherwise be unreachable. */
+    max-height: calc(100vh - 140px); overflow-y: auto;
   }
 }
 /* Sat at 14px in --muted, which reads as faint at the far edge of a wide
@@ -208,6 +217,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
    enough in colour now that the shift alone would be easy to miss. */
 .sn-link.is-active { color: var(--ink); font-weight: 700; }
 .sn-link.is-active .sn-dot { width: 24px; height: 2px; background: var(--color-coral); }
+/* Sub-sections. The dash shortens but keeps its 16px slot, so the labels stay
+   on the parent's left edge and the rail does not grow wider — it has only
+   ~25px of room before it reaches the window edge at 1300px. */
+.sn-link[hidden] { display: none; }
+.sn-sub { font-size: 13px; }
+.sn-sub .sn-dot { width: 9px; margin-left: 7px; }
+.sn-sub.is-active .sn-dot { width: 14px; margin-left: 2px; }
 
 /* ============================================================
    Hero
