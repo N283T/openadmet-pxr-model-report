@@ -329,6 +329,20 @@ pre {
   background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
 }
 pre code { background: none; border: 0; padding: 0; font-size: .84em; line-height: 1.55; }
+/* Back for the Japanese page only, which is the only one with a deck to point
+   at. #32 removed the original .hero-links because both of its buttons went
+   somewhere the navigation already reached; the deck is not in the navigation
+   at all, and is a different way to read the whole report rather than a jump
+   within it. */
+/* 24 + the hero's 30px of padding + #tldr's 40px puts the TL;DR heading 94px
+   below the button, matching the 95px #32 settled on between any two sections. */
+.hero-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 24px; }
+
+/* The one .btn on either page with Japanese in its label, so it steps off
+   --font-display: that stack is Outfit over system-ui with no Japanese face
+   behind it, by the design set out above the @font-face block. */
+.hero-links .btn { font-family: var(--font-body); font-weight: 700; }
+
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 
 /* ============================================================

@@ -7,6 +7,12 @@ Technical report for a **4th-of-95** Track 1 Activity submission to the
 - 📊 **Interactive report:** <https://n283t.github.io/openadmet-pxr-model-report/> — source in [`docs/`](docs/)
 - 🇯🇵 **Japanese version:** <https://n283t.github.io/openadmet-pxr-model-report/ja/> — source in [`docs/ja/`](docs/ja/)
 - 📄 **Markdown report:** [MODEL_REPORT.md](MODEL_REPORT.md) (English only)
+- 🖥️ **Talk slides:** <https://n283t.github.io/openadmet-pxr-model-report/slides/> — a 42-slide HTML deck in Japanese, source in [`docs/slides/`](docs/slides/)
+- ⚖️ **Third-party licences:** the report and the deck bundle their charting
+  libraries and fonts rather than loading them from a CDN. Each is redistributed
+  under its own licence, reproduced in
+  [`docs/assets/vendor/LICENSES/`](docs/assets/vendor/LICENSES/) and
+  [`docs/slides/assets/vendor/LICENSES/`](docs/slides/assets/vendor/LICENSES/).
 
 ## The model
 
