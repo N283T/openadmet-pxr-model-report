@@ -1,0 +1,144 @@
+/* Chrome the published deck carries that a presented one does not: a way back
+   to the report, edges you can click to page through, and the key map spelled
+   out on the title slide for a reader who did not come here to present.
+   Loaded only by the copy under the report site; see assets/js/site.js. */
+
+/* ---- Back to the report, beside the other title-slide actions ----------- */
+
+/* Matches .slide.title .title-actions button in slide.css. A link rather than
+   a button, since it leaves the deck — which costs it the centring a button
+   does for its own label, and the 24px that slide.css hands the buttons on the
+   1920x1080 canvas. Both are put back here. */
+.slide.title .title-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5em 1.4em;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: normal;
+  text-decoration: none;
+  cursor: pointer;
+  /* The four beside it set a talk up; this is the only way out of the deck,
+     and the only one a reader who is not presenting wants. So it takes the
+     accent while the rest stay on the quiet surface/line pair. */
+  border: 1px solid var(--color-coral);
+  background: var(--color-peach);
+  color: var(--color-ink);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+body[data-mode="slide"] .slide.is-active.title .title-actions a { font-size: 24px; }
+
+.slide.title .title-actions a:hover,
+.slide.title .title-actions a:focus-visible {
+  background: var(--color-coral);
+  color: var(--color-surface);
+}
+
+/* ---- The key map --------------------------------------------------------- */
+
+.slide.title .title-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8em 1.7em;
+  margin: 1.8em 0 0 0;
+  color: var(--muted);
+  /* The title-slide buttons resolve to 24px on the 1920x1080 canvas, so 13px
+     read as a footnote to a footnote. This sits a clear step below them and
+     is still legible from the back of a room. */
+  font-size: 17px;
+}
+
+.slide.title .title-keys > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  white-space: nowrap;
+}
+
+/* "or", between two caps that do the same thing. */
+.slide.title .title-keys .sep {
+  opacity: 0.65;
+}
+
+.slide.title .title-keys kbd {
+  display: inline-block;
+  min-width: 2.1em;
+  padding: 0.28em 0.55em;
+  border: 1px solid var(--line);
+  /* The thicker bottom edge is the whole of the keycap illusion. */
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--muted);
+  /* Zen Maru Gothic has no arrows; PlemolJP does, and the subset carries them
+     because the slides use them. So the caps have to be set in the mono face. */
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+/* A step quieter than the key map above it: the caps are the reference, this
+   is the one thing the page cannot show you by itself. */
+.slide.title .title-hint {
+  margin: 1.2em 0 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  opacity: 0.75;
+}
+
+/* ---- Click the edges to page through ------------------------------------ */
+
+.site-nav {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  width: clamp(56px, 7vw, 120px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  /* The band is what makes this work: a bare click listener on the page loses
+     to the browser starting a text selection wherever the pointer lands on
+     copy. Nothing here is selectable, so a click stays a click. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.site-nav--prev { left: 0; }
+.site-nav--next { right: 0; }
+
+.site-nav:hover,
+.site-nav:focus-visible { opacity: 0.8; }
+
+.site-nav svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* At the first and last slide there is nothing that way to go. */
+.site-nav[disabled] { cursor: default; }
+.site-nav[disabled]:hover { opacity: 0; }
+
+/* The figure overlay is dismissed by a click anywhere over it, and a band on
+   top would eat that click. */
+body.is-lightbox-open .site-nav { display: none; }
+
+@media print {
+  .site-nav { display: none !important; }
+  .slide.title .title-keys,
+  .slide.title .title-hint { display: none !important; }
+}

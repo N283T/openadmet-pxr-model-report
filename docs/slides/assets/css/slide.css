@@ -1,0 +1,4440 @@
+#deck { display: block; }
+.slide {
+  min-height: 100vh;
+  padding: 6vh 8vw;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  row-gap: 2vh;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.slide h1 { font-family: var(--font-display); font-size: 3.5rem; margin: 0; }
+.slide h2 { font-family: var(--font-display); font-size: 2.2rem; margin: 0; color: var(--color-blue); }
+.slide .body { font-size: 1.4rem; line-height: 1.6; }
+.slide .slide-number {
+  position: absolute;
+  right: 2vw; top: 2vh;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--muted);
+}
+.slide.title { text-align: center; place-items: center; grid-template-rows: 1fr; row-gap: 0; }
+.slide.title h1 { font-size: 5rem; }
+.slide.title .subtitle { color: var(--muted); font-size: 1.6rem; margin-top: 1rem; }
+.slide.title .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 1.2em 0;
+}
+.slide.title .byline {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 2.5em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  line-height: 1.5;
+}
+.slide.title .byline-name { color: var(--color-ink); }
+/* Chrome, not content: quiet enough that the title still reads as the title,
+   and gone from a capture so the PNG is the slide and nothing else. */
+.slide.title .title-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.8em;
+  margin: 2em 0 0 0;
+}
+.slide.title .title-actions button {
+  padding: 0.5em 1.4em;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.slide.title .title-actions button:hover {
+  border-color: var(--color-blue);
+  color: var(--color-ink);
+}
+/* Has to outrank `.slide.title .title-actions` above, which sets display. */
+body.is-capturing .slide.title .title-actions { display: none; }
+.slide.title::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    var(--color-coral) 0%,
+    var(--color-peach) 33%,
+    var(--color-teal) 66%,
+    var(--color-blue) 100%);
+}
+.slide aside.notes { display: none; }
+
+/* Authoring diagnostics. authoring.js adds these only when content exceeds
+   the fixed 1920x1080 canvas. Hidden while the all-slide audit is running. */
+.slide.has-overflow {
+  box-shadow: inset 0 0 0 8px #d64545;
+}
+.slide .overflow-warning {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 10000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #d64545;
+  color: #fff;
+  font: 700 18px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+body.is-auditing-slides .slide { visibility: hidden !important; }
+@media print {
+  .slide.has-overflow { box-shadow: none !important; }
+  .overflow-warning { display: none !important; }
+}
+
+/* JS-driven slide mode: only show the active slide */
+body[data-mode="slide"] .slide { display: none; }
+body[data-mode="slide"] .slide.is-active { display: grid; }
+
+/* Start fades the title out and slide 2 in. Slides are display-switched and
+   sit in block flow, so two of them cannot overlap for a true cross-fade —
+   but they share --bg, so falling to the background and rising out of it
+   reads the same. The only transition in the deck: everything else cuts,
+   which is what a press of -> should feel like. */
+body.is-fade-transition .slide.is-active { transition: opacity .4s ease; }
+body.is-fade-out .slide.is-active { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  body.is-fade-transition .slide.is-active { transition: none; }
+}
+
+/* Fragment reveal */
+body[data-mode="slide"] [data-fragment] { opacity: 0; transform: translateY(6px); transition: opacity .25s ease, transform .25s ease; pointer-events: none; }
+body[data-mode="slide"] [data-fragment].is-visible { opacity: 1; transform: none; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) {
+  body[data-mode="slide"] [data-fragment] { transition: none; }
+}
+
+/* Print: chart containers must fill their parent, not the viewport */
+@media print {
+  .chart { height: 100% !important; }
+}
+
+/* Chart placeholder for slides whose charts aren't yet implemented */
+.chart-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+.chart-placeholder::before {
+  content: "📊";
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+/* Print: shrink placeholder same as .chart */
+@media print { .chart-placeholder { min-height: 30vh; } }
+/* List style tweaks for slide bodies */
+.slide .body ul { padding-left: 1.4em; margin: 0.5em 0; }
+.slide .body li { margin: 0.6em 0; line-height: 1.6; }
+.slide .body li + li { margin-top: 0.8em; }
+.slide .body p { margin: 0.6em 0; }
+/* Long content slides need scroll-safety when viewport is short */
+.slide .body { overflow: auto; }
+
+/* ============================================================
+   16:9 fixed-canvas presentation format (slide mode only)
+   Each active slide is a fixed 1920x1080 stage. fit.js applies
+   a transform: scale() to fit whatever viewport (fullscreen or
+   windowed) with letterboxing. Authoring against a fixed pixel
+   canvas keeps every layout predictable regardless of display.
+   ============================================================ */
+body[data-mode="slide"] {
+  background: #1a1a1a;
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+}
+body[data-mode="slide"] .slide.is-active {
+  position: fixed;
+  top: 0; left: 0;
+  min-height: 0;
+  width: 1920px;
+  height: 1080px;
+  padding: 60px 100px;
+  border-bottom: none;
+  background: var(--bg);
+  transform-origin: top left;
+  overflow: hidden;
+  /* Tight gap between the h2 (which already carries a gradient underline)
+     and the body — the divider makes a large gap redundant. */
+  row-gap: 8px;
+  /* transform assigned by assets/js/fit.js */
+}
+/* Top-right: nothing else reaches that corner, and down in the footer the
+   number was too small to glance at from the back of a room. */
+body[data-mode="slide"] .slide.is-active .slide-number {
+  right: 40px; top: 40px;
+  font-size: 28px;
+}
+/* Font sizing tuned for the 1920x1080 canvas */
+body[data-mode="slide"] .slide.is-active h1 { font-size: 96px; }
+body[data-mode="slide"] .slide.is-active h2 { font-size: 60px; }
+body[data-mode="slide"] .slide.is-active .body { font-size: 32px; line-height: 1.5; }
+body[data-mode="slide"] .slide.is-active.title h1 { font-size: 112px; line-height: 1.15; }
+body[data-mode="slide"] .slide.is-active.title .subtitle { font-size: 40px; margin-top: 24px; }
+body[data-mode="slide"] .slide.is-active.title .eyebrow { font-size: 40px; margin: 0 0 48px 0; }
+body[data-mode="slide"] .slide.is-active.title .byline { font-size: 28px; margin-top: 96px; gap: 12px; }
+body[data-mode="slide"] .slide.is-active.title .title-actions { font-size: 24px; margin-top: 56px; gap: 20px; }
+body[data-mode="slide"] .slide.is-active.title .title-actions button { font-size: 24px; }
+body[data-mode="slide"] .slide.is-active.title::before { height: 8px; }
+/* .body becomes a flex column so bullets/tables take natural height and
+   the chart/placeholder fills whatever remains — no more chart eating
+   the whole slide and clipping other content. */
+body[data-mode="slide"] .slide.is-active .body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+  min-height: 0;
+}
+body[data-mode="slide"] .slide.is-active .body > .chart,
+body[data-mode="slide"] .slide.is-active .body > .chart-placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto !important;
+  width: 100% !important;
+}
+body[data-mode="slide"] .slide.is-active .body > ul,
+body[data-mode="slide"] .slide.is-active .body > ol,
+body[data-mode="slide"] .slide.is-active .body > p,
+body[data-mode="slide"] .slide.is-active .body > table,
+body[data-mode="slide"] .slide.is-active .body > h3 { flex: 0 0 auto; }
+
+/* Two-tier emphasis. <strong> is the everyday one: real Zen Maru Gothic Bold,
+   quiet enough to use several times a slide. .em is the deliberate one — the
+   phrase worth breaking the page's colour for — so it should stay rare, and
+   colours that encode meaning (a term's own hue, a column it points at) are
+   set by their own rules rather than through this class. */
+.slide .em { color: var(--em); font-weight: inherit; }
+
+/* One lead size across the deck. These sentences all do the same job, so they
+   were drifting between 32 and 36.8px for no reason other than being written
+   at different times. */
+.slide .challenge-lead,
+.slide .admet-lead,
+.slide .pxr-lead,
+.slide .dataset-lead,
+.slide .terms-lead { font-size: 1.05em; }
+
+/* ============================================================
+   Signature accents — adapted from N283T.github.io
+   Restrained "same-author" cues, sized in em so they scale
+   automatically across slide mode (1920x1080 canvas) and print
+   without per-mode overrides.
+   - coral→peach gradient underline under every h1/h2
+   - ✦ prefix on every h2
+   - coral vertical tick on the slide-number
+   ============================================================ */
+.slide h1,
+.slide h2 { position: relative; }
+.slide h1::after,
+.slide h2::after {
+  content: "";
+  display: block;
+  height: 0.08em;
+  min-height: 3px;
+  width: 1.6em;
+  margin-top: 0.28em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-coral), var(--color-peach));
+}
+.slide.title h1::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+.slide h2::before {
+  content: "\2726"; /* ✦ */
+  color: var(--color-coral);
+  font-size: 0.5em;
+  margin-right: 0.6em;
+  vertical-align: 0.35em;
+}
+.slide .slide-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.slide .slide-number::before {
+  content: "";
+  width: 0.22em;
+  min-width: 3px;
+  height: 1em;
+  border-radius: 0.1em;
+  background: var(--color-coral);
+}
+
+/* Overview slide: a landing-page hero rather than a slide. It drops the h2
+   and the slide padding, which puts it up against three rules that outrank a
+   bare `.slide .hero-thing`: the canvas rules under `body[data-mode="slide"]`
+   (padding, .body display, h1 size) and `.slide .body p { margin }`. Hence the
+   doubled selectors and the `p.` on every paragraph — see CLAUDE.md. */
+body[data-mode="slide"] .slide.is-active.hero,
+.slide.hero {
+  padding: 0;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+body[data-mode="slide"] .slide.is-active.hero .body,
+.slide.hero .body { display: block; height: 100%; }
+/* The glow is painted onto .hero-stage rather than laid out as a child, so it
+   can sit off-centre and bleed without any box overflowing the canvas — which
+   the authoring audit would otherwise read as content overflow. */
+.slide.hero .hero-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  height: 100%;
+  background: radial-gradient(circle 560px at 78% 50%,
+    rgba(122, 196, 184, 0.32) 0%,
+    rgba(247, 217, 207, 0.30) 42%,
+    rgba(251, 247, 242, 0) 72%);
+}
+.slide.hero .hero-copy {
+  position: relative;
+  align-self: center;
+  padding-left: 130px;
+}
+.slide.hero .body p.hero-eyebrow {
+  font-family: var(--font-mono);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  font-size: 24px;
+  color: var(--color-coral);
+  margin: 0;
+}
+body[data-mode="slide"] .slide.is-active.hero h1,
+.slide.hero h1 {
+  font-family: var(--font-body);
+  /* Both lines are set by hand in the markup; at this size the longer one is
+     862px against the 974px column, so neither re-wraps. */
+  font-size: 72px;
+  line-height: 1.34;
+  letter-spacing: 0.01em;
+  font-weight: 700;
+  margin: 34px 0 0 0;
+}
+.slide.hero h1 em { font-style: normal; color: var(--color-blue); }
+.slide.hero .body p.hero-sub {
+  font-size: 30px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 34px 0 0 0;
+}
+.slide.hero .body p.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin: 58px 0 0 0;
+}
+.slide.hero .hero-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 30px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+}
+.slide.hero .hero-pill--rank {
+  background: var(--color-coral);
+  color: #fff;
+  font-weight: 700;
+}
+.slide.hero .hero-pill--rank b {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 600;
+}
+.slide.hero .hero-pill--metric {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--muted);
+}
+.slide.hero .hero-mark { position: relative; place-self: center; }
+.slide.hero .hero-mark img { display: block; width: 480px; height: 480px; }
+
+/* Challenge slide: intro lead + stacked track cards + horizontal timeline */
+.slide .challenge-lead {
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin: 0;
+}
+.slide .track-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.slide .track-card {
+  padding: 1em 1.5em;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+.slide .track-card--focus {
+  border-color: var(--color-coral);
+  background: rgba(239, 159, 140, 0.08);
+  box-shadow: 0 12px 34px -22px rgba(239, 159, 140, 0.5);
+}
+.slide .track-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  flex-wrap: wrap;
+}
+.slide .track-card__label {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.72em;
+}
+.slide .track-card__title {
+  font-family: var(--font-display);
+  font-size: 1.5em;
+  margin: 0;
+  color: var(--color-ink);
+  line-height: 1;
+}
+.slide .track-card__desc {
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .track-card__badge {
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  padding: 0.25em 0.8em;
+  border-radius: 999px;
+  background: rgba(239, 159, 140, 0.18);
+  color: var(--color-coral);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+.slide .track-card__badge--dim {
+  background: var(--color-line);
+  color: var(--muted);
+}
+.slide .spec-row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.7em;
+}
+.slide .spec {
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.7em 0.6em;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  justify-content: center;
+}
+.slide .spec dt {
+  font-family: var(--font-mono);
+  font-size: 0.65em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.slide .spec dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+/* Horizontal timeline — vertical placement handled by the body's
+   space-evenly distribution (see the challenge slide override below) */
+.slide .timeline {
+  padding: 0.6em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+}
+.slide .timeline__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.slide .timeline__row > * { text-align: center; }
+.slide .timeline__row--dates time {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+  font-weight: 700;
+  font-size: 0.85em;
+}
+.slide .timeline__row--track {
+  position: relative;
+  height: 12px;
+  align-items: center;
+}
+.slide .timeline__row--track::before {
+  content: "";
+  position: absolute;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: var(--color-line);
+}
+.slide .timeline__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-coral);
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 0 5px var(--color-bg);
+}
+.slide .timeline__row--labels span {
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* Auto-distribute the challenge slide's blocks (lead / cards / timeline)
+   evenly over the full slide height instead of hand-tuning margins. */
+body[data-mode="slide"] .slide.is-active#s-03-challenge .body {
+  justify-content: space-evenly;
+}
+
+/* PXR slide — full-width lead, then liabilities | viewer, then a note */
+.slide .pxr-lead {
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+/* The `margin: 0` this used to carry never applied: `.slide .body p` outranks
+   a bare `.slide .pxr-lead`, so the lead kept a 20px bottom margin on top of
+   the body's own 24px gap. Only the bottom is overridden here — the top is the
+   0.6em every other lead in the deck also has, and pulling it would leave this
+   slide's heading sitting closer than the ADMET slide's. 32px against the
+   column's 25.6px internal rhythm: still a level up, without the gulf. */
+.slide .body p.pxr-lead { margin-bottom: 0.25em; }
+.slide .pxr-mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 3em;
+}
+/* Starts at the top rather than centring on the figure beside it. Centring
+   split the column's 49px of slack in two and put half of it between the lead
+   and the subhead, which read as a gap the deck does not use anywhere else;
+   the slack now falls to the base, where nothing is measuring itself against
+   it. Lead to subhead is 44px, the same as lead to content on the ADMET slide. */
+.slide .pxr-col {
+  flex: 3 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.8em;
+}
+.slide .pxr-subhead {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  color: var(--color-ink);
+  /* This heads all three blocks, so it needs to sit clear of the first one's
+     own label rather than being pulled onto it — but nearer to what it heads
+     than to the lead above, or it reads as floating between the two. Measured,
+     44px above and 27px below. */
+  margin: 0;
+}
+/* Right side: ~40% width column (3:2 vs the text), just the square viewer.
+   Width is driven by the flex ratio — NOT by the square's height — so the
+   viewer can never overflow the slide's right edge. */
+.slide .pxr-figwrap {
+  flex: 2 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+/* Structure switcher above the viewer. A row rather than an overlay: the
+   view controls already sit inside the frame, and two overlaid groups on one
+   square is more chrome than structure. */
+.slide .mol-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.35em;
+}
+.slide .mol-tab {
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.32em 0.85em;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.slide .mol-tab:hover { color: var(--color-ink); }
+.slide .mol-tab.is-on {
+  color: #fff;
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+}
+.slide .pxr-liabilities {
+  border-left: 3px solid var(--color-coral);
+  padding-left: 1em;
+}
+/* Term left, consequence right, on the deck's own .steps grid. As a run of
+   prose it was three sentences whose two halves ran together with only a
+   margin between them; aligned in two columns the three risks can be read
+   down the left edge. The terms stay in the body face — the deck's step
+   labels are Latin, and Japanese prose terms set in the mono face read as a
+   different voice rather than as a label. */
+.slide .pxr-steps { margin-top: 0.35em; column-gap: 1.1em; }
+.slide .pxr-steps .step__body { padding: 0.55em 0; }
+.slide .body .pxr-steps p.step__label {
+  padding-top: 0.55em;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.9em;
+}
+.slide .pxr-steps .step:first-child > .step__body { padding-top: 0; }
+.slide .body .pxr-steps .step:first-child > p.step__label { padding-top: 0; }
+.slide .body .pxr-steps p.step__lead {
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+/* The one concrete story on a slide of abstract risk, and it was the quietest
+   thing in the column: a white card of 0.8em grey. It carries the coral the
+   liabilities above it are marked with, since it is the same argument made
+   with a real compound, and its text is ink at the column's own size. */
+.slide .pxr-example {
+  background: rgba(239, 159, 140, 0.09);
+  border: 1px solid rgba(239, 159, 140, 0.45);
+  border-radius: 10px;
+  padding: 0.75em 0.95em 0.8em;
+}
+.slide .body p.pxr-example__label {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-coral);
+  margin: 0 0 0.45em 0;
+}
+.slide .pxr-example p:last-child {
+  margin: 0;
+  font-size: 0.9em;
+  line-height: 1.45;
+  color: var(--color-ink);
+}
+.slide .body p.pxr-liabilities__label {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-coral);
+  margin: 0 0 0.5em 0;
+}
+/* The liabilities and the example are one argument in coral — the risk, then
+   the compound it killed. This is the second point and it is blue, so it takes
+   the column's leftover height as the gap above it rather than a fixed one:
+   that both marks the break and lands its base on the viewer's, which are the
+   two things the eye was catching on. */
+.slide .pxr-structure {
+  border-left: 3px solid var(--color-blue);
+  padding-left: 1em;
+  margin-top: auto;
+}
+.slide .body p.pxr-structure__label {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+  margin: 0 0 0.4em 0;
+}
+.slide .pxr-note {
+  font-size: 0.9em;
+  color: var(--color-ink);
+  line-height: 1.45;
+  margin: 0;
+  text-wrap: pretty; /* avoid a lone "promiscuous" on the last line */
+}
+.slide .pxr-note strong { white-space: nowrap; }
+.slide .pxr-figure {
+  flex: 1 1 auto;         /* fill the figwrap height left over by the note */
+  min-height: 0;
+  margin: 0;
+  aspect-ratio: 1 / 1;   /* square; clamped by max-width so it stays inside */
+  width: auto;
+  max-width: 100%;
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.slide .mol-viewer {
+  position: absolute;
+  inset: 0;
+}
+/* 3Dmol injects an absolutely-positioned canvas; keep it inside the box */
+.slide .mol-viewer canvas { display: block; border-radius: 14px; }
+.slide .pxr-figure__caption {
+  position: absolute;
+  bottom: 0.6em;
+  right: 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  background: rgba(251, 247, 242, 0.7);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+/* View controls, overlaid top-right of the viewer. Two framings rather than
+   the spin toggle that used to sit here: spin is motion for its own sake and
+   nothing on this slide asks the audience to watch the domain turn, whereas
+   'ligand' is the slide's own point — how much room rifampicin has in there. */
+.slide .mol-controls {
+  position: absolute;
+  top: 0.7em;
+  right: 0.7em;
+  z-index: 2;
+  display: flex;
+  gap: 0.4em;
+}
+.slide .mol-btn {
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.35em 0.8em;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.slide .mol-btn:hover:not(:disabled) { color: var(--color-ink); }
+.slide .mol-btn:disabled { opacity: 0.4; cursor: default; }
+.slide .mol-btn.is-on {
+  color: var(--color-coral);
+  border-color: var(--color-coral);
+  background: rgba(239, 159, 140, 0.12);
+}
+
+/* Assay slide — the figure small on the left, the two routes reading down the
+   right. The figure is 1200x583 of small type: at any size that fits the slide
+   it cannot be read from the back of a room, so it is sized as evidence rather
+   than as content and opens full-bleed on a click (see assets/js/lightbox.js). */
+body[data-mode="slide"] .slide.is-active .assay-body {
+  gap: 10px;
+}
+.slide .assay-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 2.6em;
+  align-items: center;
+}
+.slide .assay-fig {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  cursor: zoom-in;
+}
+.slide .assay-fig img {
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.5em;
+  /* The source figure ships on flat white; multiply drops that white onto the
+     card so the diagram sits on it rather than on a second sheet of paper. */
+  mix-blend-mode: multiply;
+  transition: border-color 0.15s ease;
+}
+.slide .assay-fig:hover img { border-color: var(--color-blue); }
+/* Source line stays quiet; the link is only there for whoever opens the deck
+   afterwards, so it reads as caption text with a hairline under it. */
+.slide .assay-fig figcaption {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.48em;
+  color: var(--muted);
+  text-align: right;
+}
+.slide .assay-fig figcaption a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.slide .assay-fig figcaption a:hover { border-bottom-color: var(--muted); }
+
+.slide .assay-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1em;
+}
+.slide .assay-rule { height: 1px; background: var(--color-line); }
+.slide .assay-route { display: flex; flex-direction: column; gap: 0.45em; }
+.slide .assay-route__label {
+  align-self: flex-start;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.74em;
+  line-height: 1.3;
+  color: #fff;
+}
+.slide .assay-route__label--train { background: var(--color-teal); }
+.slide .assay-route__label--test { background: var(--color-coral); }
+
+/* The route as a sum, because that is how it is said out loud: two numbers
+   make a third. Each term is the count over what it counts, so the row can be
+   read across without the prose under it — which is then free to be prose. */
+.slide .body p.assay-eq {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85em;
+  flex-wrap: wrap;
+}
+.slide .assay-term { display: flex; flex-direction: column; line-height: 1.1; }
+.slide .assay-term b {
+  font-family: var(--font-mono);
+  font-size: 1.32em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.slide .assay-term i {
+  font-style: normal;
+  margin-top: 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  color: var(--muted);
+}
+.slide .assay-term--end b { color: var(--color-teal); }
+.slide .assay-term--test b { color: var(--em); }
+.slide .assay-op {
+  font-family: var(--font-mono);
+  font-size: 1.1em;
+  color: var(--muted);
+  /* Sits on the numerals' baseline rather than the term's box top. */
+  padding-top: 0.12em;
+}
+.slide .body p.assay-note {
+  margin: 0.15em 0 0;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body p.assay-note--aside { font-size: 0.7em; margin-top: 0.1em; }
+/* What the Test route amounts to, under the route rather than under the slide:
+   it summarises that column, not the figure beside it. Weight and colour like
+   the deck's closing lines, at the column's size. */
+.slide .body p.assay-sum {
+  margin: 0.45em 0 0;
+  font-size: 0.84em;
+  line-height: 1.45;
+  color: var(--color-ink);
+}
+.slide .assay-sum .em { font-weight: 700; }
+
+/* Lightbox — the figure over the slide, at the size it was drawn for. */
+.slide .lightbox {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 70px;
+  background: rgba(26, 26, 26, 0.72);
+  cursor: zoom-out;
+}
+.slide .lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1em;
+}
+.slide .lightbox__close {
+  position: absolute;
+  top: 34px;
+  right: 40px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 0.3em 1em;
+  cursor: pointer;
+}
+
+/* The released label table lost one compound to a mid-challenge revision; the
+   models were trained before it and were never rebuilt, so the deck carries
+   4,140 everywhere else. */
+.slide .assay-route__aside {
+  color: var(--muted);
+  font-size: 0.86em;
+}
+
+/* Dataset slide — the table is the whole slide, so rows get room to breathe
+   and the two files Track 1 actually trains and predicts on are lit in coral. */
+.slide .dataset-body {
+  justify-content: center;
+}
+.slide .dataset-table {
+  flex: 0 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+}
+.slide .dataset-table th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.92em;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-align: left;
+  padding: 0 0.7em 0.6em;
+  border-bottom: 2px solid var(--line);
+  line-height: 1.3;
+  /* th defaults to baseline, which pins the one-line headers to the first
+     line of the two-line log2fc labels. Middle keeps the row optically even. */
+  vertical-align: middle;
+}
+.slide .dataset-table td {
+  padding: 1.15em 0.7em;
+  border-bottom: 1px solid var(--line);
+  font-size: 1em;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.slide .dataset-name {
+  display: block;
+  font-size: 1.15em;
+  font-weight: 700;
+}
+.slide .dataset-config {
+  display: block;
+  margin-top: 0.15em;
+  font-family: var(--font-mono);
+  font-size: 0.66em;
+  color: var(--muted);
+}
+.slide .dataset-table th.dataset-num,
+.slide .dataset-table td.dataset-num {
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.slide .dataset-table td.dataset-num { font-size: 1.05em; }
+/* Availability matrix: ○ means every compound in the row has it, a count means
+   only that many do, × means the column is absent for that set. */
+.slide .dataset-table th.dataset-cell,
+.slide .dataset-table td.dataset-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+.slide .dataset-yes { color: var(--color-coral); font-size: 1.15em; }
+.slide .dataset-no { color: var(--muted); opacity: 0.5; font-size: 1.15em; }
+.slide .dataset-part {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--muted);
+}
+.slide .dataset-row--key td { background: var(--color-surface); }
+.slide .dataset-row--key td:first-child {
+  box-shadow: inset 4px 0 0 var(--color-coral);
+}
+/* pEC50 is what the model has to produce, not something it is handed. Tinting
+   that one column teal separates the target from the available inputs, and it
+   sits after the key-row rule so the tint survives on the lit rows too. */
+.slide .dataset-table th.dataset-target,
+.slide .dataset-table td.dataset-target {
+  background: rgba(122, 196, 184, 0.18);
+}
+.slide .dataset-table th.dataset-target {
+  color: #3f8d80;
+  font-weight: 700;
+}
+.slide .dataset-target .dataset-yes { color: #47a294; }
+/* The two log2fc columns are the cheap signal the whole approach leans on, so
+   they read as one coral-tinted group — distinct from the teal target column
+   and from the columns that are merely present. */
+.slide .dataset-table th.dataset-aux,
+.slide .dataset-table td.dataset-aux {
+  background: rgba(239, 159, 140, 0.15);
+}
+.slide .dataset-table th.dataset-aux {
+  color: #c2674f;
+  font-weight: 700;
+}
+.slide .dataset-aux .dataset-part {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.slide .dataset-lead {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+/* Tie the lead sentence to the table: the source of the cheap signal reads in
+   the same coral as the log2fc columns, and the name we will keep using
+   ("AUX data") reads in blue in both the sentence and the row label. */
+.slide .dataset-lead .lead-primary { font-weight: inherit; color: var(--em); }
+.slide .dataset-lead .lead-aux { font-weight: inherit; color: var(--color-blue); }
+.slide .dataset-row--aux .dataset-name { color: var(--color-blue); }
+
+.slide .body .dataset-note {
+  flex: 0 0 auto;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.24em;
+  margin: 0;
+  padding: 0;
+  font-size: 0.98em;
+  line-height: 1.35;
+  color: var(--color-ink);
+}
+.slide .body .dataset-note li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  margin: 0;
+}
+.slide .body .dataset-note li + li { margin-top: 0; }
+.slide .body .dataset-note li::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.38em;
+  height: 0.38em;
+  border-radius: 50%;
+  background: var(--color-coral);
+  transform: translateY(-0.08em);
+}
+
+/* KaTeX renders every formula; see assets/js/math.js. Sized down slightly so
+   an inline formula sits at the weight of the prose around it rather than
+   shouting over it. */
+.slide .katex { font-size: 1.05em; }
+.slide .term__eq .katex { font-size: 1em; }
+
+/* Metrics slide — tabs over a demo panel. Only the active panel is laid out,
+   but inactive ones stay in the DOM so a chart the presenter has interacted
+   with keeps its state when they switch back. */
+.slide .metric-body { justify-content: flex-start; }
+body[data-mode="slide"] .slide.is-active .metric-body { gap: 12px; }
+.slide .metric-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.4em;
+  margin: 0.1em 0 0;
+  border-bottom: 2px solid var(--line);
+}
+.slide .metric-tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--muted);
+  padding: 0.35em 0.85em 0.45em;
+  margin-bottom: -2px;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.slide .metric-tab:hover { color: var(--color-ink); }
+.slide .metric-tab.is-active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-coral);
+}
+.slide .metric-panel { display: none; }
+.slide .metric-panel.is-active {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 2em;
+  align-items: center;
+  padding-top: 0.2em;
+}
+/* A panel with no chart is all prose, so it takes the width and starts at the
+   top instead of floating in the middle of an empty row. */
+.slide .metric-panel:not(:has(.metric-chart)) { align-items: flex-start; }
+.slide .metric-panel:not(:has(.metric-chart)) .metric-panel__side {
+  flex: 1 1 auto;
+  max-width: 74%;
+  gap: 0.6em;
+}
+.slide .metric-panel__side {
+  flex: 0 0 38%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.34em;
+}
+/* The Japanese name rides on the tab rather than repeating inside every
+   panel, which also buys the panel a row back. */
+.slide .metric-tab__ja { font-size: 0.76em; opacity: 0.85; }
+.slide .metric-panel__def { margin: 0; font-size: 1em; line-height: 1.45; }
+.slide .metric-panel__eq { display: block; margin: 0; }
+/* Display-mode KaTeX defaults to a size meant for a page of maths, not for a
+   column beside a chart. */
+.slide .metric-panel__eq .katex-display { margin: 0.25em 0; }
+.slide .metric-panel__eq .katex { font-size: 1.15em; }
+.slide .metric-panel__note {
+  margin: 0;
+  font-size: 0.8em;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.slide .metric-actions {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+}
+.slide .metric-btn {
+  appearance: none;
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--muted);
+  background: none;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 0.4em 1.1em;
+  cursor: pointer;
+}
+.slide .metric-btn:hover {
+  color: var(--color-ink);
+  border-color: var(--muted);
+}
+.slide .metric-btn--accent {
+  color: var(--em);
+  border-color: var(--color-coral);
+}
+.slide .metric-btn--accent:hover {
+  color: var(--em);
+  border-color: var(--em);
+}
+/* The live number: this is what moves while a prediction is dragged. */
+.slide .metric-readout {
+  margin: 0.1em 0;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .metric-readout [data-metric-value] {
+  font-size: 1.9em;
+  color: var(--color-coral);
+  margin-left: 0.3em;
+}
+/* The arithmetic behind the ratio, under the number it produced. */
+.slide .metric-detail {
+  margin: -0.15em 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.74em;
+  color: var(--muted);
+}
+.slide .metric-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: stretch;
+}
+
+/* Evaluation phases — three columns over the same 513-compound submission.
+   Two independent things change between rounds, so they get two independent
+   encodings: fill says whether a set is scored, border says whether its
+   answers are still hidden. */
+.slide .phase-body { justify-content: flex-start; }
+.slide .phase-legend {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  margin: 0.1em 0 0;
+  font-size: 0.74em;
+  color: var(--muted);
+}
+.slide .phase-legend__item { display: inline-flex; align-items: center; gap: 0.45em; }
+.slide .phase-legend__chip {
+  width: 1.5em;
+  height: 0.95em;
+  border-radius: 4px;
+  border: 2px solid var(--line);
+  background: var(--color-line);
+}
+.slide .phase-legend__chip--scored { background: var(--color-coral); border-color: var(--color-coral); }
+.slide .phase-legend__chip--blind { background: transparent; border-style: dashed; border-color: var(--muted); }
+.slide .phase-legend__chip--open { background: transparent; border-style: solid; border-color: var(--muted); }
+.slide .phase-legend__note {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.slide .phase-flow {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* phase / arrow / phase / arrow / phase */
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 1.4em;
+  align-content: center;
+}
+/* Centring on the column happens to land on the blocks, because the heading
+   above them and the notes below are close to the same height. */
+.slide .phase-arrow {
+  align-self: center;
+  font-size: 2em;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.slide .phase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+.slide .phase__label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.05em;
+  color: var(--color-ink);
+}
+.slide .phase--interim .phase__label { color: var(--color-blue); }
+.slide .phase__when {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--muted);
+}
+.slide .phase__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  margin: 0.45em 0;
+}
+/* Tall blocks rather than thin bars: the pair reads as one submission split
+   in two, and the column has room for the state to be obvious at a glance. */
+.slide .phase__row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+  min-height: 2.4em;
+  padding: 0.5em 0.9em;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  font-family: var(--font-mono);
+  /* Not scored this round: still submitted, just invisible to the score. */
+  background: var(--color-line);
+  color: var(--muted);
+}
+.slide .phase__row.is-scored {
+  background: var(--color-coral);
+  color: #fff;
+}
+/* Dashed while the answers are withheld, solid once they are published. */
+.slide .phase__row.is-blind { border-color: var(--muted); border-style: dashed; }
+.slide .phase__row.is-scored.is-blind { border-color: #fff; }
+.slide .phase__row.is-open { border-color: var(--muted); border-style: solid; }
+.slide .phase__row.is-scored.is-open { border-color: #fff; }
+.slide .phase__as { font-size: 0.92em; letter-spacing: 0.06em; }
+.slide .phase__n { font-size: 1.15em; }
+.slide .phase__note {
+  margin: 0;
+  font-size: 0.82em;
+  line-height: 1.4;
+}
+.slide .phase__caveat {
+  margin: 0;
+  font-size: 0.78em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Terminology slide — one row per term, definition on the right. Colours carry
+   over from the dataset matrix so the same concept reads the same way twice:
+   teal for the prediction target, coral for the cheap primary-screen signal. */
+.slide .terms-body { justify-content: center; }
+/* The dose-response figure fills whatever the two term rows leave behind. */
+/* Basis 0, not auto. With `auto` the box asks to be as tall as its content —
+   and its content is an SVG whose height ECharts sets from the box, so the two
+   size each other. Whenever ECharts measured before the row heights settled,
+   the SVG stayed 5px taller than the box it sits in and the slide read as
+   overflowing. From zero the height is purely the space left over, and the
+   overflow guard keeps a stale SVG from pushing the body either way. */
+.slide .drc-chart {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  margin-top: 0.2em;
+}
+body[data-mode="slide"] .slide.is-active .terms-body { justify-content: flex-start; }
+.slide .terms-lead {
+  flex: 0 0 auto;
+  margin: 0 0 0.2em;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+.slide .body .terms-list {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+/* One row per term, separated by a rule. The padding is the breathing space
+   either side of that rule, so it is what makes a row read as its own block
+   rather than as the next line of the one above — both slides had room going
+   spare and were spending none of it here. */
+.slide .term {
+  display: grid;
+  grid-template-columns: 12em 1fr;
+  align-items: center;
+  gap: 1.5em;
+  padding: 1.25em 0;
+  border-bottom: 1px solid var(--line);
+}
+.slide .term:last-child { border-bottom: none; }
+.slide .term dt { margin: 0; }
+.slide .term dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28em;
+  line-height: 1.4;
+}
+.slide .term__def { font-size: 0.95em; }
+/* Subscripts in prose only. line-height:0 keeps them from opening up the line. */
+.slide sub {
+  font-size: 0.68em;
+  vertical-align: -0.16em;
+  line-height: 0;
+}
+/* The formula sits on its own line under the prose definition it belongs to. */
+.slide .term__eq {
+  display: block;
+  margin-top: 0.12em;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+}
+/* The "which way is strong" line — a formula, so it reads in mono, and grey
+   like the caveats: it restates the definition above rather than adding to it.
+   The coloured spans inside still carry the emphasis. */
+.slide .term__rule {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* No Japanese bold ships with this deck (Zen Maru Gothic is latin-subset and
+   PlemolJP has Regular only), so emphasis is a colour shift, never a weight. */
+.slide .term__rule strong { color: var(--color-ink); }
+.slide .term--target .term__rule strong { color: #3f8d80; }
+/* Caveats read in coral regardless of the term's own colour — matching the
+   term name made them blend into it rather than stand out. */
+.slide .term__note strong { color: inherit; }
+/* Caveat lines stay grey: they are supporting detail under a definition that
+   already reads in ink, so the lighter tone carries the hierarchy. */
+.slide .term__note {
+  font-size: 0.82em;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.slide .term__name {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 1.1em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.slide .term__sub {
+  display: block;
+  margin-top: 0.15em;
+  font-family: var(--font-mono);
+  font-size: 0.66em;
+  color: var(--muted);
+}
+.slide .term--target .term__name { color: #3f8d80; }
+.slide .term--aux .term__name { color: var(--em); }
+/* Japanese italics render badly, so emphasis here is a colour shift instead. */
+.slide .term dd em { font-style: normal; color: var(--muted); }
+
+/* Source line stays quiet; the link is only there for whoever opens the deck
+   afterwards, so it reads as caption text with a hairline under it. */
+.slide .assay-flow figcaption a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.slide .assay-flow figcaption a:hover { border-bottom-color: var(--muted); }
+.slide .assay-flow figcaption {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.48em;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ADMET slide — lead, five tall A/D/M/E/T cards, then a bridge note.
+   Signature: only the two cards PXR touches (M, T) are "lit" — coral fill,
+   coral letter, PXR tag — so the eye lands on them and sets up the next slide. */
+.slide .admet-lead {
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin: 0;
+  max-width: 48em;
+}
+.slide .admet-lead strong { color: var(--color-ink); }
+
+.slide .body .admet-cards {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0 0;                 /* room for the top accent bar's shadow */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+.slide .body .admet-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  line-height: normal;
+  padding: 1.5em 1.15em 1.4em;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 20px 44px -32px rgba(58, 66, 87, 0.4);
+}
+/* Top accent bar — hairline-neutral by default, gradient-coral when lit */
+.slide .admet-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--color-line);
+}
+.slide .admet-card__letter {
+  font-family: var(--font-display);
+  font-size: 4.8em;
+  font-weight: 600;
+  line-height: 0.85;
+  color: var(--color-blue);
+  margin-top: 0.05em;
+}
+.slide .admet-card__term {
+  font-family: var(--font-display);
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-top: 0.55em;
+  line-height: 1.15;
+}
+.slide .admet-card__ja {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--muted);
+  letter-spacing: 0.22em;
+  margin-top: 0.35em;
+}
+.slide .admet-card__desc {
+  font-size: 0.7em;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 0.6em;
+  white-space: nowrap;
+}
+/* Representative assays / parameters — pinned to the card's base */
+.slide .body .admet-card__ex {
+  list-style: none;
+  margin: auto 0 0 0;
+  padding: 0.9em 0 0 0;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.3em;
+}
+.slide .body .admet-card__ex li,
+.slide .body .admet-card__ex li + li {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.56em;
+  line-height: 1.2;
+  color: var(--muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.28em 0.52em;
+  white-space: nowrap;
+}
+/* Lit cards — the two ADMET axes PXR acts on */
+.slide .admet-card--pxr {
+  border-color: var(--color-coral);
+  background: linear-gradient(180deg, rgba(239, 159, 140, 0.12), rgba(247, 217, 207, 0.05));
+  box-shadow: 0 24px 50px -28px rgba(239, 159, 140, 0.6);
+}
+.slide .admet-card--pxr::before {
+  background: linear-gradient(90deg, var(--color-coral), var(--color-peach));
+}
+.slide .admet-card--pxr .admet-card__letter {
+  background: linear-gradient(140deg, var(--color-coral), #e07f66);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.slide .admet-card--pxr .admet-card__desc {
+  color: var(--color-ink);
+}
+.slide .admet-card--pxr .admet-card__ex {
+  border-top-color: rgba(239, 159, 140, 0.45);
+}
+.slide .admet-card--pxr .admet-card__ex li {
+  color: #c26a52;
+  background: rgba(239, 159, 140, 0.12);
+  border-color: rgba(239, 159, 140, 0.5);
+}
+.slide .admet-card__tag {
+  position: absolute;
+  top: 1em; right: 1em;
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  padding: 0.3em 0.75em;
+  border-radius: 999px;
+  background: var(--color-coral);
+  color: var(--color-surface);
+  letter-spacing: 0.18em;
+}
+/* The bridge under the cards uses the deck's own .steps idiom. Three tweaks
+   for this slide: the cards above already take the height, so the rows are
+   tighter than a full-slide .steps; the label column is narrow enough that the
+   default 1.4em gutter reads as a gap rather than a pairing; and the label's
+   top padding is re-tuned, since the base value drops the label onto a 1.02em
+   lead and this one is 0.95em. Measured, the pair sits within 2px. */
+.slide .admet-steps { margin-top: 0.7em; column-gap: 1.1em; }
+.slide .admet-steps .step__body { padding: 0.5em 0; }
+.slide .body .admet-steps p.step__label { padding-top: 0.62em; }
+.slide .admet-steps .step:first-child > .step__body { padding-top: 0; }
+.slide .body .admet-steps .step:first-child > p.step__label { padding-top: 0.12em; }
+.slide .body .admet-steps p.step__lead { font-size: 0.95em; line-height: 1.4; }
+
+/* Utility: any run of Latin/numerals that should read as data rather than
+   prose. The deck already sets var(--font-mono) in ~30 component rules; this
+   is the bare-family version for one-off spans inside body copy. */
+.slide .mono { font-family: var(--font-mono); }
+
+/* Results slide — one scored round at a time, standings on the left and the
+   whole field's distribution on the right. The two rounds score different
+   compound sets (513 vs 260), so tabbing between them says what a shared axis
+   never could: these are separate races, not a before and after.
+   Phase 1's live board is absent — the last snapshot on hand is 05-16 while
+   submissions ran to 05-25, so its closing state was never captured. */
+.slide .results-body { justify-content: flex-start; }
+
+.slide .round-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.8em;
+  border-bottom: 1px solid var(--line);
+}
+.slide .round-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.15em 0.6em 0.4em;
+  font: inherit;
+  font-size: 1.05em;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  line-height: 1.2;
+}
+.slide .round-tab:hover { color: var(--color-ink); }
+.slide .round-tab.is-active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-coral);
+}
+.slide .round-tab__sub {
+  font-size: 0.62em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.slide .round-panel { display: none; }
+.slide .round-panel.is-active {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+/* Standings take the wider half: they carry six columns of text, while the
+   histogram only has to stay legible. */
+.slide .results-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.6em;
+  align-items: stretch;
+}
+.slide .results-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  height: 100%;
+  min-height: 0;
+}
+.slide .results-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.slide .metric-picks {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+/* The standing rides the far end of the button row. It used to sit inside the
+   chart, where it read as floating over the plot with nothing to anchor it. */
+.slide .results-standing {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--muted);
+}
+.slide .results-standing strong {
+  font-size: 1.35em;
+  color: var(--color-ink);
+}
+.slide .results-standing__off {
+  margin-left: 1.2em;
+  font-size: 0.85em;
+}
+.slide .metric-pick {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12em 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.74em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.slide .metric-pick:hover { color: var(--color-ink); }
+.slide .metric-pick.is-active {
+  background: var(--color-peach);
+  border-color: var(--color-coral);
+  color: var(--color-ink);
+}
+
+/* Full height so the ten rows spread to meet the chart's baseline instead
+   of bunching at the top over a block of empty slide. */
+.slide .results-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  font-size: 0.72em;
+}
+.slide .results-table th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.9em;
+  color: var(--muted);
+  text-align: right;
+  padding: 0 0.35em 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+.slide .results-table td {
+  padding: 0.24em 0.35em;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.slide .results-table tbody tr:last-child td { border-bottom: none; }
+.slide .results-rank {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-align: right;
+  width: 1%;
+}
+/* Team names are the only free text here and the longest runs past twenty
+   characters, so this column absorbs the slack and clips rather than wraps. */
+.slide .results-team {
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+  width: 99%;
+}
+.slide .results-metric {
+  font-family: var(--font-mono);
+  text-align: right;
+  width: 1%;
+}
+/* The team column holds all the slack, so widening these pulls the numbers
+   back toward the names and puts air between four readings that otherwise ran
+   together. Needs td in the selector: the shorthand on .results-table td wins
+   against a bare class. */
+.slide .results-table th.results-metric,
+.slide .results-table td.results-metric { padding-left: 2.2em; }
+/* Where each team stood in the round before this one. It is context for the
+   ranking beside it, not a reading of its own, so it sits apart in grey after
+   a rule. matcha-croissant reads 10 -> 8 -> 1 across the two tabs. */
+.slide .results-prev {
+  font-family: var(--font-mono);
+  text-align: right;
+  width: 1%;
+  color: var(--muted);
+  font-size: 0.9em;
+  padding-left: 1.1em;
+  border-left: 1px solid var(--line);
+}
+.slide .results-table th.results-prev {
+  font-size: 0.8em;
+  border-left: 1px solid var(--line);
+}
+/* MAE is what the board ranked on; the other three are supporting, so they
+   sit back a step in colour. */
+.slide .results-table td.results-metric ~ td.results-metric { color: var(--muted); }
+/* One's own row, in the deck's accent. Nothing else in the table is coral, so
+   the eye finds it without a marker in the margin. */
+.slide .results-table .results-row--me td {
+  background: var(--color-peach);
+  font-weight: 700;
+  color: var(--ink);
+}
+.slide .results-table .results-row--me td:first-child {
+  border-top-left-radius: 0.25em;
+  border-bottom-left-radius: 0.25em;
+}
+.slide .results-table .results-row--me td:last-child {
+  border-top-right-radius: 0.25em;
+  border-bottom-right-radius: 0.25em;
+}
+
+.slide .results-note {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.82em;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* EDA slide — one property at a time, train against test. The comparison is
+   the whole point of the slide: the descriptors say the chemistry is ordinary,
+   while the pair of distributions says the test set is a narrower, more potent
+   slice of it. Buttons rather than tabs, because there is only one axis to
+   move along. */
+.slide .eda-body { justify-content: flex-start; }
+
+.slide .eda-picks {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.slide .eda-pick {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.14em 0.95em;
+  font-family: var(--font-mono);
+  font-size: 0.76em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.slide .eda-pick:hover { color: var(--color-ink); }
+.slide .eda-pick.is-active {
+  background: var(--color-peach);
+  border-color: var(--color-coral);
+  color: var(--color-ink);
+}
+/* Train and test medians, and the share passing the reference line. Rides the
+   end of the button row, the same spot the results slide puts its standing. */
+.slide .eda-readout {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--muted);
+}
+.slide .eda-readout__label { margin: 0 0.6em 0 1.8em; }
+.slide .eda-readout__label:first-child { margin-left: 0; }
+/* The bars' own two colours, so the pair reads without a legend. */
+.slide .eda-readout__train,
+.slide .eda-readout__test { font-size: 1.2em; }
+.slide .eda-readout__train { color: var(--color-blue); }
+.slide .eda-readout__test { color: var(--color-coral); }
+.slide .eda-readout__slash { margin: 0 0.3em; opacity: 0.5; }
+
+.slide .eda-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+.slide .eda-note {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.82em;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Compounds slide — a grid of structures, three ways of choosing them. The
+   drawings are RDKit SVG generated by scripts/build_compounds_data.py; nothing
+   here rewrites them beyond sizing. */
+.slide .compounds-body { justify-content: flex-start; }
+
+.slide .compound-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  border-bottom: 1px solid var(--line);
+}
+.slide .compound-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.1em 0.5em 0.35em;
+  font: inherit;
+  font-size: 1.05em;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1.2;
+}
+.slide .compound-tab:hover { color: var(--color-ink); }
+.slide .compound-tab.is-active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-coral);
+}
+
+/* Paging rides the end of the tab row; only potent-46 needs it. Hidden by
+   visibility rather than display, so the row keeps its height on the other two
+   tabs and the grid below it does not move. */
+.slide .compound-pager[hidden] { visibility: hidden; display: flex; }
+.slide .compound-pager {
+  margin: 0 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--muted);
+}
+.slide .compound-page {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 1.9em;
+  height: 1.9em;
+  font: inherit;
+  font-size: 1.1em;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.slide .compound-page:hover { color: var(--color-ink); border-color: var(--color-coral); }
+
+.slide .compound-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
+  grid-auto-rows: 1fr;
+  gap: 0.4em 0.9em;
+}
+.slide .compound {
+  margin: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.15em;
+}
+/* The SVG carries its own 300x210 viewBox; let it shrink to whatever row
+   height the grid ends up with rather than forcing a size here. */
+.slide .compound__structure {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.slide .compound__structure svg {
+  width: 100%;
+  height: 100%;
+}
+.slide .compound__caption {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.25;
+  text-align: center;
+}
+.slide .compound__name { font-size: 0.72em; font-weight: 700; }
+/* An OADMET number is a label, not a name, so it reads as one. */
+.slide .compound__name--id {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.62em;
+  color: var(--muted);
+}
+.slide .compound__note {
+  font-size: 0.58em;
+  color: var(--color-coral);
+  font-family: var(--font-mono);
+}
+.slide .compound__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  color: var(--muted);
+}
+.slide .compound__meta b { color: var(--color-ink); font-weight: 700; }
+.slide .compound__meta i { font-style: normal; margin-left: 0.7em; }
+
+.slide .compounds-note {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+
+/* Analog tab only: the test compound is boxed so a column reads as a parent
+   and the thing derived from it. Without it the pairs look like any other
+   grid of eight, which is what the tab exists to distinguish. */
+.slide .compound--test {
+  border: 1.5px solid var(--color-coral);
+  border-radius: 0.5em;
+  background: color-mix(in srgb, var(--color-peach) 22%, transparent);
+  padding: 0.3em 0.4em 0.35em;
+}
+.slide .compound--train { padding: 0.3em 0.4em 0.35em; }
+/* Points from a parent to the analog boxed below it. Zen Maru Gothic has no
+   arrow glyph, so it comes from the mono face like the other symbols do. */
+.slide .compound__arrow {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: 1;
+  color: var(--color-coral);
+  margin-top: 0.15em;
+}
+/* On the analog tab the mass says nothing, so the slot names the set the
+   compound came from instead — which is the thing the row needs to declare. */
+.slide .compound__tag { color: var(--color-coral); }
+
+/* CV Split — two slides. The first shows the recipe and what it produces, top
+   to bottom; the second argues that the choice did not matter. They were one
+   slide side by side, which left no obvious place to start reading. */
+.slide .split-body { justify-content: flex-start; }
+
+.slide .split-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* The recipe is a narrow stack of short lines, so it leaves a gutter to its
+     right whatever it is given. The figure has numbers on both edges and uses
+     everything it gets. */
+  grid-template-columns: 0.82fr 1.18fr;
+  gap: 2.2em;
+  align-items: stretch;
+}
+.slide .split-recipe { align-self: center; }
+.slide .split-heading { margin: 0 0 0.45em; font-size: 0.9em; color: var(--muted); }
+/* What kind of split it is — the reason for choosing it is the next slide's
+   job. Also earns the left column the height it needs to sit level with the
+   figure opposite. */
+.slide .split-what {
+  margin: 0 0 0.85em;
+  font-size: 0.82em;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.slide .split-what strong { color: var(--color-ink); }
+.slide .split-heading strong { color: var(--color-ink); font-size: 1.15em; }
+.slide .split-point { margin: 0.85em 0 0; font-size: 0.84em; line-height: 1.5; }
+/* Wraps before the emphasised clause rather than through the middle of it. */
+.slide .split-point .em { display: inline-block; }
+/* The blog the split recipe came from — its title, linked, rather than the
+   URL, which is 86 characters and fits nowhere. */
+.slide .split-ref {
+  margin: 0.7em 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  color: var(--muted);
+}
+.slide .split-ref a {
+  color: var(--color-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(41, 92, 148, 0.3);
+  padding-bottom: 1px;
+}
+/* Zen Maru Gothic has no ↗; keep it in the mono face. */
+.slide .split-ref span {
+  color: var(--muted);
+  margin-left: 0.3em;
+  font-family: var(--font-mono);
+}
+
+.slide .body .split-steps {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 0.46em;
+}
+.slide .body .split-steps li {
+  counter-increment: step;
+  margin: 0;
+  padding: 0.46em 0.9em 0.55em 2.6em;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 0.5em;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+/* The last step is the one that makes it a split rather than a clustering. */
+.slide .body .split-steps li.split-step--key {
+  border-color: var(--color-coral);
+  background: color-mix(in srgb, var(--color-peach) 22%, transparent);
+}
+.slide .body .split-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0.85em;
+  top: 0.58em;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  background: var(--color-peach);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  line-height: 1.5em;
+  text-align: center;
+}
+.slide .split-step__what { font-size: 0.88em; font-weight: 700; line-height: 1.25; }
+.slide .split-step__how {
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  color: var(--muted);
+}
+
+
+/* Why UMAP — everything stacked, so the eye has one path through it. */
+.slide .split-why-body { justify-content: center; }
+/* The deck-wide .body sets gap: 24px between children. With five children
+   that is 96px of spacing this slide never asked for, on top of the margins
+   below — and it outranks anything written as `.slide .x`, so trimming those
+   margins moved nothing. Spacing is the margins' job here. */
+body[data-mode="slide"] .slide.is-active .split-why-body { gap: 0; }
+
+.slide .split-why-lead { flex: 0 0 auto; margin: 0; font-size: 1.05em; }
+
+/* The split diagnostics, from dataset_split_report.md §9. The point is the
+   y-dispersion column: the three full-coverage splits are indistinguishable
+   on it, which is what "no real difference" actually means. */
+.slide .split-diag {
+  flex: 0 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.9em;
+  font-size: 0.84em;
+}
+.slide .split-diag th,
+.slide .split-diag td { padding: 0.34em 0.7em; text-align: left; }
+.slide .split-diag thead th {
+  font-weight: 400;
+  font-size: 0.88em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.slide .split-diag tbody th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--color-blue);
+  white-space: nowrap;
+}
+.slide .split-diag tbody td { color: var(--muted); }
+.slide .split-diag .split-diag__num { text-align: right; white-space: nowrap; }
+.slide .split-diag tbody tr { border-bottom: 1px solid var(--line); }
+.slide .split-diag .split-diag__row--pick th,
+.slide .split-diag .split-diag__row--pick td {
+  background: var(--color-peach);
+  color: var(--color-ink);
+}
+
+.slide .split-read {
+  flex: 0 0 auto;
+  margin: 0.55em 0 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .split-read strong { color: var(--color-ink); }
+
+.slide .split-ab {
+  flex: 0 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.2em;
+  font-size: 0.84em;
+}
+.slide .split-ab th,
+.slide .split-ab td { padding: 0.3em 0.6em; text-align: left; }
+.slide .split-ab thead th {
+  font-weight: 400;
+  font-size: 0.88em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.slide .split-ab tbody th { font-family: var(--font-mono); font-weight: 400; }
+.slide .split-ab .split-ab__num { text-align: right; }
+.slide .split-ab tbody tr { border-bottom: 1px solid var(--line); }
+.slide .split-ab .split-ab__row--pick th,
+.slide .split-ab .split-ab__row--pick td {
+  background: var(--color-peach);
+  font-weight: 700;
+}
+
+.slide .split-note {
+  flex: 0 0 auto;
+  margin: 0.9em 0 0;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+
+/* The 5-fold matrix. Each row is one training run; the coral column is the
+   part held out that time. Read down the diagonal and every compound has been
+   held out exactly once — which is what OOF means, and OOF is what the
+   ensemble and the calibration are both fitted on later. */
+.slide .fold-figure {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+.slide .fold-figure__head {
+  margin: 0 0 0.3em;
+  font-size: 0.84em;
+  color: var(--muted);
+}
+.slide .fold-figure__head strong { color: var(--color-ink); }
+/* Floated rather than a flex item: the head is a run of inline text, and
+   making it a flex container would break each span into its own item. */
+.slide .fold-figure__maehead {
+  float: right;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+.slide .fold-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+.slide .fold-row__label {
+  flex: 0 0 4.2em;
+  font-family: var(--font-mono);
+  font-size: 0.74em;
+  color: var(--muted);
+}
+.slide .fold-row__cells {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.3em;
+}
+.slide .fold-cell {
+  height: 2.2em;
+  border-radius: 0.3em;
+  background: color-mix(in srgb, var(--color-blue) 16%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.slide .fold-cell--val {
+  background: var(--color-peach);
+  border: 1px solid var(--color-coral);
+}
+.slide .fold-cell__tag {
+  font-family: var(--font-mono);
+  font-size: 0.56em;
+  color: var(--color-coral);
+}
+.slide .fold-cell__n {
+  font-family: var(--font-mono);
+  font-size: 0.66em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.slide .fold-row__mae {
+  flex: 0 0 4.4em;
+  text-align: right;
+  font-family: var(--font-mono);
+  /* These are the five numbers the block below averages, so they should read
+     as data rather than as row labels. */
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+/* The averaging spelled out, because "OOF MAE" is the number every later
+   slide is quoting and it is worth showing once where it comes from. */
+/* The conclusion of the figure, and the number every later slide quotes. It
+   borrows the val cells' colour on purpose: OOF is what the coral diagonal
+   adds up to. */
+/* A glossary card. OOF is the deck's most-reused term — the ensemble picks
+   members on it and the calibration is fitted on it — so it gets introduced
+   properly once, here, where the figure has just shown where it comes from.
+   Coral rule down the side rather than a peach fill: the val cells above own
+   that colour, and a second filled block competed with them. */
+.slide .oof-card {
+  margin: 0.7em 0 0;
+  padding: 0.55em 1.1em 0.65em;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--color-coral);
+  border-radius: 0.5em;
+  background: var(--surface);
+}
+.slide .oof-card__term {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  font-size: 1.28em;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+.slide .oof-card__expand {
+  font-family: var(--font-mono);
+  font-size: 0.44em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--color-coral);
+}
+.slide .oof-card__def {
+  margin: 0.25em 0 0;
+  font-size: 0.92em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .oof-card__def strong { color: var(--color-ink); }
+/* The quantity the term is here to define, hung off the bottom of the card. */
+.slide .oof-card__metric {
+  margin: 0.5em 0 0;
+  padding-top: 0.45em;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  font-size: 0.92em;
+  color: var(--color-ink);
+}
+/* Same size as the phrase it equals — the two sides of the definition should
+   read as one line, not as a label and its caption. */
+.slide .oof-card__metric-name {
+  font-family: var(--font-mono);
+  color: var(--color-coral);
+}
+/* One worked instance, quieter than the definition it illustrates. */
+.slide .oof-card__example {
+  margin-left: auto;
+  font-size: 0.84em;
+  color: var(--muted);
+}
+.slide .oof-card__example b {
+  font-family: var(--font-mono);
+  color: var(--color-ink);
+}
+.slide .fold-caveat {
+  margin: 0.25em 0 0;
+  font-size: 0.64em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+
+/* ---------------------------------------------------------------- Strategy */
+/* One paper, introduced on the open slide. No card around it — there is
+   nothing to separate it from. Read straight down: what it asks, what it
+   compared, what it concluded. */
+body[data-mode="slide"] .slide.is-active .paper-body { gap: 0; justify-content: center; }
+.slide .body p.paper-title {
+  margin: 0;
+  font-size: 1.35em;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.slide .body p.paper-meta {
+  margin: 0.55em 0 0;
+  font-size: 0.76em;
+  color: var(--muted);
+}
+.slide .paper-meta a {
+  color: var(--color-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(41, 92, 148, 0.3);
+}
+
+.slide .paper-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6em;
+  margin-top: 0.5em;
+  padding-top: 0.48em;
+  border-top: 1px solid var(--line);
+}
+.slide .paper-row__label-sub {
+  display: block;
+  margin-top: 0.25em;
+  font-size: 0.82em;
+  line-height: 1.4;
+  white-space: normal;
+  color: var(--muted);
+}
+.slide .body p.paper-row__label {
+  flex: 0 0 7.6em;
+  margin: 0;
+  font-size: 0.82em;
+  white-space: nowrap;
+  color: var(--color-coral);
+}
+.slide .body p.paper-row__body {
+  margin: 0;
+  font-size: 0.88em;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+.slide .paper-row__body strong:not(.em) { color: var(--color-ink); }
+/* A second breath inside one row: the claim, then what it means. */
+.slide .paper-row__then { display: block; margin-top: 0.45em; }
+/* What it buys and what it costs, side by side, because the cost is the reason
+   the next slides exist. */
+.slide .pros {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2em;
+}
+.slide .body p.pros__head {
+  margin: 0 0 0.2em;
+  font-size: 0.76em;
+  color: var(--muted);
+}
+.slide .pros__col--con .pros__head { color: var(--color-coral); }
+.slide .body ul.pros__list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+.slide .pros__list li { margin-top: 0.15em; }
+.slide .pros__list strong:not(.em) { color: var(--color-ink); }
+
+/* The qualification a claim needs but should not be read in the same breath. */
+/* Links in the body read like the ones in the meta line above them. */
+.slide .paper-row__body a {
+  color: var(--color-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(41, 92, 148, 0.3);
+}
+.slide .paper-row__body .paper-caveat {
+  display: block;
+  margin-top: 0.35em;
+  font-size: 0.86em;
+  color: var(--muted);
+}
+
+/* The screening cascade the paper is about, folded into the question rather
+   than standing beside it. Left to right, because that is the direction the
+   funnel runs and it costs one row instead of three. */
+.slide .cascade { flex: 1 1 auto; }
+.slide .cascade__flow {
+  display: flex;
+  align-items: stretch;
+  gap: 1.1em;
+}
+.slide .tier {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  padding: 0.5em 0.9em 0.6em;
+  border: 1px solid var(--line);
+  border-radius: 0.45em;
+  background: var(--surface);
+}
+.slide .tier--hf {
+  border-color: var(--color-coral);
+  background: color-mix(in srgb, var(--color-peach) 30%, transparent);
+}
+.slide .tier__tag {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--color-blue);
+}
+.slide .tier--hf .tier__tag { color: var(--color-coral); }
+.slide .tier__what { font-size: 0.9em; font-weight: 700; }
+.slide .tier__note { font-size: 0.78em; color: var(--muted); }
+
+.slide .cascade__arrow {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+}
+.slide .cascade__arrow-mark {
+  font-family: var(--font-mono);
+  font-size: 1.3em;
+  line-height: 1;
+  color: var(--color-coral);
+}
+.slide .cascade__arrow-note {
+  font-size: 0.68em;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--muted);
+}
+.slide .cascade__arrow-note strong { color: var(--color-ink); }
+
+.slide .body p.cascade__ask {
+  margin: 0.6em 0 0;
+  font-size: 0.9em;
+  color: var(--color-ink);
+}
+.slide .cascade__ask strong { color: var(--color-ink); }
+
+/* Six cards in two columns of three, filled down each column so the reading
+   order stays vertical. Puts the best of them at the head of the second. */
+.slide .body .strategy-list {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: strat;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  column-gap: 1.1em;
+  row-gap: 0.32em;
+}
+.slide .body .strategy-list li {
+  counter-increment: strat;
+  margin: 0;
+  padding: 0.34em 0.9em 0.4em 2.5em;
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  border: 1px solid var(--line);
+  border-radius: 0.45em;
+  background: var(--surface);
+  font-size: 0.84em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .body .strategy-list li strong { color: var(--color-ink); }
+/* Same badge as the next slide's, so a number means the same thing on both. */
+.slide .body .strategy-list li::before {
+  content: counter(strat);
+  position: absolute;
+  left: 0.75em;
+  top: 0.5em;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  background: var(--color-coral);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  line-height: 1.4em;
+  text-align: center;
+}
+/* How often each one came out best, from the paper's own Table 1. Counting
+   wins ranks all six; picking a winner only ranked one. */
+.slide .strategy__count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  min-width: 1.9em;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--color-ink);
+}
+
+
+/* The mapping onto this challenge, then the ranking that came out different.
+   Same row shape as the paper slide so the pair reads as one argument. */
+body[data-mode="slide"] .slide.is-active .apply-body { gap: 0; justify-content: center; }
+/* The apply slide is not tight for space the way the paper slide is, so its
+   rows get more room than the shared rule gives them. */
+.slide .apply-body .paper-row {
+  margin-top: 1.05em;
+  padding-top: 1em;
+}
+
+.slide .body p.apply-lead { flex: 0 0 auto; margin: 0; font-size: 1.05em; }
+
+/* The paper's own numbering, carried across from the previous slide. */
+.slide .strat-ref {
+  display: inline-block;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--color-coral);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+  line-height: 1.4em;
+  text-align: center;
+  vertical-align: 0.05em;
+}
+.slide .strat-ref--bad {
+  background: transparent;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  line-height: 1.3em;
+}
+
+.slide .apply-map { flex: 1 1 auto; border-collapse: collapse; font-size: 0.82em; }
+.slide .apply-map th,
+.slide .apply-map td { padding: 0.2em 0.7em; text-align: left; }
+.slide .apply-map tbody th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.92em;
+  color: var(--color-blue);
+  white-space: nowrap;
+}
+.slide .apply-map tbody td { color: var(--muted); }
+.slide .apply-map tbody td strong { color: var(--color-ink); }
+.slide .apply-map__n { color: var(--color-ink); font-family: var(--font-mono); font-size: 0.92em; }
+.slide .apply-map .apply-map__row--key td { color: var(--color-ink); }
+
+.slide .apply-ab { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+.slide .apply-ab th,
+.slide .apply-ab td { padding: 0.22em 0.7em; text-align: left; }
+.slide .apply-ab thead th {
+  font-weight: 400;
+  font-size: 0.9em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.slide .apply-ab tbody th { font-weight: 400; color: var(--muted); }
+.slide .apply-ab tbody th strong { color: var(--color-ink); }
+.slide .apply-ab .apply-ab__num { text-align: right; font-family: var(--font-mono); }
+.slide .apply-ab tbody tr { border-bottom: 1px solid var(--line); }
+.slide .apply-ab .apply-ab__row--pick th,
+.slide .apply-ab .apply-ab__row--pick td {
+  background: var(--color-peach);
+  color: var(--color-ink);
+}
+/* Why strategy 1 was never on the table here. Sits beside the correspondence,
+   which is short and leaves the room for it. */
+/* Two facts to a row, laid out across it. One line each, so there are no
+   heights left to disagree about. */
+.slide .pair {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+}
+/* Ink, not grey. This is the mapping itself and the difference itself — the
+   substance of the row rather than a note under it — and grey is for labels
+   and asides. <strong> carries emphasis inside it, as everywhere else. */
+.slide .body p.pair__item {
+  flex: 1 1 0;
+  margin: 0;
+  font-size: 0.84em;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+.slide .pair__item + .pair__item {
+  padding-left: 2.2em;
+  border-left: 1px solid var(--line);
+}
+.slide .pair__key {
+  display: inline-block;
+  min-width: 8.4em;
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+  color: var(--color-blue);
+}
+/* Only the 対応 row is a mapping — the paper's term on the left, what it is
+   in this challenge on the right — so only that one takes an arrow. */
+.slide .pair__to {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  margin-right: 0.6em;
+}
+
+.slide .apply-twist { flex: 1 1 auto; }
+.slide .body p.apply-twist__head {
+  margin: 0 0 0.45em;
+  font-size: 0.88em;
+  color: var(--color-ink);
+}
+.slide .apply-twist__sub { font-size: 0.88em; color: var(--muted); }
+.slide .body p.apply-twist__note {
+  margin: 0.5em 0 0;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+.slide .apply-twist__note strong:not(.em) { color: var(--color-ink); }
+.slide .apply-ab__tail { font-size: 0.9em; color: var(--muted); }
+.slide .body p.apply-ab__note {
+  margin: 0.45em 0 0;
+  font-size: 0.78em;
+  color: var(--muted);
+}
+
+
+.slide .apply-map__aside {
+  margin: 0 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--muted);
+}
+
+
+/* ------------------------------------------------------------ Model overview */
+/* An author-drawn 16:9 figure. Only the gap under the heading is closed —
+   the slide keeps the deck's padding so the heading stays where it is on
+   every other slide. */
+body[data-mode="slide"] .slide.is-active#s-model {
+  padding: 48px 120px;
+  row-gap: 0;
+  grid-template-rows: 1fr;
+}
+body[data-mode="slide"] .slide.is-active#s-model h2 { display: none; }
+body[data-mode="slide"] .slide.is-active .model-body { gap: 0; }
+.slide .model-figure {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slide .model-figure img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+
+/* ----------------------------------------------------------------- Members */
+/* The nine, in weight order. Row colour is the Model Overview's three tracks,
+   which the slide after this one shows in full. */
+body[data-mode="slide"] .slide.is-active .member-body { gap: 0; }
+.slide .body p.member-lead { flex: 0 0 auto; margin: 0; font-size: 1.02em; }
+
+/* The three tracks the table's row colours stand for, named before the table
+   so the family column reads as a label rather than a new fact. */
+.slide .family-cards {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8em;
+  margin-top: 0.35em;
+}
+.slide .family-card {
+  background: var(--surface);
+  border-left: 4px solid var(--line);
+  border-radius: 0 0.4em 0.4em 0;
+  padding: 0.4em 0.8em 0.45em;
+}
+.slide .body p.family-card__name {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+.slide .body p.family-card__what {
+  margin: 0.2em 0 0;
+  font-size: 0.8em;
+  line-height: 1.38;
+  color: var(--muted);
+}
+.slide .family-card__n { margin-left: 0.7em; font-size: 0.82em; color: var(--muted); }
+.slide .family-card--tabular { border-left-color: var(--color-teal); }
+.slide .family-card--embed { border-left-color: var(--color-blue); }
+.slide .family-card--boltz { border-left-color: var(--color-coral); }
+.slide .family-card--tabular .family-card__name { color: var(--color-teal); }
+.slide .family-card--embed .family-card__name { color: var(--color-blue); }
+.slide .family-card--boltz .family-card__name { color: var(--color-coral); }
+
+.slide .member-tbl {
+  flex: 0 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75em;
+  font-size: 0.84em;
+}
+.slide .member-tbl th,
+.slide .member-tbl td { padding: 0.3em 0.7em; text-align: left; }
+.slide .member-tbl thead th {
+  font-weight: 400;
+  font-size: 0.88em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.slide .member-tbl tbody tr { border-bottom: 1px solid var(--line); }
+.slide .member-tbl tbody th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  white-space: nowrap;
+  border-left: 4px solid transparent;
+  padding-left: 0.9em;
+}
+.slide .member-tbl tbody td { color: var(--muted); }
+.slide .member-tbl .member-tbl__num { text-align: right; white-space: nowrap; }
+.slide .member-tbl .member-tbl__flag { text-align: center; }
+.slide .member-tbl tbody .member-tbl__flag { color: var(--color-ink); }
+
+.slide .member-tbl .member-row--tabular th { border-left-color: var(--color-teal); color: var(--color-teal); }
+.slide .member-tbl .member-row--embed th { border-left-color: var(--color-blue); color: var(--color-blue); }
+.slide .member-tbl .member-row--boltz th { border-left-color: var(--color-coral); color: var(--color-coral); }
+
+/* The family column names what the row colour already says, so it takes the
+   same three colours rather than the muted grey the other cells sit in. */
+.slide .member-tbl .member-tbl__family { white-space: nowrap; }
+.slide .member-tbl .member-row--tabular .member-tbl__family { color: var(--color-teal); }
+.slide .member-tbl .member-row--embed .member-tbl__family { color: var(--color-blue); }
+.slide .member-tbl .member-row--boltz .member-tbl__family { color: var(--color-coral); }
+
+.slide .body p.member-alias-note {
+  flex: 0 0 auto;
+  margin: 0.3em 0 0;
+  font-size: 0.68em;
+  color: var(--muted);
+}
+
+/* The row index, so the heatmap's numbered columns can be read back. */
+.slide .member-tbl__i {
+  display: inline-block;
+  width: 1.5em;
+  color: var(--muted);
+  font-size: 0.86em;
+}
+
+/* -------------------------------------------------- Ensemble: correlations */
+/* Read straight down: claim, evidence, claim, evidence. Nothing sits beside
+   anything else except the three steps, which are a sequence and read left to
+   right on purpose. */
+body[data-mode="slide"] .slide.is-active .corr-body { gap: 0; justify-content: flex-start; }
+.slide .body p.corr-lead { flex: 0 0 auto; margin: 0 0 0.2em; font-size: 1.05em; }
+
+.slide .band { flex: 0 0 auto; padding-top: 0.7em; }
+.slide .band--last { padding-top: 0.6em; }
+.slide .body p.band__claim {
+  margin: 0 0 0.45em;
+  font-size: 1.02em;
+  color: var(--color-ink);
+}
+.slide .body p.band__claim strong:not(.em) { color: var(--color-ink); }
+.slide .body p.band__read {
+  margin: 0.55em 0 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body p.band__read strong { color: var(--color-ink); }
+
+/* Two panels, one figure: rank change on the left, the weights themselves on
+   the right. Both charts place nine rows at the same band centres and keep the
+   same top and bottom margins, so a member's line lands on its own bar. */
+.slide .slope-pair {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 0.82fr;
+  column-gap: 0.6em;
+}
+.slide .slope-chart,
+.slide .slope-bars { width: 100%; height: 530px; }
+
+.slide .corr-chart { flex: 0 0 auto; width: 100%; height: 300px; }
+/* A second lead partway down opens the block under it, so it takes the gap a
+   heading would rather than the paragraph spacing above it. */
+.slide .body p.feat-lead--again { margin-top: 1.1em; }
+/* Both blocks share a label column so the two rules line up and the rows read
+   as one list broken by a lead. .body.calib-body, not .calib-body: the shared
+   label rule sits later in this file at equal specificity and would win a tie. */
+.slide .calib-body .steps { grid-template-columns: 6.6em 1fr; }
+.slide .body.calib-body p.step__label { white-space: normal; line-height: 1.25; }
+/* This block follows a lead rather than a heading, so it keeps its top rule. */
+.slide .steps--ruled .step:first-child > .step__label,
+.slide .steps--ruled .step:first-child > .step__body { border-top: 1px solid var(--line); }
+.slide .steps--ruled .step:first-child > .step__body { padding-top: 0.75em; }
+.slide .steps--ruled .step:first-child > .step__label { padding-top: 0.92em; }
+/* Left, what the correction bought overall; right, where it came from. Same
+   layout as the model report, which pairs Table 11 with Figure 9. */
+.slide .calib-pair {
+  flex: 0 0 auto;
+  margin-top: 0.7em;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2.4em;
+  align-items: start;
+}
+/* Both columns open with a caption, so their contents start on the same line. */
+.slide .calib-left,
+.slide .calib-right { display: grid; }
+.slide .body p.calib-sub { margin: 0 0 0.4em; font-size: 0.78em; color: var(--muted); }
+/* Pixels, not 100% of a 1fr row: ECharts sizes itself off the container at init
+   and this one would be measured before the row had resolved, so the SVG stuck
+   at the minimum. 500 is what the table column comes to, so the two end level. */
+.slide .calib-band-chart { width: 100%; height: 500px; }
+/* The spread numbers carried the scatter plot's point once the plot came off
+   this slide; they are an aside, so they take the supporting size and grey. */
+.slide .body p.calib-spread { margin: 0.9em 0 0; font-size: 0.82em; color: var(--muted); }
+
+/* ----------------------------------------- Phase 1: tuning against the board */
+.slide .phase1-chart { flex: 0 0 auto; width: 100%; height: 450px; margin-top: 0.5em; }
+.slide .phase2-chart { width: 100%; height: 240px; }
+/* The Phase 2 row runs text against the figure; the figure only has to be
+   readable, not large, so it takes the smaller share. */
+/* minmax(0, 1fr), not 1fr: the figure's column is fixed, so an auto minimum
+   lets a long mono run in the sentence widen the whole grid past the canvas. */
+.slide .phase2-body .steps { grid-template-columns: max-content minmax(0, 1fr); }
+/* English labels here, so the column gets a floor: the four of them differ in
+   length enough that max-content alone leaves the shortest looking stranded. */
+.slide .phase2-row { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 1.6em; align-items: center; }
+
+/* The pair as numbers. Two of the three metrics are better lower, so bars on a
+   shared axis had to be normalised before they meant anything; a table says it
+   directly. Spearman is in here to be read twice. */
+.slide .calib-tbl { width: 100%; border-collapse: collapse; }
+.slide .calib-tbl th,
+.slide .calib-tbl td { padding: 0.36em 0.4em; text-align: right; font-weight: 400; }
+.slide .calib-tbl tbody th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 1.05em;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+.slide .calib-tbl__head {
+  font-size: 0.8em;
+  color: var(--muted);
+  padding-bottom: 0.35em;
+  border-bottom: 2px solid var(--line);
+}
+/* Spelt out with thead: the shared th/td rule carries an element selector and
+   would win a tie on order. */
+.slide .calib-tbl thead th.calib-tbl__head--metric { text-align: left; }
+.slide .calib-tbl__head--win { color: var(--color-coral); font-weight: 700; }
+/* Both columns are real numbers, so neither is greyed out; the corrected one is
+   picked out instead. */
+.slide .calib-tbl__num { font-size: 1.02em; color: var(--color-ink); }
+.slide .calib-tbl__num--win { color: var(--color-coral); font-weight: 700; }
+/* The by-activity table is the qualifier, not the headline. */
+.slide .calib-tbl tbody tr + tr th,
+.slide .calib-tbl tbody tr + tr td { border-top: 1px solid var(--line); }
+/* The one row where both columns hold the same number, and that is the point. */
+.slide .calib-tbl__same .calib-tbl__num { color: var(--color-ink); font-weight: 700; }
+
+
+/* The three steps of the selection, as a sequence. */
+.slide .body .caruana-flow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: caruana;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.4em;
+}
+.slide .body .caruana-flow li {
+  counter-increment: caruana;
+  margin: 0;
+  padding: 0.45em 0.9em 0.5em 2.5em;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 0.5em;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+.slide .body .caruana-flow li::before {
+  content: counter(caruana);
+  position: absolute;
+  left: 0.8em;
+  top: 0.52em;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 50%;
+  background: var(--color-coral);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  line-height: 1.45em;
+  text-align: center;
+}
+.slide .caruana-flow__what { font-size: 0.84em; line-height: 1.35; color: var(--muted); }
+.slide .caruana-flow__what strong { color: var(--color-ink); }
+.slide .caruana-flow__note { font-size: 0.7em; color: var(--muted); }
+
+.slide .band__claim-sub { font-size: 0.78em; color: var(--muted); }
+
+.slide .band__claim-term {
+  margin-right: 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--color-coral);
+}
+/* On the ensemble slide the term is a method's name introducing the claim, not
+   an identifier, so it takes the body face and weight rather than the mono. */
+.slide .corr-body .band__claim-term {
+  font-family: var(--font-body);
+  font-size: 0.92em;
+  font-weight: 700;
+}
+
+
+/* ------------------------------------------------------ Members: tabular core */
+body[data-mode="slide"] .slide.is-active .tabular-body,
+body[data-mode="slide"] .slide.is-active .embed-body { gap: 0; justify-content: flex-start; }
+/* The 2,103 columns by where they came from. Four cards rather than the
+   report's seven rows: the audience needs the kinds, not the blocks.
+   The lead's 0.5em, not the deck default, is what puts the gap under the
+   heading where the strategy slides put theirs. */
+.slide .body p.feat-lead { flex: 0 0 auto; margin: 0.5em 0 0; }
+/* Names the thing the four cards add up to, and hands off to the next slide.
+   The one place in the deck where .em also takes weight: it is the closing
+   line, and colour alone does not read as a conclusion. */
+/* The last line on a slide is the one the slide adds up to, so it sits under
+   the middle of what it is closing rather than starting again at the left
+   margin. Every closing line in the deck takes this. */
+.slide .body p.feat-close { flex: 0 0 auto; margin: 0.85em 0 0; text-align: center; }
+.slide .body p.feat-close .em { font-weight: 700; }
+/* A qualifier on its own line wants air above it, not just a break. */
+.slide .feat-close__more { display: block; margin-top: 0.5em; }
+/* Here the caveat is a note under the closing line rather than a tail on it. */
+.slide .feat-close .corr-caveat { display: block; margin-top: 0.25em; }
+.slide .feat-cards {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85em;
+  margin-top: 0.9em;
+}
+/* One accent per kind of column, carried by --feat-accent: a wash for the
+   card, the accent itself for the outline, and a darkened mix for the head.
+   The four hues are pale, so the head has to be mixed toward the ink to stay
+   readable at 0.92em. */
+.slide .feat-card {
+  --feat-accent: var(--color-blue);
+  background: color-mix(in srgb, var(--feat-accent) 16%, var(--surface));
+  border: 1.5px solid var(--feat-accent);
+  border-radius: 0.5em;
+  padding: 0.6em 0.95em 0.7em;
+}
+/* The frozen-embedding slide reuses these cards for its five members. A hue
+   each: the four are different backbones, not four parts of one thing, and the
+   two weak GNNs sharing the grey is the quietest way to say they are the pair
+   that is here for a job rather than for a score. */
+.slide .feat-card--chemprop { --feat-accent: #bcd1ec; }
+.slide .feat-card--kermt { --feat-accent: #c4bde0; }
+.slide .feat-card--molformer { --feat-accent: #f0c9a8; }
+.slide .feat-card--gnn { --feat-accent: #b0b3bc; }
+.slide .feat-card--desc { --feat-accent: #95d0c6; }
+.slide .feat-card--chemeleon { --feat-accent: #b0b3bc; }
+.slide .feat-card--boltz { --feat-accent: #f2b2a3; }
+/* The two pred columns are the point of the next slide; mark them here. */
+.slide .feat-card--pred { --feat-accent: #bcd1ec; }
+.slide .body p.feat-card__head {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8em;
+  font-family: var(--font-mono);
+  font-size: 1.06em;
+  color: color-mix(in srgb, var(--feat-accent) 45%, var(--color-ink));
+}
+.slide .feat-card__dim { font-size: 0.86em; color: var(--muted); white-space: nowrap; }
+.slide .body p.feat-card__what {
+  margin: 0.35em 0 0;
+  font-size: 0.86em;
+  line-height: 1.5;
+}
+.slide .body p.feat-card__parts {
+  margin: 0.35em 0 0;
+  font-size: 0.78em;
+  color: var(--muted);
+}
+/* Boltz is the one card whose three sources each need a sentence, so its
+   breakdown is a table rather than the one-line parts row. Ruled rows and no
+   header: three columns this narrow label themselves, and the rules are what
+   stop the dimensions reading as running text. A rule above the first row
+   detaches the block from the sentence it sits under. */
+.slide .feat-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.55em;
+  font-size: 0.72em;
+  line-height: 1.4;
+}
+.slide .feat-tbl th,
+.slide .feat-tbl td {
+  padding: 0.26em 0;
+  text-align: left;
+  vertical-align: baseline;
+  font-weight: 400;
+}
+.slide .feat-tbl th {
+  font-family: var(--font-mono);
+  color: color-mix(in srgb, var(--feat-accent) 45%, var(--color-ink));
+  white-space: nowrap;
+}
+.slide .feat-tbl tbody {
+  border-top: 2px solid color-mix(in srgb, var(--feat-accent) 75%, transparent);
+}
+.slide .feat-tbl tbody tr + tr {
+  border-top: 1px solid color-mix(in srgb, var(--feat-accent) 50%, transparent);
+}
+/* th and td spelt out: the shared `.slide .feat-tbl th, td` rule above carries
+   an element selector, so a bare `.slide .feat-tbl__dim` loses its alignment. */
+.slide .feat-tbl th.feat-tbl__dim,
+.slide .feat-tbl td.feat-tbl__dim {
+  width: 3.4em;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 0.55em;
+  padding-right: 0.85em;
+}
+
+/* ------------------------------------------- Members: the top-500 selection */
+body[data-mode="slide"] .slide.is-active .topk-body { gap: 0; justify-content: flex-start; }
+/* Two panels: where the gain sits, and what cutting to K costs. Read left to
+   right, they are cause and consequence. The bars are seven labelled rows and
+   one long bar, so they need less width than the two-axis sweep beside them. */
+.slide .body p.topk-lead { flex: 0 0 auto; margin: 0.5em 0 0; }
+.slide .topk-grid {
+  flex: 0 0 auto;
+  margin-top: 0.7em;
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  column-gap: 2.2em;
+}
+.slide .topk-panel { display: flex; flex-direction: column; }
+.slide .body p.topk-panel__head {
+  margin: 0 0 0.3em;
+  font-size: 0.92em;
+  font-weight: 700;
+}
+/* The head says the finding; the sub says what the axes are. */
+.slide .topk-panel__sub {
+  display: block;
+  margin-top: 0.1em;
+  font-size: 0.78em;
+  font-weight: 400;
+  color: var(--muted);
+}
+.slide .topk-chart { width: 100%; height: 540px; }
+.slide .body p.topk-close { flex: 0 0 auto; margin: 0.7em 0 0; font-size: 0.92em; }
+
+/* ----------------------------------------------------- Members: Boltz trunk */
+body[data-mode="slide"] .slide.is-active .step-body { gap: 0; justify-content: flex-start; }
+/* Cards would say these are siblings. They are not: the Boltz members are one
+   procedure, and the reader is meant to walk down it. So a label column and a
+   ruled row per step, read top to bottom. The column is max-content, not a
+   fixed width — a fixed one leaves a gutter as wide as the longest label might
+   have been, and the body drifts right for no reason. */
+.slide .steps {
+  flex: 0 0 auto;
+  margin-top: 0.8em;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1.4em;
+}
+.slide .step { display: contents; }
+/* Where the steps are the whole slide there is height going spare, and 1.55em
+   between rows leaves it in a block at the foot of the canvas instead. 2.35em
+   spends part of it — the rows read as their own points without the run of
+   them coming apart, which distributing all of the slack did. Split either
+   side of the rule rather than added as a row gap, or the rule drifts off the
+   row above and onto the one below. The first row keeps its own top padding:
+   there is no gap above it to open. */
+.slide .steps--airy .step__body { padding-bottom: 1.2em; }
+.slide .steps--airy .step:not(:first-child) > .step__body { padding-top: 1.15em; }
+.slide .body .steps--airy .step:not(:first-child) > p.step__label { padding-top: 1.32em; }
+/* 0.92em of top padding, not the body's 0.75em: the label is set smaller than
+   the line it labels, so equal padding leaves their baselines about 5px apart
+   and the label reads as floating above its own row. The extra drops it onto
+   the lead's baseline — revisit if either font-size moves. */
+.slide .body p.step__label {
+  margin: 0;
+  padding: 0.92em 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--color-coral);
+  white-space: nowrap;
+  border-top: 1px solid var(--line);
+}
+.slide .step__body { padding: 0.75em 0 0.8em; border-top: 1px solid var(--line); }
+/* The first rule would double up under the lead, which already sits on one. */
+.slide .step:first-child > .step__label,
+.slide .step:first-child > .step__body { border-top: none; padding-top: 0.2em; }
+.slide .step:first-child > .step__label { padding-top: 0.37em; }
+.slide .body p.step__lead { margin: 0; font-size: 1.02em; }
+.slide .body p.step__note {
+  margin: 0.35em 0 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body p.step__note strong { color: var(--color-ink); }
+/* A run of settings reads as a spec sheet, so the field name sits ahead of the
+   value in the label face rather than being folded into a sentence. No column
+   width: a tab stop here only pushes the value away from its own key. */
+.slide .spec-key {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--muted);
+}
+/* Ties the compound count to the note that says three of them failed. Set as a
+   superscript rather than picked out in colour: it is a reference mark, and a
+   coloured one reads as emphasis on the number it follows. */
+.slide .spec-ref {
+  font-size: 0.7em;
+  vertical-align: super;
+  line-height: 0;
+}
+.slide .body p.step__note--caveat { margin-top: 0.3em; font-size: 0.72em; }
+/* The figure carries what two steps of prose used to: the two tensors, the
+   block it pools, and the two members falling out of one choice. Sized by
+   width, with the height following its 2894x655 aspect. */
+.slide .boltz-figure { flex: 0 0 auto; margin: 0.9em 0 0; }
+.slide .boltz-figure img { display: block; width: 100%; height: auto; }
+
+.slide .block-tbl { width: 100%; border-collapse: collapse; font-size: 0.84em; }
+.slide .block-tbl th,
+.slide .block-tbl td { padding: 0.26em 0.7em; text-align: left; }
+.slide .block-tbl tbody th {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.slide .block-tbl tbody td { color: var(--muted); }
+.slide .block-tbl .block-tbl__num { text-align: right; width: 6em; color: var(--color-ink); }
+.slide .block-tbl tbody tr { border-bottom: 1px solid var(--line); }
+/* The two columns the next band is about. */
+.slide .block-tbl .block-row--key th,
+.slide .block-tbl .block-row--key td { background: var(--color-peach); color: var(--color-ink); }
+
+.slide .gain-bars { display: grid; gap: 0.4em; }
+.slide .gain-bar { display: flex; align-items: center; gap: 1em; font-size: 0.82em; }
+.slide .gain-bar__name { flex: 0 0 12em; color: var(--color-ink); }
+.slide .gain-bar__track {
+  flex: 1 1 auto;
+  height: 1.15em;
+  border-radius: 0.15em;
+  background: color-mix(in srgb, var(--color-line) 60%, transparent);
+  overflow: hidden;
+}
+.slide .gain-bar__track i { display: block; height: 100%; background: var(--color-coral); }
+.slide .gain-bar__num { flex: 0 0 4em; text-align: right; color: var(--color-ink); }
+.slide .gain-bar--rest .gain-bar__name,
+.slide .gain-bar--rest .gain-bar__num { color: var(--muted); }
+.slide .gain-bar--rest .gain-bar__track i { background: var(--color-blue); opacity: 0.45; }
+
+
+/* ------------------------------------------------------- Strategy: the feature */
+body[data-mode="slide"] .slide.is-active .pred-body { gap: 0; justify-content: flex-start; }
+body[data-mode="slide"] .slide.is-active .pred2-body { gap: 0; justify-content: flex-start; }
+.slide .body p.pred-lead { flex: 0 0 auto; margin: 0.7em 0 0; font-size: 1.02em; }
+.slide .pred-lead__sub { font-size: 0.82em; color: var(--muted); }
+
+/* Figure 2: the four log2fc variants, observed above predicted. */
+/* The report's figures, reproduced rather than reinterpreted: each chart is
+   rendered at the pixel size it has on the report's 920px-wide page and then
+   scaled, so type, margins and proportions come across unchanged. */
+.slide .zoom { position: relative; overflow: hidden; }
+.slide .zoom > .chart { position: absolute; top: 0; left: 0; transform-origin: top left; }
+
+/* Panels left at the report's proportions, the reading of each row on the
+   right, aligned to it. */
+.slide .pred-grid {
+  flex: 0 0 auto;
+  margin-top: 0.5em;
+  display: grid;
+  grid-template-columns: 520px 520px 1fr;
+  column-gap: 18px;
+  row-gap: 0;
+  align-items: center;
+}
+/* Placed explicitly: a spanning item confuses auto-flow into scattering the
+   panels across whatever cells are left. */
+.slide .pred-grid > :nth-child(1) { grid-area: 1 / 1; }
+.slide .pred-grid > :nth-child(2) { grid-area: 1 / 2; }
+.slide .pred-grid > :nth-child(3) { grid-area: 1 / 3; }
+.slide .pred-grid > :nth-child(4) { grid-area: 2 / 1 / 3 / 3; }
+.slide .pred-grid > :nth-child(5) { grid-area: 3 / 1; }
+.slide .pred-grid > :nth-child(6) { grid-area: 3 / 2; }
+.slide .pred-grid > :nth-child(7) { grid-area: 3 / 3; }
+.slide .pred-arrow {
+  padding: 0.1em 0;
+  text-align: center;
+  font-size: 1.4em;
+  line-height: 1;
+  color: var(--color-coral);
+}
+.slide .zoom--panel { width: 520px; height: 322px; border-radius: 0.5em; }
+.slide .zoom--panel > .chart { width: 453px; height: 280px; transform: scale(1.1479); }
+/* The row the slide is arguing for. */
+.slide .zoom--pred { box-shadow: inset 0 0 0 2px var(--color-coral); }
+
+.slide .pred-say { padding-left: 1.6em; border-left: 1px solid var(--line); }
+.slide .body p.pred-say__head {
+  margin: 0 0 0.4em;
+  font-size: 0.86em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.slide .pred-say--pred .pred-say__head { color: var(--color-coral); }
+.slide .body ul.pred-say__list { margin: 0; padding-left: 1.1em; }
+.slide .body ul.pred-say__list li {
+  margin: 0;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+.slide .body ul.pred-say__list li + li { margin-top: 0.5em; }
+.slide .body .pred-say li strong { color: var(--color-ink); }
+
+/* Report: 920x210 for two rows. One row needs less, and the room it frees
+   goes into the cells rather than into white space. */
+/* Report: 210px holds two 59px rows plus 92px of labels and legend. One row
+   needs 151, and keeping the extra would only stretch the cells. */
+.slide .zoom--corr { width: 1720px; height: 205px; margin: 0.2em auto 0; }
+.slide .zoom--corr > .chart { width: 920px; height: 109px; transform: scale(1.87); }
+
+.slide .body p.pred-note {
+  flex: 0 0 auto;
+  margin: 0.85em 0 0;
+  font-size: 0.8em;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.slide .body p.pred-note strong:not(.em) { color: var(--color-ink); }
+
+.slide .body p.band__claim--gap { margin-top: 1.05em; }
+
+.slide .abl { flex: 0 0 auto; width: 100%; border-collapse: collapse; margin-top: 0.4em; font-size: 0.82em; }
+.slide .abl th,
+.slide .abl td { padding: 0.2em 0.7em; text-align: left; }
+.slide .abl thead th {
+  font-weight: 400;
+  font-size: 0.9em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.slide .abl tbody th { font-weight: 400; color: var(--color-ink); white-space: nowrap; }
+.slide .abl tbody td { color: var(--muted); }
+.slide .abl tbody td:first-of-type { white-space: nowrap; }
+/* Widths chosen so the numbers land around the middle of the slide: against
+   the right edge they were hard to pair with the row label, and packed left
+   they left the right half empty. */
+.slide .abl th:first-child { width: 19em; }
+.slide .abl th:nth-child(2) { width: 15em; }
+.slide .abl .abl__dim { width: 8em; text-align: left; font-family: var(--font-mono); }
+.slide .abl .abl__num { width: 11em; text-align: center; font-family: var(--font-mono); }
+.slide .abl tbody tr { border-bottom: 1px solid var(--line); }
+
+/* Two levels: every pred row, and the pair the claim compares. */
+.slide .abl .abl-row--pred th,
+.slide .abl .abl-row--pred td { background: color-mix(in srgb, var(--color-peach) 38%, transparent); color: var(--color-ink); }
+.slide .abl .abl-row--key th,
+.slide .abl .abl-row--key td { background: var(--color-peach); color: var(--color-ink); }
+.slide .abl .abl-row--key th { font-weight: 700; }
+.slide .abl .abl-row--key .abl__num { font-weight: 700; }
+/* The cells that carry the claim: pred matches RDKit's MAE and beats it on
+   every Spearman. Needs tbody+td in the selector — the row colour rules above
+   are more specific than a bare class and were winning. */
+.slide .abl tbody td.abl__num--hit { color: var(--color-coral); font-weight: 700; }
+.slide .abl .abl-row--ref th,
+.slide .abl .abl-row--ref td { color: var(--muted); opacity: 0.85; }
+
+.slide .nowrap { white-space: nowrap; }
+
+.slide .body p.abl-foot {
+  flex: 0 0 auto;
+  margin: 0.4em 0 0;
+  font-size: 0.66em;
+  color: var(--muted);
+}
+.slide .body p.pred-close {
+  flex: 0 0 auto;
+  margin: 0.55em 0 0;
+  font-size: 0.95em;
+  color: var(--color-ink);
+  text-align: center;
+}
+.slide .body p.pred-close strong:not(.em) { color: var(--color-ink); }
+
+/* Slide 20 opens like slide 19: same gap under the heading rule, then the
+   figure sits close under its claim. */
+.slide .pred2-body > p.band__claim:first-child { margin: 0.7em 0 0.15em; }
+.slide .pred2-body .zoom--corr { margin-top: 0; }
+.slide .body p.band__claim--gap { margin-top: 0.75em; }
+.slide .pred2-body .abl { margin-top: 0.15em; }
+
+/* The conclusion, centred so it reads as one. */
+/* .em only carries colour by convention, so the weight comes from the line —
+   which it should anyway, being the slide's conclusion. */
+.slide .body p.pred-close { text-align: center; font-size: 1.05em; font-weight: 700; }
+
+/* Counts differ by feature: the observed assay only covers what was measured,
+   and the Boltz columns miss the compounds that would not co-fold. */
+.slide .corr-caveat {
+  margin-left: 1.6em;
+  font-size: 0.62em;
+  color: var(--muted);
+}
+
+/* =========================================== AI section: three intro candidates
+   Same argument, three shapes. Two of these blocks go when the author picks. */
+
+/* --- The rig, and what came out of it ------------------------------------- */
+/* The slide claims one thing caused the other, so it is stacked rather than
+   split: the environment across the top, what came out of it underneath. Side
+   by side, the two columns read as a comparison, which is the wrong reading. */
+body[data-mode="slide"] .slide.is-active .rig-body { gap: 0; justify-content: center; }
+.slide .body p.rig-lead { flex: 0 0 auto; margin: 0 0 2em; font-size: 1.05em; }
+.slide .rig-block { flex: 0 0 auto; }
+.slide .rig-block + .rig-block { margin-top: 2.3em; }
+.slide .body p.rig-label {
+  margin: 0 0 0.7em;
+  font-size: 0.76em;
+  letter-spacing: 0.06em;
+  color: var(--color-coral);
+}
+/* Five readings of one machine, so they sit in a single bordered strip with
+   hairlines between them rather than as five separate cards — a spec plate,
+   not a set of facts that happen to be near each other. */
+.slide .rig-strip {
+  display: grid;
+  /* Not five equal columns: the machine name is the longest value and "1" the
+     shortest, and equal columns wrapped the first onto two lines while leaving
+     the third half empty. Sized to the content instead. */
+  grid-template-columns: 1.3fr 1.15fr 0.5fr 1.1fr 1.05fr;
+  background: rgba(239, 159, 140, 0.08);
+  border: 1.5px solid var(--color-coral);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px -22px rgba(239, 159, 140, 0.5);
+  padding: 1.35em 0;
+}
+.slide .rig-spec { padding: 0 1.3em; }
+.slide .rig-spec + .rig-spec { border-left: 1px solid rgba(239, 159, 140, 0.45); }
+.slide .body p.rig-spec__key {
+  margin: 0;
+  font-size: 0.74em;
+  color: var(--muted);
+}
+.slide .body p.rig-spec__val { margin: 0.34em 0 0; font-size: 1em; line-height: 1.35; }
+/* What the other teams had and this setup did not. It qualifies the strip
+   above it, so it hangs off its right edge in the aside size. */
+.slide .body p.rig-foot {
+  margin: 0.6em 0 0;
+  font-size: 0.72em;
+  color: var(--muted);
+  text-align: right;
+}
+/* Four readings of equal size. A bulleted list put them in a queue and made
+   the last one look like an afterthought; on a row they are four facts, and
+   the figures line up along one baseline. */
+.slide .rig-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 1.6em;
+}
+.slide .rig-stat { border-top: 1px solid var(--line); padding-top: 0.8em; }
+.slide .body p.rig-stat__fig {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.85em;
+  line-height: 1.05;
+  color: var(--color-blue);
+}
+/* The unit rides on the figure's baseline rather than sitting under it, so
+   "4" and "th / 95" read as one reading. */
+.slide .rig-stat__unit {
+  margin-left: 0.35em;
+  font-size: 0.38em;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.slide .body p.rig-stat__cap { margin: 0.4em 0 0; font-size: 0.74em; color: var(--muted); }
+/* Centred, like every other closing line in the deck: it closes the two blocks
+   above it rather than starting a new paragraph at the left margin. */
+.slide .body p.rig-close {
+  flex: 0 0 auto;
+  margin: 2.3em 0 0;
+  font-size: 1.02em;
+  text-align: center;
+}
+
+/* ------------------------------------------------ Who wrote it, and where */
+/* Three tools, three cards. Not the deck's .steps idiom: steps are a procedure
+   read top to bottom, and these three ran alongside each other. Equal height
+   so the shortest card does not read as the least important. */
+body[data-mode="slide"] .slide.is-active .setup-body { gap: 0; justify-content: center; }
+.slide .body p.tools-lead { flex: 0 0 auto; margin: 0 0 1.5em; font-size: 1.05em; }
+.slide .tools-row {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 1.5em;
+  align-items: stretch;
+}
+/* The accent sits on the top edge rather than the border all round: three
+   fully coloured cards would compete, and the deck only ever colours one
+   thing per group. */
+.slide .tool-card {
+  padding: 1.1em 1.3em 1.2em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--line);
+  border-radius: 4px 4px 18px 18px;
+}
+.slide .tool-card--cc { border-top-color: var(--color-coral); }
+.slide .tool-card--cx { border-top-color: var(--color-blue); }
+.slide .tool-card--gpt { border-top-color: var(--color-teal); }
+.slide .body p.tool-card__name {
+  margin: 0 0 0.75em;
+  padding-bottom: 0.6em;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 1.3em;
+  line-height: 1.1;
+}
+/* The model, not a second name: it rides on the same line at aside size so the
+   card is still found by "Codex" rather than by "Codex 5.5". */
+.slide .tool-card__ver {
+  margin-left: 0.45em;
+  font-family: var(--font-mono);
+  font-size: 0.5em;
+  color: var(--muted);
+}
+.slide .body p.tool-card__line {
+  margin: 0.45em 0 0;
+  font-size: 0.88em;
+  line-height: 1.45;
+}
+.slide .body p.tool-card__line:first-of-type { margin-top: 0; }
+/* Six decisions that do not depend on each other, so they sit in one plate on
+   a 3x2 grid and can be read in any order — the thing a numbered list denies.
+   One plate rather than six cards keeps them out of the tools' weight class:
+   the cards above are the subject, these are the settings. */
+/* Two registers on one line: the section name, then what it is for. The name
+   is Japanese, so it takes colour rather than the mono face — the deck keeps
+   mono for runs of Latin and numerals. */
+.slide .body p.env-label {
+  flex: 0 0 auto;
+  margin: 1.5em 0 0.7em;
+  font-size: 0.76em;
+  color: var(--muted);
+}
+.slide .env-label__key { margin-right: 0.9em; color: var(--color-coral); }
+.slide .env-plate {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0.5em 0;
+}
+.slide .env-cell { padding: 0.8em 1.3em; }
+/* Hairlines between cells, drawn by the cells themselves: a border on every
+   cell would double up and box in the outer edges. */
+.slide .env-cell:not(:nth-child(3n + 1)) { border-left: 1px solid var(--line); }
+.slide .env-cell:nth-child(n + 4) { border-top: 1px solid var(--line); }
+.slide .body p.env-cell__key {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--muted);
+}
+.slide .body p.env-cell__val { margin: 0.3em 0 0; font-size: 1em; line-height: 1.35; }
+
+/* ------------------------------------------------ Where agents paid off */
+/* Two sections on one slide, so each gets a heading and the second sits under
+   a rule. The headings are Japanese, which means they take colour rather than
+   the mono face — the deck keeps mono for runs of Latin and numerals. */
+body[data-mode="slide"] .slide.is-active .dr-body { gap: 0; justify-content: center; }
+.slide .body p.dr-sec {
+  flex: 0 0 auto;
+  margin: 0 0 0.9em;
+  font-size: 1.02em;
+  color: var(--color-coral);
+}
+.slide .dr-part {
+  flex: 0 0 auto;
+  margin-top: 1.1em;
+  padding-top: 1em;
+  border-top: 1px solid var(--line);
+}
+/* One box, then the split. The claim is that one of the two routes dies, so
+   the dead one is drawn: flat boxes, dashed, grey, and no arrow out of the
+   last of them. */
+.slide .dr-branch {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1.1em;
+  align-items: center;
+}
+.slide .dr-seed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  padding: 1.1em 1em;
+  background: var(--surface);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 16px;
+  text-align: center;
+}
+.slide .dr-seed b { font-size: 1.05em; }
+.slide .dr-seed i { font-style: normal; font-size: 0.72em; color: var(--muted); }
+/* The split is drawn by one rule down the left of the lanes: two elbows would
+   be more literal and two more things to keep aligned. */
+.slide .dr-lanes {
+  display: grid;
+  row-gap: 0.85em;
+  padding-left: 1.1em;
+  border-left: 1px solid var(--line);
+}
+.slide .dr-lane { display: flex; align-items: stretch; gap: 0.55em; }
+/* The dead lane is the counter-example, not half the slide: flat boxes at a
+   smaller size, marked once at the head so the eye can skip the row. */
+.slide .dr-lane--bad { align-items: center; }
+.slide .dr-cross {
+  flex: 0 0 auto;
+  font-size: 0.9em;
+  color: var(--muted);
+}
+.slide .dr-flat {
+  padding: 0.6em 1.1em;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  font-size: 0.84em;
+  color: var(--muted);
+}
+.slide .dr-flat--dead { border-style: dashed; }
+.slide .dr-box {
+  flex: 1 1 0;
+  padding: 1em 0.9em 1.05em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--color-blue);
+  border-radius: 4px 4px 16px 16px;
+}
+/* The last step is the one that is easy to skip — taking the paper as written
+   instead of fitting it to the task — so it is the one that takes colour. */
+.slide .dr-box--out {
+  border-color: var(--color-coral);
+  border-top-color: var(--color-coral);
+  background: rgba(239, 159, 140, 0.1);
+}
+/* The number rides on the title's line rather than above it. Stacked, it cost
+   a whole line per card and left the cards mostly air. */
+.slide .dr-box__no {
+  margin-right: 0.6em;
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  color: var(--muted);
+}
+/* 1.05em, not larger: "Deep Research" plus its number is the widest of the
+   four and takes a second line above this size, which then sets the height of
+   the whole row. */
+.slide .body p.dr-box__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  line-height: 1.15;
+}
+.slide .body p.dr-box__sub {
+  margin: 0.45em 0 0;
+  font-size: 0.8em;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.slide .dr-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+/* What came out of the route, banded off under it: it is the result, not a
+   step, so it does not get a card on the chart. */
+.slide .body p.dr-got {
+  flex: 0 0 auto;
+  margin: 1em 0 0;
+  font-size: 0.9em;
+  text-align: center;
+}
+.slide .dr-got__key { margin-right: 0.9em; font-size: 0.82em; color: var(--color-coral); }
+.slide .body p.dr-mcp__body { margin: 0; font-size: 0.95em; line-height: 1.45; }
+/* Said as it happened: one line asked, one line answered. A bulleted count of
+   what came back would be the same facts with none of the point, which is how
+   little work it was to ask for. Laid out the way a chat is — the question on
+   the right, the answer on the left — so it reads as a transcript at a glance
+   rather than as two more bullets. */
+.slide .dr-chat { margin-top: 0.7em; display: grid; row-gap: 0.5em; }
+.slide .body p.dr-chat__row {
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6em;
+}
+.slide .dr-chat__row--me { justify-content: flex-end; }
+.slide .dr-chat__row--ai { justify-content: flex-start; }
+/* Drawn rather than set in an emoji: the deck ships its own fonts, and an
+   emoji would render in whatever the viewer's system has. */
+.slide .dr-chat__icon {
+  flex: 0 0 auto;
+  width: 2.1em;
+  height: 2.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.slide .dr-chat__icon svg {
+  width: 62%;
+  height: 62%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.slide .dr-chat__icon .dr-chat__eye { fill: currentColor; stroke: none; }
+.slide .dr-chat__icon--ai {
+  color: var(--color-teal);
+  border-color: rgba(122, 196, 184, 0.55);
+  background: rgba(122, 196, 184, 0.14);
+}
+/* One square corner each, on the side the speaker is on. */
+.slide .dr-chat__bubble {
+  max-width: 76%;
+  padding: 0.55em 1.1em;
+  border-radius: 18px 4px 18px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.86em;
+  line-height: 1.45;
+}
+.slide .dr-chat__bubble--ai {
+  border-radius: 4px 18px 18px 18px;
+  background: rgba(122, 196, 184, 0.14);
+  border-color: rgba(122, 196, 184, 0.55);
+}
+
+/* ------------------------------------------------ Where agents fall down */
+body[data-mode="slide"] .slide.is-active .wk-body { gap: 0; justify-content: center; }
+.slide .body p.wk-lead { flex: 0 0 auto; margin: 0 0 1.2em; font-size: 1.05em; }
+/* Four incidents in one plate rather than four cards: they are one class of
+   problem with one cause, and four cards would argue they are four. Set small
+   — they are evidence for the line under them, not the subject of the slide. */
+.slide .wk-plate {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.3em 0;
+}
+.slide .wk-cell { padding: 0.7em 1.3em; }
+/* Hairlines drawn by the cells themselves; a border on every cell would double
+   up and box in the outer edges. */
+.slide .wk-cell:nth-child(even) { border-left: 1px solid var(--line); }
+.slide .wk-cell:nth-child(n + 3) { border-top: 1px solid var(--line); }
+.slide .body p.wk-cell__title { margin: 0; font-size: 0.88em; }
+.slide .body p.wk-cell__note {
+  margin: 0.2em 0 0;
+  font-size: 0.72em;
+  line-height: 1.45;
+  color: var(--muted);
+}
+/* What the four of them add up to. Kept at aside size, which is the size that
+   holds it on one line — set larger it wraps mid-clause, and a sentence broken
+   in the wrong place reads worse than a smaller one that is not. */
+.slide .body p.wk-obs {
+  flex: 0 0 auto;
+  margin: 1.3em 0 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+.slide .body p.wk-obs strong { color: var(--ink); }
+/* Two causes, one answer. Drawn as a join rather than said as a third bullet:
+   the point is that both failures have the same fix. */
+.slide .wk-why {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  margin-top: 1.2em;
+}
+.slide .wk-causes { flex: 1 1 0; display: grid; row-gap: 0.5em; }
+.slide .wk-cause {
+  padding: 0.55em 1.1em;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 0.84em;
+  color: var(--muted);
+}
+.slide .wk-cause strong { color: var(--ink); }
+.slide .wk-arrow { flex: 0 0 auto; font-family: var(--font-mono); color: var(--muted); }
+.slide .wk-fix {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  padding: 0.9em 1.3em;
+  background: rgba(239, 159, 140, 0.1);
+  border: 1.5px solid var(--color-coral);
+  border-radius: 14px;
+}
+.slide .wk-fix b { font-size: 1.02em; }
+.slide .wk-fix i { font-style: normal; font-size: 0.76em; color: var(--muted); }
+.slide .body p.wk-close {
+  flex: 0 0 auto;
+  margin: 1.3em 0 0;
+  font-size: 0.98em;
+  text-align: center;
+}
+
+/* ------------------------------------------------ The other teams */
+/* Shaped after the challenge's own wrap-up table: what each team built, and
+   which of the auxiliary sets they used. MAE is deliberately absent — the
+   results slide two back already ranks them, and repeating it here would make
+   this a second leaderboard instead of a look at the methods. */
+body[data-mode="slide"] .slide.is-active .peers-body { gap: 0; justify-content: center; }
+.slide .body p.peers-lead { flex: 0 0 auto; margin: 0 0 1em; font-size: 1em; }
+.slide .peers-table {
+  flex: 0 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+}
+.slide .peers-table th {
+  padding: 0 0.55em 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--muted);
+  text-align: left;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--line);
+}
+.slide .peers-table td {
+  padding: 0.45em 0.55em;
+  border-bottom: 1px solid var(--line);
+  vertical-align: baseline;
+}
+.slide .peers-table tbody tr:last-child td { border-bottom: none; }
+.slide .peers-table th.peers-rank,
+.slide .peers-table td.peers-rank {
+  width: 1%;
+  padding-left: 0;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-align: right;
+}
+/* Who they are, not what they called themselves: the team names are on the
+   results slide and adding them here cost a second line in every row. Two rows
+   share a lab, which the rank column and the "N 位と同じ" text already say. */
+.slide .peers-table td.peers-org { width: 1%; white-space: nowrap; }
+.slide .peers-table td.peers-org a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+/* The one column with slack to give. Set smaller than the rest: nobody reads
+   nine model stacks off a screen, so it is there to be scanned for a familiar
+   name, not read. */
+.slide .peers-table td.peers-how { font-size: 0.86em; color: var(--muted); }
+/* Six narrow columns of the same width, so a tick can be found by position
+   rather than by reading its heading each time. */
+.slide .peers-table th.peers-flag,
+.slide .peers-table td.peers-flag {
+  width: 1%;
+  padding-left: 0.7em;
+  padding-right: 0.7em;
+  font-family: var(--font-mono);
+  text-align: center;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.slide .peers-table td.peers-y { color: var(--color-teal); }
+.slide .peers-table td.peers-own { color: var(--color-coral); }
+/* Centred like the tick columns beside it rather than right-aligned like a
+   figure: the ranking is already the order, so these read as one more column
+   to glance across, not as a column of numbers to compare digit by digit. */
+.slide .peers-table th.peers-mae,
+.slide .peers-table td.peers-mae {
+  width: 1%;
+  padding-left: 1.1em;
+  padding-right: 0;
+  font-family: var(--font-mono);
+  text-align: center;
+  white-space: nowrap;
+}
+/* Six of the nine are companies, which is the point of the row of tags: the
+   one unlabelled academic pair and the one unlabelled individual are what the
+   eye is left with. */
+.slide .peers-tag {
+  margin-left: 0.6em;
+  padding: 0.12em 0.5em;
+  border-radius: 999px;
+  background: var(--color-blue);
+  font-size: 0.72em;
+  line-height: 1.5;
+  color: #fff;
+  vertical-align: 0.08em;
+}
+.slide .peers-table .peers-row--corp td { background: rgba(91, 123, 176, 0.07); }
+.slide .peers-table .peers-row--corp td:first-child {
+  border-top-left-radius: 0.25em;
+  border-bottom-left-radius: 0.25em;
+}
+.slide .peers-table .peers-row--corp td:last-child {
+  border-top-right-radius: 0.25em;
+  border-bottom-right-radius: 0.25em;
+}
+/* One's own row, in the same peach the results table uses, so the eye looks for
+   the same thing in both. */
+.slide .peers-table .peers-row--me td { background: var(--color-peach); color: var(--ink); }
+.slide .peers-table .peers-row--me td.peers-how { color: var(--ink); }
+.slide .peers-table .peers-row--me td:first-child {
+  border-top-left-radius: 0.25em;
+  border-bottom-left-radius: 0.25em;
+}
+.slide .peers-table .peers-row--me td:last-child {
+  border-top-right-radius: 0.25em;
+  border-bottom-right-radius: 0.25em;
+}
+.slide .body p.peers-close {
+  flex: 0 0 auto;
+  margin: 1.1em 0 0;
+  font-size: 0.85em;
+  color: var(--muted);
+  text-align: center;
+}
+.slide .body p.peers-close strong { color: var(--ink); }
+
+/* ------------------------------------------------ Three reports worth reading */
+/* Three cards, because they are three unrelated ideas rather than three steps.
+   The rank sits with the name to say plainly that none of this is about where
+   they placed — two are well down the board and one is on the other track. */
+body[data-mode="slide"] .slide.is-active .reads-body { gap: 0; justify-content: center; }
+.slide .body p.reads-lead { flex: 0 0 auto; margin: 0 0 1.8em; font-size: 1.05em; }
+.slide .reads-row {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 1.1em;
+  align-items: stretch;
+}
+.slide .read-card {
+  padding: 1.15em 1.2em 1.3em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--color-blue);
+  border-radius: 4px 4px 18px 18px;
+}
+/* The structure track is a different competition, so its card takes the other
+   accent rather than passing as a third activity entry. */
+.slide .read-card--t2 { border-top-color: var(--color-teal); }
+/* The line is mixed: a rank in Japanese and a handle in Latin. Only the handle
+   takes the mono face — a full-width space inside a mono run renders visibly,
+   and the deck keeps Japanese out of that face anyway. */
+.slide .body p.read-card__who { margin: 0; font-size: 0.86em; }
+.slide .read-card__name { font-family: var(--font-mono); }
+.slide .read-card__rank { margin-right: 0.7em; color: var(--muted); }
+.slide .read-card__who a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+.slide .body p.read-card__hook {
+  margin: 0.6em 0 0;
+  padding-bottom: 0.7em;
+  border-bottom: 1px solid var(--line);
+  font-size: 1.12em;
+  line-height: 1.35;
+}
+.slide .body p.read-card__body { margin: 0.75em 0 0; font-size: 0.84em; line-height: 1.5; }
+.slide .body p.read-card__note {
+  margin: 0.5em 0 0;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body p.read-card__note strong { color: var(--ink); }
+/* Centred, like every other closing line in the deck: it closes the four cards
+   above it rather than starting a new paragraph at the left margin. */
+.slide .body p.reads-close {
+  flex: 0 0 auto;
+  margin: 1.5em 0 0;
+  font-size: 1em;
+  text-align: center;
+}
+
+/* ------------------------------------------------ The next challenge */
+/* The banner does the work of saying "this is a real, open thing"; the spec
+   list beside it does the work of saying whether it is worth entering. */
+body[data-mode="slide"] .slide.is-active .next-body { gap: 0; justify-content: center; }
+.slide .body p.next-lead { flex: 0 0 auto; margin: 0; font-size: 1.12em; }
+.slide .next-split {
+  flex: 0 0 auto;
+  display: grid;
+  /* Near enough to even: at 0.82fr the banner ended a hundred pixels short of
+     the list beside it and the row read as a picture with a gap under it. */
+  grid-template-columns: 1fr 1.1fr;
+  column-gap: 2em;
+  align-items: start;
+}
+.slide .next-figure { margin: 0; }
+.slide .next-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.slide .next-figure figcaption {
+  margin-top: 0.5em;
+  font-size: 0.68em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .next-figure figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+.slide .next-spec { margin: 0; }
+.slide .next-spec > div {
+  display: grid;
+  grid-template-columns: 6.2em 1fr;
+  align-items: baseline;
+  column-gap: 1.1em;
+  padding-top: 0.7em;
+  margin-top: 0.7em;
+  border-top: 1px solid var(--line);
+}
+.slide .next-spec > div:first-child { padding-top: 0; margin-top: 0; border-top: none; }
+.slide .next-spec dt { font-size: 0.82em; color: var(--color-coral); }
+.slide .next-spec dd { margin: 0; font-size: 0.92em; line-height: 1.45; }
+.slide .body p.next-close {
+  flex: 0 0 auto;
+  margin: 1.5em 0 0;
+  font-size: 0.95em;
+  text-align: center;
+}
+/* The official title, under the line that reacts to it. Grey and small: it is
+   the name of the thing, not the news about it. */
+.slide .body p.next-sub {
+  flex: 0 0 auto;
+  margin: 0.35em 0 1.4em;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* The link is the words, not the URL: a ghost.io path spelled out across the
+   foot of a slide is unreadable from the back of a room and unclickable from
+   a projector. */
+.slide .next-close a {
+  color: var(--color-blue);
+  text-decoration: underline;
+  text-decoration-color: var(--color-peach);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.24em;
+}
+
+/* ------------------------------------------------ Into the bonus block */
+/* A divider, not a slide: no heading, because an h2 would put it in the run of
+   content slides it is meant to separate. The hero is the deck's only other
+   headless one, and this borrows its shape. */
+.slide.divider { grid-template-rows: 1fr; }
+body[data-mode="slide"] .slide.is-active.divider .body,
+.slide.divider .body { display: block; height: 100%; }
+.slide.divider .open-stage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 1.4em;
+  border-left: 6px solid var(--color-peach);
+}
+.slide .body p.open-kicker {
+  margin: 0 0 1.1em;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  letter-spacing: 0.22em;
+  color: var(--color-coral);
+}
+.slide .body p.open-big {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 3em;
+  line-height: 1.15;
+}
+.slide .open-big em { font-style: normal; color: var(--em); }
+/* What is behind the door, so the divider is also a contents page for the
+   three slides that follow it. */
+.slide .open-list { margin-top: 2.2em; display: grid; row-gap: 0.85em; }
+.slide .open-item {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  align-items: baseline;
+  column-gap: 1.4em;
+  padding-top: 0.75em;
+  border-top: 1px solid var(--line);
+}
+.slide .open-item b { font-size: 1.05em; }
+.slide .open-item i { font-style: normal; font-size: 0.88em; color: var(--muted); }
+.slide .open-item i strong { color: var(--ink); }
+
+/* ------------------------------------------------ The next challenge */
+/* The banner does the work of saying "this is a real, open thing"; the spec
+   list beside it does the work of saying whether it is worth entering. */
+body[data-mode="slide"] .slide.is-active .next-body { gap: 0; justify-content: center; }
+.slide .body p.next-lead { flex: 0 0 auto; margin: 0; font-size: 1.12em; }
+.slide .next-split {
+  flex: 0 0 auto;
+  display: grid;
+  /* Near enough to even: at 0.82fr the banner ended a hundred pixels short of
+     the list beside it and the row read as a picture with a gap under it. */
+  grid-template-columns: 1fr 1.1fr;
+  column-gap: 2em;
+  align-items: start;
+}
+.slide .next-figure { margin: 0; }
+.slide .next-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.slide .next-figure figcaption {
+  margin-top: 0.5em;
+  font-size: 0.68em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .next-figure figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+.slide .next-spec { margin: 0; }
+.slide .next-spec > div {
+  display: grid;
+  grid-template-columns: 6.2em 1fr;
+  align-items: baseline;
+  column-gap: 1.1em;
+  padding-top: 0.7em;
+  margin-top: 0.7em;
+  border-top: 1px solid var(--line);
+}
+.slide .next-spec > div:first-child { padding-top: 0; margin-top: 0; border-top: none; }
+.slide .next-spec dt { font-size: 0.82em; color: var(--color-coral); }
+.slide .next-spec dd { margin: 0; font-size: 0.92em; line-height: 1.45; }
+.slide .body p.next-close {
+  flex: 0 0 auto;
+  margin: 1.5em 0 0;
+  font-size: 0.95em;
+  text-align: center;
+}
+/* The official title, under the line that reacts to it. Grey and small: it is
+   the name of the thing, not the news about it. */
+.slide .body p.next-sub {
+  flex: 0 0 auto;
+  margin: 0.35em 0 1.4em;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* The link is the words, not the URL: a ghost.io path spelled out across the
+   foot of a slide is unreadable from the back of a room and unclickable from
+   a projector. */
+.slide .next-close a {
+  color: var(--color-blue);
+  text-decoration: underline;
+  text-decoration-color: var(--color-peach);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.24em;
+}
+
+/* ------------------------------------------------ Into the bonus block */
+/* A divider, not a slide: no heading, because an h2 would put it in the run of
+   content slides it is meant to separate. The hero is the deck's only other
+   headless one, and this borrows its shape. */
+.slide.divider { grid-template-rows: 1fr; }
+body[data-mode="slide"] .slide.is-active.divider .body,
+.slide.divider .body { display: block; height: 100%; }
+.slide.divider .open-stage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 1.4em;
+  border-left: 6px solid var(--color-peach);
+}
+.slide .body p.open-kicker {
+  margin: 0 0 1.1em;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  letter-spacing: 0.22em;
+  color: var(--color-coral);
+}
+.slide .body p.open-big {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 3em;
+  line-height: 1.15;
+}
+.slide .open-big em { font-style: normal; color: var(--em); }
+/* What is behind the door, so the divider is also a contents page for the
+   three slides that follow it. */
+.slide .open-list { margin-top: 2.2em; display: grid; row-gap: 0.85em; }
+.slide .open-item {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  align-items: baseline;
+  column-gap: 1.4em;
+  padding-top: 0.75em;
+  border-top: 1px solid var(--line);
+}
+.slide .open-item b { font-size: 1.05em; }
+.slide .open-item i { font-style: normal; font-size: 0.88em; color: var(--muted); }
+.slide .open-item i strong { color: var(--ink); }
+
+/* ------------------------------------------------ Conclusion, after the bonus */
+/* Two cards with solid heads, because the slide is a summary and a summary
+   wants two labelled boxes rather than a run of prose: what the model did on
+   the left, how the work was run on the right. No lead line — the ranking has
+   been said three times by here, and the heading is the only introduction a
+   conclusion needs. */
+body[data-mode="slide"] .slide.is-active .sum-body { gap: 0; justify-content: center; }
+.slide .sum-split {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 1.8em;
+  align-items: stretch;
+}
+.slide .sum-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+/* The head is the only reversed-out type in the deck. It earns it here: two
+   solid bars are what make the pair read as two lists rather than one. */
+.slide .body p.sum-card__head {
+  margin: 0;
+  padding: 0.7em 1.2em;
+  font-size: 1.05em;
+  color: #fff;
+  text-align: center;
+}
+.slide .sum-card--model .sum-card__head { background: var(--color-blue); }
+.slide .sum-card--run .sum-card__head { background: var(--color-coral); }
+.slide .sum-card__body { padding: 1.2em 1.3em 1.3em; }
+.slide .sum-item + .sum-item { margin-top: 1.1em; }
+/* The key sits in a tinted bar of its own, the way the reference deck does it:
+   the eye can take the six keys alone and skip the notes under them. */
+.slide .body p.sum-item__key {
+  margin: 0;
+  padding: 0.4em 0.9em;
+  border-radius: 8px;
+  font-size: 0.98em;
+  text-align: center;
+}
+.slide .sum-card--model .sum-item__key { background: rgba(91, 123, 176, 0.13); }
+.slide .sum-card--run .sum-item__key { background: rgba(239, 159, 140, 0.16); }
+.slide .body p.sum-item__note {
+  margin: 0.5em 0 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body p.sum-item__note strong { color: var(--ink); }
+.slide .body p.sum-close {
+  flex: 0 0 auto;
+  margin: 1.6em 0 0;
+  font-size: 1.1em;
+  text-align: center;
+}
+
+/* ------------------------------------------------ The next challenge */
+/* The banner does the work of saying "this is a real, open thing"; the spec
+   list beside it does the work of saying whether it is worth entering. */
+body[data-mode="slide"] .slide.is-active .next-body { gap: 0; justify-content: center; }
+.slide .body p.next-lead { flex: 0 0 auto; margin: 0; font-size: 1.12em; }
+.slide .next-split {
+  flex: 0 0 auto;
+  display: grid;
+  /* Near enough to even: at 0.82fr the banner ended a hundred pixels short of
+     the list beside it and the row read as a picture with a gap under it. */
+  grid-template-columns: 1fr 1.1fr;
+  column-gap: 2em;
+  align-items: start;
+}
+.slide .next-figure { margin: 0; }
+.slide .next-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.slide .next-figure figcaption {
+  margin-top: 0.5em;
+  font-size: 0.68em;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.slide .next-figure figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+.slide .next-spec { margin: 0; }
+.slide .next-spec > div {
+  display: grid;
+  grid-template-columns: 6.2em 1fr;
+  align-items: baseline;
+  column-gap: 1.1em;
+  padding-top: 0.7em;
+  margin-top: 0.7em;
+  border-top: 1px solid var(--line);
+}
+.slide .next-spec > div:first-child { padding-top: 0; margin-top: 0; border-top: none; }
+.slide .next-spec dt { font-size: 0.82em; color: var(--color-coral); }
+.slide .next-spec dd { margin: 0; font-size: 0.92em; line-height: 1.45; }
+.slide .body p.next-close {
+  flex: 0 0 auto;
+  margin: 1.5em 0 0;
+  font-size: 0.95em;
+  text-align: center;
+}
+/* The official title, under the line that reacts to it. Grey and small: it is
+   the name of the thing, not the news about it. */
+.slide .body p.next-sub {
+  flex: 0 0 auto;
+  margin: 0.35em 0 1.4em;
+  font-size: 0.82em;
+  color: var(--muted);
+}
+/* The link is the words, not the URL: a ghost.io path spelled out across the
+   foot of a slide is unreadable from the back of a room and unclickable from
+   a projector. */
+.slide .next-close a {
+  color: var(--color-blue);
+  text-decoration: underline;
+  text-decoration-color: var(--color-peach);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.24em;
+}
+
+/* ------------------------------------------------ Into the bonus block */
+/* A divider, not a slide: no heading, because an h2 would put it in the run of
+   content slides it is meant to separate. The hero is the deck's only other
+   headless one, and this borrows its shape. */
+.slide.divider { grid-template-rows: 1fr; }
+body[data-mode="slide"] .slide.is-active.divider .body,
+.slide.divider .body { display: block; height: 100%; }
+.slide.divider .open-stage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 1.4em;
+  border-left: 6px solid var(--color-peach);
+}
+.slide .body p.open-kicker {
+  margin: 0 0 1.1em;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  letter-spacing: 0.22em;
+  color: var(--color-coral);
+}
+.slide .body p.open-big {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 3em;
+  line-height: 1.15;
+}
+.slide .open-big em { font-style: normal; color: var(--em); }
+/* What is behind the door, so the divider is also a contents page for the
+   three slides that follow it. */
+.slide .open-list { margin-top: 2.2em; display: grid; row-gap: 0.85em; }
+.slide .open-item {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  align-items: baseline;
+  column-gap: 1.4em;
+  padding-top: 0.75em;
+  border-top: 1px solid var(--line);
+}
+.slide .open-item b { font-size: 1.05em; }
+.slide .open-item i { font-style: normal; font-size: 0.88em; color: var(--muted); }
+.slide .open-item i strong { color: var(--ink); }
+
+/* ------------------------------------------------ Conclusion, after the bonus */
+/* Two bands, one above the other, rather than two columns. Side by side each
+   line was half the width and wrapped, which is the wrong shape for the one
+   slide people copy down: full width buys a line per point at reading size. */
+body[data-mode="slide"] .slide.is-active .sum-body { gap: 0; justify-content: center; }
+.slide .body p.sum-lead { flex: 0 0 auto; margin: 0 0 1.3em; font-size: 1.05em; }
+.slide .sum-band { flex: 0 0 auto; }
+.slide .sum-band + .sum-band {
+  margin-top: 1.8em;
+  padding-top: 1.7em;
+  border-top: 1px solid var(--line);
+}
+.slide .body p.sum-band__label {
+  margin: 0 0 0.9em;
+  font-size: 0.86em;
+  color: var(--color-coral);
+}
+/* The deck's own `.slide .body ul` and `li` rules outrank a bare class. */
+.slide .body ul.sum-list { margin: 0; padding-left: 0; list-style: none; }
+.slide .body ul.sum-list li {
+  margin: 0 0 0.7em;
+  padding-left: 1.2em;
+  position: relative;
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.slide .body ul.sum-list li + li { margin-top: 0; }
+.slide .body ul.sum-list li:last-child { margin-bottom: 0; }
+.slide .body ul.sum-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 0.34em;
+  height: 0.34em;
+  border-radius: 50%;
+  background: var(--color-blue);
+}
+.slide .body ul.sum-list li b { color: var(--ink); }
+.slide .body ul.sum-list li strong { color: var(--ink); }
+.slide .body p.sum-close {
+  flex: 0 0 auto;
+  margin: 1.3em 0 0;
+  font-size: 1.05em;
+  text-align: center;
+}
