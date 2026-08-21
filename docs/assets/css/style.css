@@ -430,6 +430,11 @@ html[lang="ja"] {
 }
 html[lang="ja"] body { font-feature-settings: "palt" 1; }
 html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
+/* Zen Maru Gothic is a rounded gothic and sets a visibly smaller face than
+   Outfit or the system stack at the same size; palt then pulls it in further.
+   A step up on the running text only, so .lede, .note and every heading, card
+   and table keep their own rem sizes and the two pages stay comparable. */
+html[lang="ja"] p:not(.lede):not(.note), html[lang="ja"] li { font-size: 1.06rem; }
 
 /* Member roster table (aliases) */
 /* 560px was under what these tables need: the widest of them wants 947px, so
