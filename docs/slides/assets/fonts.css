@@ -1,0 +1,28 @@
+/* Bundled faces are Japanese-capable subsets built by scripts/build_fonts.py.
+   Rebuild after adding Japanese text that introduces new kanji — the script
+   warns about any character no bundled face can provide. */
+/* One variable face for the whole 100-900 range. The two files this replaces
+   were Google's latin / latin-ext split declared without the unicode-range
+   that makes a split work: identical descriptors meant the browser picked the
+   latin-ext file (2 of 95 ASCII characters) and reached the real one only by
+   per-glyph fallback. */
+@font-face {
+  font-family: "Outfit"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("vendor/fonts/outfit-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Zen Maru Gothic"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("vendor/fonts/zenmaru-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Zen Maru Gothic"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("vendor/fonts/zenmaru-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PlemolJP"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("vendor/fonts/plemoljp-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PlemolJP"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("vendor/fonts/plemoljp-700.woff2") format("woff2");
+}

@@ -329,6 +329,20 @@ pre {
   background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
 }
 pre code { background: none; border: 0; padding: 0; font-size: .84em; line-height: 1.55; }
+/* Back for the Japanese page only, which is the only one with a deck to point
+   at. #32 removed the original .hero-links because both of its buttons went
+   somewhere the navigation already reached; the deck is not in the navigation
+   at all, and is a different way to read the whole report rather than a jump
+   within it. */
+/* 24 + the hero's 30px of padding + #tldr's 40px puts the TL;DR heading 94px
+   below the button, matching the 95px #32 settled on between any two sections. */
+.hero-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 24px; }
+
+/* The one .btn on either page with Japanese in its label, so it steps off
+   --font-display: that stack is Outfit over system-ui with no Japanese face
+   behind it, by the design set out above the @font-face block. */
+.hero-links .btn { font-family: var(--font-body); font-weight: 700; }
+
 .official-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 
 /* ============================================================
@@ -416,6 +430,11 @@ html[lang="ja"] {
 }
 html[lang="ja"] body { font-feature-settings: "palt" 1; }
 html[lang="ja"] p:not(.lede), html[lang="ja"] li { line-height: 1.9; }
+/* Zen Maru Gothic is a rounded gothic and sets a visibly smaller face than
+   Outfit or the system stack at the same size; palt then pulls it in further.
+   A step up on the running text only, so .lede, .note and every heading, card
+   and table keep their own rem sizes and the two pages stay comparable. */
+html[lang="ja"] p:not(.lede):not(.note), html[lang="ja"] li { font-size: 1.06rem; }
 
 /* Member roster table (aliases) */
 /* 560px was under what these tables need: the widest of them wants 947px, so

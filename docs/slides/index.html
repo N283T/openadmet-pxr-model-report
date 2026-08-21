@@ -1,0 +1,2100 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>OpenADMET PXR Challenge — Track 1 Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The deck has no icon, and every capture would otherwise ask the server
+         for one and be told 404 — 36 lines of noise per run in a log kept for
+         real errors. An empty data URL stops the request being made. -->
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="assets/fonts.css">
+    <link rel="stylesheet" href="assets/css/deck.css">
+    <link rel="stylesheet" href="assets/css/slide.css">
+    <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+    <link rel="stylesheet" href="assets/css/site.css">
+    <link rel="stylesheet" href="assets/css/print.css" media="print">
+  </head>
+  <body>
+    <div id="deck">
+
+      <section class="slide title" id="s-01-title">
+        <div class="title-body">
+          <p class="eyebrow">Lab Seminar</p>
+          <h1>OpenADMET<br>PXR Challenge 参加報告</h1>
+          <!-- Setting up and then beginning a talk, in the order it happens,
+               for the moment when remembering a keyboard shortcut is the last
+               thing on hand. Hidden from captures; see deck.js. -->
+          <p class="title-actions" data-overflow-ignore>
+            <button id="deck-presenter-open" type="button">Presenter</button>
+            <button id="deck-fullscreen" type="button">Fullscreen</button>
+            <button id="deck-capture" type="button">Capture</button>
+            <button id="deck-timer-start" type="button">Start</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- The one slide with no h2 and no padding: a landing-page top view
+           rather than a slide, so the talk opens on the news and the mark
+           instead of on a heading. The layout lives in .hero in slide.css. -->
+      <section class="slide hero" id="s-02-overview">
+        <div class="body">
+          <div class="hero-stage">
+            <div class="hero-copy">
+              <p class="hero-eyebrow">OpenADMET Blind Challenge</p>
+              <h1>PXR Challenge に参加して<br><em>4 位</em>に入賞しました！</h1>
+              <p class="hero-sub">Challenge での戦略とモデルづくりの裏話をお話しします</p>
+              <p class="hero-stats">
+                <span class="hero-pill hero-pill--rank"><b>4th</b> / 103 teams</span>
+                <span class="hero-pill hero-pill--metric">MAE 0.4113</span>
+              </p>
+            </div>
+            <div class="hero-mark">
+              <img src="assets/img/challenge-logo.png" alt="OpenADMET PXR Induction Challenge logo">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="s-03-challenge">
+        <h2>The Challenge</h2>
+        <div class="body">
+          <p class="challenge-lead">PXR 誘導活性に関する AI モデル開発コンペティション　2 つの Track からなり いずれも正解は <strong>OpenADMET 独自の実験データ</strong></p>
+          <div class="track-stack">
+            <article class="track-card track-card--focus">
+              <div class="track-card__head">
+                <span class="track-card__label">Track 1</span>
+                <h3 class="track-card__title">Activity</h3>
+                <span class="track-card__desc">各化合物と PXR の活性を予測</span>
+                <span class="track-card__badge">this talk</span>
+              </div>
+              <dl class="spec-row">
+                <div class="spec"><dt>Input</dt><dd>SMILES</dd></div>
+                <div class="spec"><dt>Target</dt><dd>pEC50</dd></div>
+                <div class="spec"><dt>Task</dt><dd>Regression</dd></div>
+                <div class="spec"><dt>Metric</dt><dd>MAE</dd></div>
+                <div class="spec"><dt>Train / Test</dt><dd>4,140 / 513</dd></div>
+              </dl>
+            </article>
+            <article class="track-card track-card--slim">
+              <div class="track-card__head">
+                <span class="track-card__label">Track 2</span>
+                <h3 class="track-card__title">Structure</h3>
+                <span class="track-card__desc">Ligand–PXR 複合体の立体構造を予測</span>
+                <span class="track-card__badge track-card__badge--dim">not attempted</span>
+              </div>
+            </article>
+          </div>
+          <div class="timeline">
+            <div class="timeline__row timeline__row--dates">
+              <time>2026-04-01</time>
+              <time>2026-05-25 → 26</time>
+              <time>2026-07-01</time>
+            </div>
+            <div class="timeline__row timeline__row--track">
+              <span class="timeline__dot"></span>
+              <span class="timeline__dot"></span>
+              <span class="timeline__dot"></span>
+            </div>
+            <div class="timeline__row timeline__row--labels">
+              <span>Open</span>
+              <span>Phase 1 close → 2 start</span>
+              <span>Phase 2 close</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="s-04-admet">
+        <h2>What is ADMET?</h2>
+        <div class="body">
+          <p class="admet-lead"><strong>効く（efficacy）だけでは薬にならない</strong>　体内でどう振る舞うかを示す ADMET が創薬の成否を分ける</p>
+          <ul class="admet-cards">
+            <li class="admet-card">
+              <span class="admet-card__letter">A</span>
+              <span class="admet-card__term">Absorption</span>
+              <span class="admet-card__ja">吸収</span>
+              <span class="admet-card__desc">体内にどれだけ入るか</span>
+              <ul class="admet-card__ex">
+                <li>Caco-2</li><li>Solubility</li><li>F%</li>
+              </ul>
+            </li>
+            <li class="admet-card">
+              <span class="admet-card__letter">D</span>
+              <span class="admet-card__term">Distribution</span>
+              <span class="admet-card__ja">分布</span>
+              <span class="admet-card__desc">組織へどう行き渡るか</span>
+              <ul class="admet-card__ex">
+                <li>LogD</li><li>PPB</li><li>Vd</li>
+              </ul>
+            </li>
+            <li class="admet-card admet-card--pxr">
+              <span class="admet-card__tag">PXR</span>
+              <span class="admet-card__letter">M</span>
+              <span class="admet-card__term">Metabolism</span>
+              <span class="admet-card__ja">代謝</span>
+              <span class="admet-card__desc">どれだけ速く分解されるか</span>
+              <ul class="admet-card__ex">
+                <li>CYP</li><li>CLint</li><li>t½</li>
+              </ul>
+            </li>
+            <li class="admet-card">
+              <span class="admet-card__letter">E</span>
+              <span class="admet-card__term">Excretion</span>
+              <span class="admet-card__ja">排泄</span>
+              <span class="admet-card__desc">どう体外へ出ていくか</span>
+              <ul class="admet-card__ex">
+                <li>CL</li><li>Renal</li><li>Biliary</li>
+              </ul>
+            </li>
+            <li class="admet-card admet-card--pxr">
+              <span class="admet-card__tag">PXR</span>
+              <span class="admet-card__letter">T</span>
+              <span class="admet-card__term">Toxicity</span>
+              <span class="admet-card__ja">毒性</span>
+              <span class="admet-card__desc">体にとって安全か</span>
+              <ul class="admet-card__ex">
+                <li>hERG</li><li>DILI</li><li>Ames</li>
+              </ul>
+            </li>
+          </ul>
+          <!-- Which two letters PXR touches is what the lit cards above are
+               for, so the line that used to say it in prose is gone. -->
+          <div class="steps admet-steps">
+            <div class="step">
+              <p class="step__label">Impact</p>
+              <div class="step__body">
+                <p class="step__lead">ADMET の問題は <strong>臨床試験での脱落や開発中止</strong> の主要な要因</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">In silico</p>
+              <div class="step__body">
+                <p class="step__lead">だから <strong>合成や実験の前に計算で予測</strong>　創薬の初期段階でリスクを見極める</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">ML</p>
+              <div class="step__body">
+                <p class="step__lead">いま <strong>機械学習を用いた ADMET 予測モデル</strong> の研究開発が活発</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">日本語で言えば<strong>薬物動態</strong>　効きそうな化合物でも、ここがダメだと薬にならない</p>
+          <ul>
+            <li>読み — Absorption <strong>アブソープション</strong> / Distribution <strong>ディストリビューション</strong> / Metabolism <strong>メタボリズム</strong> / Excretion <strong>エクスクリーション</strong> / Toxicity <strong>トキシシティ</strong></li>
+            <li>創薬が難しい理由そのもの　だから<strong>合成する前に計算で当てたい</strong>という需要がある</li>
+            <li>化合物の機械学習では定番のテーマで、OpenADMET が狙っているのもここ</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">次に繋がる</span>光っている 2 枚が PXR の関わるところ — 代謝 (M) と 毒性 (T)</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-04-pxr-task">
+        <h2>Pregnane X Receptor (PXR)</h2>
+        <div class="body">
+          <p class="pxr-lead">体内に入った異物や薬物を感知する<strong>核内受容体 (xenobiotic sensor)</strong>　薬物代謝酵素の転写を活性化してオンにする　主に <strong>CYP3A4</strong>（市販薬の約 <strong>50%</strong> を代謝する酵素）を制御する</p>
+          <div class="pxr-mid">
+            <div class="pxr-col">
+              <h3 class="pxr-subhead">Why PXR in ADMET?</h3>
+              <div class="pxr-liabilities">
+                <p class="pxr-liabilities__label">Activation liabilities</p>
+                <div class="steps pxr-steps">
+                  <div class="step">
+                    <p class="step__label">薬物間相互作用 (DDI)</p>
+                    <div class="step__body">
+                      <p class="step__lead">代謝が速まり 併用薬が有効濃度を下回る</p>
+                    </div>
+                  </div>
+                  <div class="step">
+                    <p class="step__label">肝毒性</p>
+                    <div class="step__body">
+                      <p class="step__lead">反応性の高い毒性代謝物が増える</p>
+                    </div>
+                  </div>
+                  <div class="step">
+                    <p class="step__label">化学療法抵抗性</p>
+                    <div class="step__body">
+                      <p class="step__lead">腫瘍細胞で抗がん剤の排出が促進される</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pxr-example">
+                <p class="pxr-example__label">Recent example</p>
+                <p>COVID Moonshot の Mpro 阻害剤 <strong>(S)-x38 (DNDI-6510)</strong> は PXR 活性化で代謝が速まり　有効濃度を保てず <strong>前臨床で開発中止</strong></p>
+              </div>
+              <div class="pxr-structure">
+                <p class="pxr-structure__label">Structural feature</p>
+                <p class="pxr-note">大きくて柔軟な結合部位 → 無差別に何でも結合する性質 <strong class="em">"promiscuous"</strong></p>
+              </div>
+            </div>
+            <div class="pxr-figwrap">
+              <!-- Four views of the same protein, in the order they are argued:
+                   the empty pocket, then one large ligand in it, then two at
+                   once, then the full-length model no crystal structure
+                   covers. All four are superimposed, so the camera holds still
+                   across the first three and only the contents change. The
+                   captions and the structures come from build_pxr_mol_data.py. -->
+              <div class="mol-tabs" role="group" aria-label="構造">
+                <button class="mol-tab is-on" type="button" data-structure="apo" aria-pressed="true">apo</button>
+                <button class="mol-tab" type="button" data-structure="holo" aria-pressed="false">rifampicin</button>
+                <button class="mol-tab" type="button" data-structure="two" aria-pressed="false">2 ligands</button>
+                <button class="mol-tab" type="button" data-structure="model" aria-pressed="false">AlphaFold</button>
+              </div>
+              <figure class="pxr-figure">
+                <div class="mol-viewer" data-chart="molecule" data-src="pxr-mol"></div>
+                <div class="mol-controls">
+                  <button class="mol-btn is-on" type="button" data-view="all" aria-pressed="true" title="Frame the whole structure">reset</button>
+                  <button class="mol-btn" type="button" data-view="ligand" aria-pressed="false" disabled title="Zoom to the bound ligands">ligand</button>
+                </div>
+                <figcaption class="pxr-figure__caption">apo (1ILG)</figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">PXR が問題になるのは、これ自体が毒だからではなく <strong>他の薬の効き方を変えてしまう</strong>から</p>
+          <ul>
+            <li>異物センサーとして働き、活性化すると薬物代謝酵素の転写がオンになる</li>
+            <li>主に <span class="n-num">CYP3A4</span> を制御　<strong>市販薬の約 50% を代謝する</strong>酵素なので影響範囲が広い</li>
+            <li>併用薬が有効濃度を下回る (DDI)、肝毒性、抗がん剤が効かなくなる</li>
+            <li>最近の例 — COVID 向けの治療薬候補 <span class="n-num">(S)-x38</span> は<strong>PXR 活性が高くて</strong>代謝が速まり、有効な血中濃度を保てずに前臨床で中止になった</li>
+            <li>構造 — 構造ベース創薬はふつう「ポケットが無くて困る」　<strong>PXR は逆で、大きすぎてなんでも入ってしまう</strong></li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-06-assay">
+        <h2>Assay</h2>
+        <div class="body assay-body">
+          <!-- The figure is 1200x583 and full of small type: at slide scale it
+               fills the canvas and still cannot be read from the back of a
+               room. It sits small here and opens over the slide on a click,
+               which is the one thing a printed deck could not do. -->
+          <div class="assay-split">
+            <figure class="assay-fig" data-lightbox>
+              <img src="assets/img/pxr-assay-flow.png" alt="単一濃度スクリーニングから用量反応試験、counter assay、類縁体探索、513化合物のblind testへ至るPXRデータセット構築フロー">
+              <figcaption>Source: OpenADMET / Octant — <a href="https://openadmet.ghost.io/predicting-pxr-induction-we-have-liftoff/" target="_blank" rel="noopener">“Predicting PXR Induction: We have liftoff”</a></figcaption>
+            </figure>
+            <div class="assay-side">
+              <div class="assay-route">
+                <span class="assay-route__label assay-route__label--train">Train</span>
+                <p class="assay-eq">
+                  <span class="assay-term"><b>2,744</b><i>primary screen</i></span>
+                  <span class="assay-op">＋</span>
+                  <span class="assay-term"><b>1,395</b><i>既存データ</i></span>
+                  <span class="assay-op">＝</span>
+                  <span class="assay-term assay-term--end"><b>4,139</b><i>pEC50 付き</i></span>
+                </p>
+                <p class="assay-note">Enamine の多様性セットと FDA 承認薬 約 1.1 万件を単一濃度でスクリーニング　反応した分を 8 点用量反応にかけ Hill 式で fit</p>
+                <p class="assay-note assay-note--aside">PXR の結合部位を持たない counter assay でも光るものは偽陽性として除外　データ改訂で 1 件減り 学習は改訂前の <span class="mono">4,140</span> 件</p>
+              </div>
+              <div class="assay-rule"></div>
+              <div class="assay-route">
+                <span class="assay-route__label assay-route__label--test">Test</span>
+                <p class="assay-eq">
+                  <span class="assay-term"><b>114</b><i>EC50 ≤ 1 µM</i></span>
+                  <span class="assay-op">→</span>
+                  <span class="assay-term"><b>63</b><i>on-target</i></span>
+                  <span class="assay-op">→</span>
+                  <span class="assay-term assay-term--end assay-term--test"><b>513</b><i>Analog Set</i></span>
+                </p>
+                <p class="assay-note">counter assay で反応の小さい 63 件に絞り　1 件につき市販の類似化合物を 10 件以上検索　発注・実測して最終 QC を通ったのが 513 件</p>
+                <p class="assay-sum"><strong>要するに<span class="mono"> potent </span>な化合物の<span class="em">類縁体だけ</span>の集合</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">Octant Bio がやった<strong>しっかりしたアッセイの生データ</strong>から組み上がっている</p>
+          <ul>
+            <li>流れ自体は創薬では標準的なもの　<strong>低コストな単一濃度で当たりを付けて、当たったものだけ用量反応にかける</strong></li>
+            <li>counter assay は PXR の結合部位を持たない細胞　そこでも光れば化合物自体が光っている＝偽陽性</li>
+            <li>詳しく知りたい人は OpenADMET の blog に一部始終が載っている</li>
+            <li>図はクリックで拡大できる</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">以降のスライドの学習件数は全部 4,140</span>　図の 4,139 との 1 件差は、配布データが途中で改訂されて 1 件がラベル表から外れたため。学習は改訂前で回していて、再学習はしていない</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>513 が 63×10 にならないのは、「1 件につき 10 件以上」が発注の方針で、513 は発注・実測・QC を通った実数だから。potent が 63 なのは challenge 開始時点で、再測定後は <span class="n-num">46</span> 件</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-dataset">
+        <h2>Dataset</h2>
+        <div class="body dataset-body">
+          <p class="dataset-lead">Train と Test のほか <strong class="lead-primary">primary screen (single-conc)</strong> で得られたデータも <strong class="lead-aux">補助データ (AUX data)</strong> として利用可能</p>
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th class="dataset-num">Compounds</th>
+                <th class="dataset-cell">SMILES</th>
+                <th class="dataset-cell dataset-target">pEC50</th>
+                <th class="dataset-cell">Emax</th>
+                <th class="dataset-cell">counter<br>assay</th>
+                <th class="dataset-cell dataset-aux">log2fc<br>8.25 µM</th>
+                <th class="dataset-cell dataset-aux">log2fc<br>33 µM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="dataset-row--key">
+                <td><span class="dataset-name">Train</span></td>
+                <td class="dataset-num">4,140</td>
+                <td class="dataset-cell"><span class="dataset-yes">○</span></td>
+                <td class="dataset-cell dataset-target"><span class="dataset-yes">○</span></td>
+                <td class="dataset-cell"><span class="dataset-yes">○</span></td>
+                <td class="dataset-cell"><span class="dataset-part">2,859</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-part">2,375</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-part">2,321</span></td>
+              </tr>
+              <tr class="dataset-row--key">
+                <td><span class="dataset-name">Test</span></td>
+                <td class="dataset-num">513</td>
+                <td class="dataset-cell"><span class="dataset-yes">○</span></td>
+                <td class="dataset-cell dataset-target"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-no">×</span></td>
+              </tr>
+              <tr class="dataset-row--aux">
+                <td><span class="dataset-name">AUX data</span></td>
+                <td class="dataset-num">10,870</td>
+                <td class="dataset-cell"><span class="dataset-yes">○</span></td>
+                <td class="dataset-cell dataset-target"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell"><span class="dataset-no">×</span></td>
+                <td class="dataset-cell"><span class="dataset-part">2,360</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-part">10,747</span></td>
+                <td class="dataset-cell dataset-aux"><span class="dataset-part">9,523</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <ul class="dataset-note">
+            <li>すべてのデータで全ての項目が揃うわけではない</li>
+            <li>特に <strong class="em">Test</strong> は SMILES 以外が存在せず 実測値を直接学習に使うことはできない</li>
+          </ul>
+        </div>
+        <aside class="notes">
+          <p class="n-say">train <span class="n-num">4,140</span> は機械学習としては<strong>決して多くない</strong>　とくに DL 系にはつらい数</p>
+          <ul>
+            <li>pEC50 以外のラベルも付いてくるが、<strong>test は SMILES だけ</strong>　だから test 側で使える手が最初から限られる</li>
+            <li>その外側に一次スクリーン由来の約 <span class="n-num">1 万件</span>が補助データとして使える　<strong>ここが後半の鍵になる</strong></li>
+            <li>表の見方 — ○ は全件にある、数字はその件数だけにある、× は列自体が無い</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>学習で log2fc の実測を持つのは 8.25 µM が 2,375 件、33 µM が 2,321 件。どちらかを持つのは約 <span class="n-num">58%</span> で、全件にあるわけではない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-phases">
+        <h2>Evaluation Phases</h2>
+        <div class="body phase-body">
+          <p class="terms-lead">提出は最初から最後まで <strong>513 件すべて</strong>　変わるのは<strong>採点に使われる範囲</strong>だけ</p>
+          <p class="phase-legend">
+            <span class="phase-legend__item"><span class="phase-legend__chip phase-legend__chip--scored"></span>採点される</span>
+            <span class="phase-legend__item"><span class="phase-legend__chip phase-legend__chip--blind"></span>正解は blind</span>
+            <span class="phase-legend__item"><span class="phase-legend__chip phase-legend__chip--open"></span>正解が公開済み</span>
+            <span class="phase-legend__note">AS = Analog Set（potent 化合物の類縁体）</span>
+          </p>
+          <div class="phase-flow">
+            <div class="phase">
+              <p class="phase__label">Phase 1</p>
+              <p class="phase__when">04-01 → 05-25</p>
+              <div class="phase__rows">
+                <div class="phase__row is-scored is-blind"><span class="phase__as">AS1</span><span class="phase__n">253</span></div>
+                <div class="phase__row is-blind"><span class="phase__as">AS2</span><span class="phase__n">260</span></div>
+              </div>
+              <p class="phase__note">Leaderboard に出るのは <strong>AS1 の分だけ</strong></p>
+              <p class="phase__caveat">ただし <strong class="em">どの化合物が AS1 かは非公開</strong></p>
+            </div>
+
+            <div class="phase-arrow" aria-hidden="true">→</div>
+
+            <div class="phase phase--interim">
+              <p class="phase__label">Interim</p>
+              <p class="phase__when">05-26</p>
+              <div class="phase__rows">
+                <div class="phase__row is-scored is-open"><span class="phase__as">AS1</span><span class="phase__n">253</span></div>
+                <div class="phase__row is-scored is-blind"><span class="phase__as">AS2</span><span class="phase__n">260</span></div>
+              </div>
+              <p class="phase__note">Phase 1 の最終提出を <strong>513 件</strong>で採点</p>
+              <p class="phase__caveat"><strong class="em">AS1 の正解が公開</strong> 内訳もここで判明</p>
+            </div>
+
+            <div class="phase-arrow" aria-hidden="true">→</div>
+
+            <div class="phase">
+              <p class="phase__label">Phase 2</p>
+              <p class="phase__when">05-26 → 07-01</p>
+              <div class="phase__rows">
+                <div class="phase__row is-open"><span class="phase__as">AS1</span><span class="phase__n">253</span></div>
+                <div class="phase__row is-scored is-blind"><span class="phase__as">AS2</span><span class="phase__n">260</span></div>
+              </div>
+              <p class="phase__note">最終順位は <strong>AS2 の 260 件</strong>で決まる</p>
+              <p class="phase__caveat"><strong class="em">Leaderboard なし</strong> 手がかりが無い</p>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">やることは <strong>予測 → 提出 → 順位が出る → 直してまた提出</strong>　これを期間中ずっと回す</p>
+          <ul>
+            <li>test 513 件の pEC50 を予測して出すと、その精度が<strong>リアルタイムで Leaderboard に反映される</strong>　それを見てモデルを直し、また出す</li>
+            <li>提出はいつも 513 件　<strong>変わるのは採点範囲だけ</strong></li>
+            <li>Phase 1 の LB は AS1 <span class="n-num">253</span> 件のスコアだけ　しかも<strong>どの化合物が AS1 かは非公開</strong></li>
+            <li>中間発表で初めて 513 件のスコアが出て、同時に AS1 の正解が公開された</li>
+            <li>Phase 2 は AS2 <span class="n-num">260</span> 件だけで最終順位が決まる　<strong>LB は無い</strong></li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">ここが効いてくる</span><span class="n-warn">LB を見ても AS1 に効いたのか AS2 に効いたのか切り分けられない</span>　Phase 1 は「ノイズの多い代理指標」が見えていて、Phase 2 は何も見えない。後半の 2 つの教訓はこの構造から来ている</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-terms-dr">
+        <h2>Terminology — Dose-response</h2>
+        <div class="body terms-body">
+          <p class="terms-lead">化合物が <strong>PXR</strong> に結合すると 下流につないだ <strong>ルシフェラーゼ</strong> が転写されて細胞が光る<br>この <strong>発光量</strong> が活性の指標になる 濃度を振って測れば用量反応曲線が引ける</p>
+          <dl class="terms-list">
+            <div class="term term--target">
+              <dt><span class="term__name">pEC50</span><span class="term__sub">50% 効果濃度（対数）</span></dt>
+              <dd>
+                <span class="term__def">活性値を表す ターゲットが半分活性化するのに必要な濃度の −log<sub>10</sub></span>
+                <span class="term__rule">pEC50 <strong>高</strong> → 効く濃度が<strong>低い</strong> → 活性 <strong>強</strong></span>
+                <span class="term__note">単なるタンパク質と ligand の<strong>親和性 (affinity) とは異なる</strong>のがポイント</span>
+                <span class="term__note">細胞への取り込み・代謝・転写の活性化まで含んだ細胞応答なので <strong>様々な要素が関係</strong>する</span>
+              </dd>
+            </div>
+            <div class="term">
+              <dt><span class="term__name">Emax</span><span class="term__sub">最大効果</span></dt>
+              <dd>
+                <span class="term__def">濃度を上げきったときの応答の高さ pEC<sub>50</sub> が「どの濃度で効くか」なら E<sub>max</sub> は「どこまで上がるか」</span>
+              </dd>
+            </div>
+            <div class="term">
+              <dt><span class="term__name">counter assay</span><span class="term__sub">PXR-null 対照アッセイ</span></dt>
+              <dd>
+                <span class="term__def">PXR の影響を除いた対照測定 化合物そのものが光っていないかを確かめる</span>
+                <span class="term__rule">primary ○ / counter × → PXR 依存 = on-target</span>
+                <span class="term__rule">primary ○ / counter ○ → PXR 非依存 = 偽陽性</span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <aside class="notes">
+          <ul>
+            <li>pEC50 — EC50 が 1 µM なら 6　<strong>数字が大きいほど低い濃度で効く＝強い</strong></li>
+            <li>Emax — 「どの濃度で効き始めるか」と「どこまで上がるか」は別物　両方揃って曲線が決まる</li>
+            <li>counter assay — PXR の DNA 結合部位を持たない細胞系　差が <span class="n-num">1.5 log</span> 以上あるものを on-target とみなす</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>学習データの pEC50 は平均 4.32、最大 7.55。<span class="n-num">6</span> 以上は 4,140 件中 <span class="n-num">67</span> 件しかない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-terms-screen">
+        <h2>Terminology — Primary screen</h2>
+        <div class="body terms-body">
+          <dl class="terms-list">
+            <div class="term term--aux">
+              <dt><span class="term__name">single-conc</span><span class="term__sub">単一濃度スクリーニング</span></dt>
+              <dd>
+                <span class="term__def">一次スクリーニングとして 1 濃度のみで測定する</span>
+                <span class="term__note">用量反応曲線を引かないので EC<sub>50</sub> は出せない 代わりに低コストで 桁違いに多くの化合物をカバーできる</span>
+              </dd>
+            </div>
+            <div class="term term--aux">
+              <dt><span class="term__name">log2fc</span><span class="term__sub">log2 fold-change</span></dt>
+              <dd>
+                <span class="term__def">single-conc の応答を対照との比で表し log2 をとった値<span class="term__eq">log2fc = log2( 化合物ありの発光量 / 対照の発光量 )</span></span>
+              </dd>
+            </div>
+          </dl>
+          <div class="chart drc-chart" data-chart="drc" data-src="drc"></div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">要するに <strong>pEC50 そのものにはなれないが、活性のシグナルは持っていて、しかも数が多い</strong></p>
+          <ul>
+            <li>単一濃度なので曲線が引けず EC50 は出せない　「効いたかどうか」に近い情報</li>
+            <li>log2fc は対照との比の log2　<span class="n-num">0</span> なら対照と同じ、<span class="n-num">1</span> なら 2 倍</li>
+            <li>高濃度側は飽和して<strong>強い化合物どうしの差が潰れる</strong>　だから 2 濃度の性格が違う</li>
+            <li>log2fc は test に存在しない　だから後半は実測ではなく<strong>予測値</strong>を使う話になる</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>2 濃度の差は実データにも出ている。pEC50 との Spearman は 8.25 µM で <span class="n-num">0.73</span>、33 µM では <span class="n-num">0.25</span> まで落ちる</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-terms-metrics">
+        <h2>Terminology — Metrics</h2>
+        <div class="body metric-body">
+          <p class="terms-lead">最終評価は <strong>MAE</strong>　Leaderboard (LB) からは他の指標も得ることができる</p>
+          <div class="metric-tabs" role="tablist" aria-label="評価指標">
+            <button class="metric-tab is-active" type="button" role="tab" aria-selected="true" data-metric="mae">MAE<span class="metric-tab__ja">（平均絶対誤差）</span></button>
+            <button class="metric-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-metric="rae">RAE<span class="metric-tab__ja">（相対絶対誤差）</span></button>
+            <button class="metric-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-metric="r2">R²<span class="metric-tab__ja">（決定係数）</span></button>
+            <button class="metric-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-metric="rho">Spearman ρ<span class="metric-tab__ja">（順位相関係数）</span></button>
+          </div>
+
+          <div class="metric-panel is-active" data-panel="mae" role="tabpanel">
+            <div class="metric-panel__side">
+              <p class="metric-panel__def">予測が実測からどれだけ離れているか その<strong>絶対値の平均</strong></p>
+              <span class="metric-panel__eq" data-tex="\mathrm{MAE} = \frac{1}{n}\sum_{i=1}^{n}\left| y_i - \hat{y}_i \right|" data-tex-display="block"></span>
+              <p class="metric-readout">MAE <span data-metric-value>—</span></p>
+              <p class="metric-actions">
+                <button class="metric-btn" type="button" data-demo-action="reset">リセット</button>
+                <button class="metric-btn metric-btn--accent" type="button" data-demo-action="improve">良化</button>
+                <button class="metric-btn" type="button" data-demo-action="worsen">悪化</button>
+                <button class="metric-btn" type="button" data-demo-action="perfect">完全一致</button>
+              </p>
+              <p class="metric-panel__note">帯の長さがその化合物の誤差 その平均が MAE 単位は pEC<sub>50</sub> のままなので <strong class="em">0.41 は「平均して 0.41 外している」</strong></p>
+            </div>
+            <div class="chart metric-chart" data-chart="metricDemo" data-src="metricDemo" data-mode="mae"></div>
+          </div>
+
+          <div class="metric-panel" data-panel="rae" role="tabpanel">
+            <div class="metric-panel__side">
+              <p class="metric-panel__def">MAE を<strong>「平均値をいつも答えるモデル」</strong>の MAE で割った値</p>
+              <span class="metric-panel__eq" data-tex="\mathrm{RAE} = \frac{\sum \left| y_i - \hat{y}_i \right|}{\sum \left| y_i - \bar{y} \right|}" data-tex-display="block"></span>
+              <p class="metric-readout">RAE <span data-metric-value>—</span></p>
+              <p class="metric-detail" data-metric-detail>—</p>
+              <p class="metric-actions">
+                <button class="metric-btn" type="button" data-demo-action="reset">リセット</button>
+                <button class="metric-btn metric-btn--accent" type="button" data-demo-action="improve">良化</button>
+                <button class="metric-btn" type="button" data-demo-action="worsen">悪化</button>
+                <button class="metric-btn" type="button" data-demo-action="perfect">完全一致</button>
+              </p>
+              <p class="metric-panel__note"><strong class="em">1 を下回れば平均を答えるより マシ</strong>ということ <strong>単位が消える</strong>ので データセットが違っても比べられる</p>
+            </div>
+            <div class="chart metric-chart" data-chart="metricDemo" data-src="metricDemo" data-mode="rae"></div>
+          </div>
+
+          <div class="metric-panel" data-panel="r2" role="tabpanel">
+            <div class="metric-panel__side">
+              <p class="metric-panel__def">ばらつきのうち<strong>何割を説明できたか</strong></p>
+              <span class="metric-panel__eq" data-tex="R^{2} = 1 - \frac{\sum \left( y_i - \hat{y}_i \right)^{2}}{\sum \left( y_i - \bar{y} \right)^{2}}" data-tex-display="block"></span>
+              <p class="metric-readout">R² <span data-metric-value>—</span></p>
+              <p class="metric-actions">
+                <button class="metric-btn" type="button" data-demo-action="reset">リセット</button>
+                <button class="metric-btn metric-btn--accent" type="button" data-demo-action="improve">良化</button>
+                <button class="metric-btn" type="button" data-demo-action="worsen">悪化</button>
+                <button class="metric-btn" type="button" data-demo-action="perfect">完全一致</button>
+              </p>
+              <p class="metric-panel__note">点が破線に乗るほど 1 に近づく 二乗なので<strong class="em">大きく外した点ほど強く効く</strong></p>
+            </div>
+            <div class="chart metric-chart" data-chart="metricDemo" data-src="metricDemo" data-mode="r2"></div>
+          </div>
+
+          <div class="metric-panel" data-panel="rho" role="tabpanel">
+            <div class="metric-panel__side">
+              <p class="metric-panel__def">値ではなく<strong>順位</strong>がどれだけ一致しているか</p>
+              <span class="metric-panel__eq" data-tex="\rho = 1 - \frac{6\sum d_i^{2}}{n\left(n^{2}-1\right)}" data-tex-display="block"></span>
+              <p class="metric-readout">ρ <span data-metric-value>—</span></p>
+              <p class="metric-actions">
+                <button class="metric-btn" type="button" data-demo-action="reset">リセット</button>
+                <button class="metric-btn metric-btn--accent" type="button" data-demo-action="swap">隣を入れ替える</button>
+              </p>
+              <p class="metric-panel__note"><strong>d</strong> は各化合物の順位の差 最初は全て一致していて ρ = 1 順位を入れ替えると<strong class="em">交差した線の数だけ ρ が下がる</strong> 値を全体にずらしても線は平行に動くだけなので ρ は変わらない</p>
+            </div>
+            <div class="chart metric-chart" data-chart="metricDemo" data-src="metricDemo" data-mode="rho"></div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">順位を決めるのは MAE ひとつ　残りは参考値</p>
+          <ul>
+            <li>どのタブも同じ 8 化合物・同じ予測から始まる　違うのは指標が何を見ているかだけ</li>
+            <li>コーラルの予測をドラッグすると帯の長さと数値が動く</li>
+            <li>RAE の分母は「常に平均を答えるモデル」の誤差　1 未満なら平均予測よりマシ</li>
+            <li>ρ は順位しか見ていない　「全体を +0.8 ずらす」を押すと MAE は悪化するのに ρ は 1 のまま</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">触れない</span>Kendall τ もほぼ同じ話なので飛ばす。値だけ結果スライドに出る</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-results">
+        <h2>Final Results</h2>
+        <div class="body results-body">
+          <div class="round-tabs" role="tablist" aria-label="採点ラウンド">
+            <button class="round-tab is-active" type="button" role="tab" aria-selected="true" data-round="interim">中間発表<span class="round-tab__sub">2026-05-26　AS1 + AS2 の 513 件　338 チーム</span></button>
+            <button class="round-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-round="phase2">Phase 2<span class="round-tab__sub">2026-07-01　AS2 の 260 件　103 チーム</span></button>
+          </div>
+          <div class="round-panel is-active" data-round="interim" role="tabpanel">
+            <div class="results-split">
+              <table class="results-table">
+                <thead>
+                  <tr><th class="results-rank"></th><th class="results-team"></th><th class="results-metric">MAE</th><th class="results-metric">RAE</th><th class="results-metric">R²</th><th class="results-metric">ρ</th><th class="results-prev">Phase 1 LB</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="results-rank">1</td><td class="results-team">AIDD-LiLab</td><td class="results-metric">0.4000</td><td class="results-metric">0.5280</td><td class="results-metric">0.6363</td><td class="results-metric">0.8428</td><td class="results-prev">3</td></tr>
+                  <tr><td class="results-rank">2</td><td class="results-team">toxicity</td><td class="results-metric">0.4005</td><td class="results-metric">0.5288</td><td class="results-metric">0.6628</td><td class="results-metric">0.8309</td><td class="results-prev">1</td></tr>
+                  <tr><td class="results-rank">3</td><td class="results-team">nova</td><td class="results-metric">0.4057</td><td class="results-metric">0.5357</td><td class="results-metric">0.6427</td><td class="results-metric">0.8293</td><td class="results-prev">4</td></tr>
+                  <tr class="results-row--me"><td class="results-rank">4</td><td class="results-team">N283T</td><td class="results-metric">0.4059</td><td class="results-metric">0.5359</td><td class="results-metric">0.6496</td><td class="results-metric">0.8343</td><td class="results-prev">8</td></tr>
+                  <tr><td class="results-rank">5</td><td class="results-team">sia</td><td class="results-metric">0.4078</td><td class="results-metric">0.5384</td><td class="results-metric">0.6353</td><td class="results-metric">0.8361</td><td class="results-prev">5</td></tr>
+                  <tr><td class="results-rank">6</td><td class="results-team">oxidane</td><td class="results-metric">0.4093</td><td class="results-metric">0.5404</td><td class="results-metric">0.6386</td><td class="results-metric">0.8312</td><td class="results-prev">7</td></tr>
+                  <tr><td class="results-rank">7</td><td class="results-team">PXRegressor</td><td class="results-metric">0.4134</td><td class="results-metric">0.5458</td><td class="results-metric">0.6401</td><td class="results-metric">0.8308</td><td class="results-prev">11</td></tr>
+                  <tr><td class="results-rank">8</td><td class="results-team">matcha-croissant</td><td class="results-metric">0.4157</td><td class="results-metric">0.5486</td><td class="results-metric">0.6246</td><td class="results-metric">0.8291</td><td class="results-prev">10</td></tr>
+                  <tr><td class="results-rank">9</td><td class="results-team">jaybirdy</td><td class="results-metric">0.4257</td><td class="results-metric">0.5619</td><td class="results-metric">0.6126</td><td class="results-metric">0.8212</td><td class="results-prev">6</td></tr>
+                  <tr><td class="results-rank">10</td><td class="results-team">Maisy</td><td class="results-metric">0.4261</td><td class="results-metric">0.5624</td><td class="results-metric">0.6071</td><td class="results-metric">0.8242</td><td class="results-prev">9</td></tr>
+                </tbody>
+              </table>
+              <div class="results-side">
+                <div class="metric-picks"><button class="metric-pick is-active" type="button" aria-pressed="true" data-pick="mae">MAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rae">RAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="r2">R²</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rho">ρ</button><span class="results-standing" data-standing></span></div>
+                <div class="chart results-chart" data-chart="results" data-src="results" data-round="interim" data-metric="mae"></div>
+              </div>
+            </div>
+            <p class="results-note">採点が AS1 の <span class="mono">253</span> 件から <span class="mono">513</span> 件に広がり　Phase 1 LB の <span class="mono">8</span> 位から <strong class="em">4位</strong> へ　同じ提出を採点し直しただけ</p>
+          </div>
+          <div class="round-panel" data-round="phase2" role="tabpanel">
+            <div class="results-split">
+              <table class="results-table">
+                <thead>
+                  <tr><th class="results-rank"></th><th class="results-team"></th><th class="results-metric">MAE</th><th class="results-metric">RAE</th><th class="results-metric">R²</th><th class="results-metric">ρ</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="results-rank">1</td><td class="results-team">matcha-croissant</td><td class="results-metric">0.4061</td><td class="results-metric">0.5631</td><td class="results-metric">0.5982</td><td class="results-metric">0.8269</td></tr>
+                  <tr><td class="results-rank">2</td><td class="results-team">AIDD-LiLab</td><td class="results-metric">0.4092</td><td class="results-metric">0.5676</td><td class="results-metric">0.5907</td><td class="results-metric">0.8245</td></tr>
+                  <tr><td class="results-rank">3</td><td class="results-team">AIDD-LiLab-Aggressive</td><td class="results-metric">0.4104</td><td class="results-metric">0.5692</td><td class="results-metric">0.5886</td><td class="results-metric">0.8216</td></tr>
+                  <tr class="results-row--me"><td class="results-rank">4</td><td class="results-team">N283T</td><td class="results-metric">0.4113</td><td class="results-metric">0.5703</td><td class="results-metric">0.6008</td><td class="results-metric">0.8161</td></tr>
+                  <tr><td class="results-rank">5</td><td class="results-team">toxicity</td><td class="results-metric">0.4121</td><td class="results-metric">0.5713</td><td class="results-metric">0.5790</td><td class="results-metric">0.8107</td></tr>
+                  <tr><td class="results-rank">6</td><td class="results-team">tguttenb1</td><td class="results-metric">0.4139</td><td class="results-metric">0.5741</td><td class="results-metric">0.6075</td><td class="results-metric">0.8201</td></tr>
+                  <tr><td class="results-rank">7</td><td class="results-team">rdkbio</td><td class="results-metric">0.4149</td><td class="results-metric">0.5751</td><td class="results-metric">0.5701</td><td class="results-metric">0.8095</td></tr>
+                  <tr><td class="results-rank">8</td><td class="results-team">Multi</td><td class="results-metric">0.4152</td><td class="results-metric">0.5755</td><td class="results-metric">0.5802</td><td class="results-metric">0.8172</td></tr>
+                  <tr><td class="results-rank">9</td><td class="results-team">rasayan-labs</td><td class="results-metric">0.4170</td><td class="results-metric">0.5780</td><td class="results-metric">0.5600</td><td class="results-metric">0.8092</td></tr>
+                  <tr><td class="results-rank">10</td><td class="results-team">Rasayan-ai</td><td class="results-metric">0.4192</td><td class="results-metric">0.5811</td><td class="results-metric">0.5573</td><td class="results-metric">0.8080</td></tr>
+                </tbody>
+              </table>
+              <div class="results-side">
+                <div class="metric-picks"><button class="metric-pick is-active" type="button" aria-pressed="true" data-pick="mae">MAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rae">RAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="r2">R²</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rho">ρ</button><span class="results-standing" data-standing></span></div>
+                <div class="chart results-chart" data-chart="results" data-src="results" data-round="phase2" data-metric="mae"></div>
+              </div>
+            </div>
+            <p class="results-note">優勝との差は <span class="mono">0.005</span>　MAE の標準偏差 <span class="mono">±0.028</span> の <strong class="em">5分の1</strong> しかない</p>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">Phase 1 で 8 位、中間で 4 位　<strong>同じ提出を採点し直しただけ</strong></p>
+          <ul>
+            <li>中間は Phase 1 と<strong>同じ提出</strong>を AS1+AS2 で採点し直したもの　採点が 253 件から 513 件に広がって、上にいた 4 チームが落ちた</li>
+            <li>中間は全指標で上位 — MAE <span class="n-num">4</span> / RAE <span class="n-num">4</span> / R² <span class="n-num">2</span> / ρ <span class="n-num">3</span></li>
+            <li>Phase 2 は割れる — MAE 4 / RAE 4 / R² 2 だが <strong>ρ は 11 位</strong></li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>CLD は compact letter display。文字を共有する提出どうしは統計的に区別がつかない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-eda">
+        <h2>Exploratory Data Analysis (EDA)</h2>
+        <div class="body eda-body">
+          <div class="eda-picks" role="group" aria-label="表示する性質">
+            <button class="eda-pick is-active" type="button" aria-pressed="true" data-pick="pec50">pEC50</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="mw">MW</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="logp">LogP</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="hbd">HBD</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="hba">HBA</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="tpsa">TPSA</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="rotb">回転結合</button><button class="eda-pick" type="button" aria-pressed="false" data-pick="qed">QED</button>
+            <span class="eda-readout" data-eda-readout></span>
+          </div>
+          <div class="chart eda-chart" data-chart="eda" data-src="eda" data-property="pec50"></div>
+          <p class="eda-note">記述子の分布に目立った特徴はない　Ro5 の 4 条件はどちらもほぼ全件が適合し、<strong class="em">いわゆる drug-like な化合物が大半</strong></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say"><span class="n-warn">test の pEC50 は答え合わせ後にしか無かった数字</span>　だから最初は出していない</p>
+          <ul>
+            <li>記述子のほうは <strong>SMILES から計算できる</strong>ので、コンペ中も両方見られた　こちらは最初から並べてある</li>
+            <li>pEC50 だけ、凡例の <span class="n-num">Test</span> をクリックして出す　右の数値も同時に出る</li>
+            <li>出すと分かるのは — 中央値 <span class="n-num">4.65 → 5.00</span>、pEC50 ≥ 6 が <span class="n-num">1.6% → 6.0%</span></li>
+            <li>記述子は中央値がほぼ一致する　違うのは<strong>裾</strong>で、test には両端の極端な化合物が入らない　中央がずれているわけではない</li>
+            <li>pEC50 と相関がある記述子は LogP だけ　ρ = 0.45 (train) / 0.58 (test)　他はほぼ無相関</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">正直に</span><span class="n-warn">この記述子の傾向は、結局ほとんど使わなかった</span>　本番で効いた特徴量は記述子ではない。ひととおり見はするが、ここから戦略が出たわけではない</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>pEC50 だけ違うのは test が高活性 63 化合物の analog として作られたから。狭くて強いのは設計どおりで、偏りではない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-compounds">
+        <h2>Compounds</h2>
+        <div class="body compounds-body">
+          <div class="compound-tabs" role="tablist" aria-label="化合物の見方">
+            <button class="compound-tab is-active" type="button" role="tab" aria-selected="true" data-tab="diversity">多様性</button>
+            <button class="compound-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-tab="activity">活性値別</button>
+            <button class="compound-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-tab="potent">potent-46</button>
+            <button class="compound-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-tab="analogs">Analog Set</button>
+            <p class="compound-pager" data-compound-pager hidden>
+              <button class="compound-page" type="button" data-page-step="-1" aria-label="前のページ">‹</button>
+              <span class="compound-page__label" data-page-label></span>
+              <button class="compound-page" type="button" data-page-step="1" aria-label="次のページ">›</button>
+            </p>
+          </div>
+          <div class="compound-grid" data-compound-grid></div>
+          <p class="compounds-note" data-compound-caption></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say"><span class="n-num">61 Da</span> から <span class="n-num">1,736 Da</span> まで、同じ 1 つの学習セットに入っている</p>
+          <ul>
+            <li>タブで 4 つの見方 — 多様性 / 活性値別 / potent-46 / Analog Set</li>
+            <li>potent-46 は pEC50 ≥ 6 かつ選択性 ≥ 1.5 log の 46 件　名前が付くのは <strong>4 件だけ</strong>で、あとは OpenADMET 独自化合物</li>
+            <li>Analog Set タブは下段が test、上段がそれに最も近い potent-46　列ごとにペア</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">このペアはこちらで最近傍を計算したもので、運営が公開した由来関係ではない</span>　どの test 化合物がどの train 化合物から作られたかは非公開。言えるのは「どの test 化合物にも近縁の強い化合物が train にいる」まで</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>シクロスポリンは 1,203 Da の大環状ペプチドだが pEC50 3.27 と弱い。大きさと活性は関係ない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-split">
+        <h2>Cross-Validation (CV) Split</h2>
+        <div class="body split-body">
+          <div class="split-grid">
+            <div class="split-recipe">
+              <p class="split-heading">使ったもの　<strong>UMAP split</strong>　<span class="mono">5-fold</span></p>
+              <p class="split-what"><strong>化学構造の近さ</strong> で切る分割<br>共通骨格ではなく <strong>fingerprint 全体の近さ</strong> でまとまる</p>
+              <ol class="split-steps">
+                <li><span class="split-step__what">Morgan FP</span><span class="split-step__how">r=2 · 2048 bit</span></li>
+                <li><span class="split-step__what">UMAP</span><span class="split-step__how">10 次元 · Jaccard</span></li>
+                <li><span class="split-step__what">KMeans</span><span class="split-step__how">50 クラスタ</span></li>
+                <li class="split-step--key"><span class="split-step__what">クラスタ単位で fold へ</span><span class="split-step__how">分割の本体はここ</span></li>
+              </ol>
+              <p class="split-point">クラスタを丸ごと 1 つの fold に入れる　だから <strong class="em">似た化合物が train と val にまたがらない</strong></p>
+              <p class="split-ref">参考: <a href="https://practicalcheminformatics.blogspot.com/2024/11/some-thoughts-on-splitting-chemical.html" target="_blank" rel="noopener">Some Thoughts on Splitting Chemical Datasets</a></p>
+            </div>
+            <div class="fold-figure">
+            <p class="fold-figure__head">学習 <span class="mono">4,140</span> 件を　クラスタ単位で 5 つ　に分ける<span class="fold-figure__maehead">val の MAE</span></p>
+            <div class="fold-row"><span class="fold-row__label">fold 1</span><span class="fold-row__cells"><span class="fold-cell fold-cell--val"><span class="fold-cell__tag">val</span><span class="fold-cell__n">831</span></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span></span><span class="fold-row__mae">0.5616</span></div>
+            <div class="fold-row"><span class="fold-row__label">fold 2</span><span class="fold-row__cells"><span class="fold-cell"></span><span class="fold-cell fold-cell--val"><span class="fold-cell__tag">val</span><span class="fold-cell__n">830</span></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span></span><span class="fold-row__mae">0.5277</span></div>
+            <div class="fold-row"><span class="fold-row__label">fold 3</span><span class="fold-row__cells"><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell fold-cell--val"><span class="fold-cell__tag">val</span><span class="fold-cell__n">829</span></span><span class="fold-cell"></span><span class="fold-cell"></span></span><span class="fold-row__mae">0.5186</span></div>
+            <div class="fold-row"><span class="fold-row__label">fold 4</span><span class="fold-row__cells"><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell fold-cell--val"><span class="fold-cell__tag">val</span><span class="fold-cell__n">818</span></span><span class="fold-cell"></span></span><span class="fold-row__mae">0.4845</span></div>
+            <div class="fold-row"><span class="fold-row__label">fold 5</span><span class="fold-row__cells"><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell"></span><span class="fold-cell fold-cell--val"><span class="fold-cell__tag">val</span><span class="fold-cell__n">832</span></span></span><span class="fold-row__mae">0.5476</span></div>
+            <aside class="oof-card">
+              <p class="oof-card__term">OOF<span class="oof-card__expand">Out-Of-Fold</span></p>
+              <p class="oof-card__def">その化合物を <strong>学習に使っていないモデル</strong> の予測</p>
+              <p class="oof-card__metric"><span class="oof-card__metric-name">OOF MAE</span>= 各 fold の MAE の平均<span class="oof-card__example">上例の <span class="mono">OOF MAE</span> = <b>0.528</b></span></p>
+            </aside>
+            <p class="fold-caveat">* 本来の <span class="mono">OOF MAE</span> は全件の予測を繋いで 1 回で計算する　今回は実用上問題なし</p>
+          </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">5 回まわすと、学習 4,140 件すべてに「その化合物を学習に使っていないモデルの予測」が 1 つ付く　これが OOF</p>
+          <ul>
+            <li>各行が 1 回の学習で、コーラルの列がその回の val　fold は <span class="n-num">818〜832</span> 件</li>
+            <li>ランダム分割だと似た化合物が train と val の両方に入り、<strong>OOF が楽観的になる</strong>　それを避けるのが目的</li>
+            <li>メンバー選択もキャリブレーションも全部 OOF の上でやる</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>分割は fingerprint を UMAP で低次元に写してからクラスタリングし、同じクラスタは train か val の片方にだけ入れる方式。scaffold と違って「共通骨格を持つか」ではなく「fingerprint 全体が近いか」でまとめる</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-split-why">
+        <h2>Why UMAP?</h2>
+        <div class="body split-why-body">
+          <p class="split-why-lead">ほかの分割も試した　<strong>val の中身に差はなかった</strong></p>
+          <table class="split-diag">
+            <thead>
+              <tr>
+                <th>分割</th>
+                <th>どう切るか</th>
+                <th class="split-diag__num">val 件数</th>
+                <th class="split-diag__num">y 分散</th>
+                <th class="split-diag__num">val→train NN</th>
+                <th class="split-diag__num">coverage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">random</th>
+                <td>無作為に 5 等分　比較の基準</td>
+                <td class="split-diag__num"><span class="mono">828</span></td>
+                <td class="split-diag__num"><span class="mono">0.864</span></td>
+                <td class="split-diag__num"><span class="mono">0.396</span></td>
+                <td class="split-diag__num"><span class="mono">100%</span></td>
+              </tr>
+              <tr class="split-diag__row--pick">
+                <th scope="row">UMAP</th>
+                <td>fingerprint → UMAP → KMeans　前スライドの手順</td>
+                <td class="split-diag__num"><span class="mono">828</span></td>
+                <td class="split-diag__num"><span class="mono">0.861</span></td>
+                <td class="split-diag__num"><span class="mono">0.340</span></td>
+                <td class="split-diag__num"><span class="mono">100%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">scaffold</th>
+                <td>共通骨格ごと　定番だが今回は骨格がほぼ単独で効かない</td>
+                <td class="split-diag__num"><span class="mono">828</span></td>
+                <td class="split-diag__num"><span class="mono">0.862</span></td>
+                <td class="split-diag__num"><span class="mono">0.388</span></td>
+                <td class="split-diag__num"><span class="mono">100%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">analog-only</th>
+                <td>test の作り方と同じ手順で切る</td>
+                <td class="split-diag__num"><span class="mono">170</span></td>
+                <td class="split-diag__num"><span class="mono">0.676</span></td>
+                <td class="split-diag__num"><span class="mono">0.414</span></td>
+                <td class="split-diag__num"><span class="mono">20.5%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">mixed analog</th>
+                <td>analog-only を coverage 100% に直したもの</td>
+                <td class="split-diag__num"><span class="mono">828</span></td>
+                <td class="split-diag__num"><span class="mono">0.863</span></td>
+                <td class="split-diag__num"><span class="mono">0.398</span></td>
+                <td class="split-diag__num"><span class="mono">100%</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="split-read">y 分散は <strong>random とも区別がつかない</strong>　差が出るのは NN だけで、<strong>UMAP が最も遠い＝最も厳しい</strong>　analog-only は coverage 2 割で <strong>OOF が作れない</strong></p>
+          <table class="split-ab">
+            <thead>
+              <tr><th>上の 2 つを、同じモデルで実際に提出</th><th class="split-ab__num">OOF MAE</th><th class="split-ab__num">LB MAE</th><th class="split-ab__num">乖離</th></tr>
+            </thead>
+            <tbody>
+              <tr class="split-ab__row--pick">
+                <th scope="row">UMAP</th>
+                <td class="split-ab__num"><span class="mono">0.528</span></td>
+                <td class="split-ab__num"><span class="mono">0.574</span></td>
+                <td class="split-ab__num"><span class="mono">+0.046</span></td>
+              </tr>
+              <tr>
+                <th scope="row">analog-only</th>
+                <td class="split-ab__num"><span class="mono">0.464</span></td>
+                <td class="split-ab__num"><span class="mono">0.580</span></td>
+                <td class="split-ab__num"><span class="mono">+0.116</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="split-note">OOF が良く見えたのは val の分布が狭かっただけ　<strong class="em">ここは時間をかけるところではない</strong>と判断して UMAP のまま進めた</p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">決定的に優位な分割は無かった　結果的に Morgan UMAP が一番無難だった</p>
+          <ul>
+            <li>scaffold が効かないのは、Murcko 骨格 3,676 種のうち <span class="n-num">3,532</span> 種が 1 化合物だけだから　化合物ベースで <span class="n-num">85.3%</span> が単独で、実質ランダム分割になる</li>
+            <li>analog-only は一度は最良と結論づけたが、翌日の A/B 提出で棄却　<strong>170 件の val に過学習していただけ</strong>だった</li>
+            <li>NN Tanimoto が低いほど val が train から遠い＝厳しい　UMAP を選んだ根拠はこれだけ</li>
+            <li>umap は常に <span class="n-num">0.012〜0.025</span> だけ悪く出る　見積もりとしては一番正直</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>同じ特徴量 7 組で umap と scaffold を比べると順位の Spearman は <span class="n-num">0.964</span>。隣り合う 1 組が入れ替わるだけで、順位はほぼ変わらない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-strategy">
+        <h2>Strategy — The Paper</h2>
+        <div class="body paper-body">
+          <p class="paper-title">Transfer learning with graph neural networks for improved molecular property prediction in the multi-fidelity setting</p>
+          <p class="paper-meta">David Buterez et al. (Cambridge / AstraZeneca)　Nature Communications (2024)　<a href="https://doi.org/10.1038/s41467-024-45566-8" target="_blank" rel="noopener">DOI: 10.1038/s41467-024-45566-8</a></p>
+
+          <div class="paper-row">
+            <p class="paper-row__label">問い<span class="paper-row__label-sub">創薬スクリーニングの階層</span></p>
+            <div class="cascade">
+              <div class="cascade__flow">
+                <div class="tier">
+                  <span class="tier__tag">low-fidelity</span>
+                  <span class="tier__what">一次スクリーニング　単一濃度</span>
+                  <span class="tier__note">低コスト・大量・noisy</span>
+                </div>
+                <div class="cascade__arrow">
+                  <span class="cascade__arrow-mark">→</span>
+                  <span class="cascade__arrow-note">一部だけが進む<br>件数の差は <strong>500 倍以上</strong></span>
+                </div>
+                <div class="tier tier--hf">
+                  <span class="tier__tag">high-fidelity</span>
+                  <span class="tier__what">用量反応　<span class="mono">pXC50</span></span>
+                  <span class="tier__note">高コスト・少数・これが予測したい値</span>
+                </div>
+              </div>
+              <p class="cascade__ask">この <strong>low-fidelity 側を、high-fidelity の予測にどう活かすか</strong></p>
+            </div>
+          </div>
+
+          <div class="paper-row paper-row--list">
+            <p class="paper-row__label">比較した <span class="mono">6</span> 通り<span class="paper-row__label-sub">数字は <span class="mono">51</span> ケース中<br>最良だった回数</span></p>
+            <ol class="strategy-list">
+              <li><strong>生の LF ラベル</strong>を特徴量に足す<span class="strategy__count">10</span></li>
+              <li>LF モデルが<strong>予測したラベル</strong>を足す<span class="strategy__count">3</span></li>
+              <li><strong>ハイブリッド</strong>　学習は実測　推論は予測<span class="strategy__count">2</span></li>
+              <li>LF モデルの<strong>embedding</strong>を足す<span class="strategy__count">10</span></li>
+              <li>LF で事前学習して <strong>通常どおり fine-tune</strong><span class="strategy__count">0</span></li>
+              <li>LF で事前学習し <strong>readout だけ fine-tune</strong><span class="strategy__count">26</span></li>
+            </ol>
+          </div>
+
+          <div class="paper-row paper-row--last">
+            <p class="paper-row__label">結論</p>
+            <p class="paper-row__body">生ラベルを足すだけで MAE が <span class="mono">10〜40%</span> 下がり、<strong>embedding はそれをさらに最大 <span class="mono">10%</span> 上回る</strong><br><strong class="em">効くのは adaptive readout があるときだけ</strong>　表現を使った <span class="mono">41</span> 勝のうち <span class="mono">40</span> がそちら側</p>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">この論文の設定が、今回のデータ構造とほぼそのままだった</p>
+          <ul>
+            <li>fidelity は「フィデリティ」　測定の<strong>忠実度</strong>のこと　low = 粗いが大量に測れる、high = 正確だが少ない</li>
+            <li>LF = 単一濃度の一次スクリーニング、HF = 用量反応で pXC50　件数差は <span class="n-num">500 倍</span>以上になることもある</li>
+            <li>6 通り比べた勝敗が右の数字　最多は <strong>readout だけ fine-tune の 26</strong>、次が生ラベルと embedding で各 10</li>
+            <li>効くのは <strong>adaptive readout があるときだけ</strong>　表現を使った 41 勝のうち 40 がそちら側</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>sum readout だと embedding も予測値も MAE がほとんど下がらず、悪化することさえある。つまり「悪化」は戦略の性質ではなく readout の性質</p>
+          <p class="n-ask"><span class="n-ask-label">次に繋がる</span>discussion に「embedding は random forest や SVM でも使える」とある。<strong>下流が深層でなくてよい</strong></p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-strategy-apply">
+        <h2>Strategy — Adapting It</h2>
+        <div class="body apply-body">
+          <p class="apply-lead">今回のデータは <strong>この論文が想定している設定そのもの</strong>だった</p>
+
+          <div class="paper-row">
+            <p class="paper-row__label">対応</p>
+            <div class="pair pair--map">
+              <p class="pair__item"><span class="pair__key">high-fidelity</span><span class="pair__to">→</span>学習の <span class="mono">pEC50</span>　<span class="apply-map__n">4,140 件</span></p>
+              <p class="pair__item"><span class="pair__key">low-fidelity</span><span class="pair__to">→</span>単一濃度の <span class="mono">log2_fc</span>　<span class="apply-map__n">10,875 化合物</span></p>
+            </div>
+          </div>
+
+          <div class="paper-row">
+            <p class="paper-row__label">論文との違い</p>
+            <div class="pair">
+              <p class="pair__item"><strong>生ラベルが使えない</strong>　test に実測がない</p>
+              <p class="pair__item"><strong>LF が桁違いに少ない</strong>　論文は <span class="mono">100</span> 万件以上</p>
+            </div>
+          </div>
+
+          <div class="paper-row">
+            <p class="paper-row__label">採用した戦略</p>
+            <table class="apply-map">
+              <tbody>
+                <tr class="apply-map__row--key">
+                  <th scope="row"><span class="strat-ref">2</span> LF モデルの予測値</th>
+                  <td><span class="mono">log2fc_8p25_pred</span> / <span class="mono">log2fc_33_pred</span> を特徴量に足す</td>
+                </tr>
+                <tr class="apply-map__row--key">
+                  <th scope="row"><span class="strat-ref">4</span> LF の embedding</th>
+                  <td><span class="mono">log2_fc</span> で pretrain した encoder の <strong>frozen embedding</strong> を渡す</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="paper-row paper-row--last">
+            <p class="paper-row__label">今回の応用<span class="paper-row__label-sub">encoder の上に<br>何を載せるか</span></p>
+            <div class="apply-twist">
+              <p class="apply-twist__head">論文にない <strong>TabPFN</strong> を下流に置いた　<span class="apply-twist__sub">小標本の非線形回帰がそのまま使える</span></p>
+              <table class="apply-ab">
+                <thead>
+                  <tr><th>下流　<span class="apply-ab__tail">ChemProp (D-MPNN) での比較</span></th><th class="apply-ab__num">OOF MAE</th><th class="apply-ab__num">Spearman</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="apply-ab__row--pick">
+                    <th scope="row"><span class="strat-ref">4</span> の embedding を <strong>TabPFN</strong> で読む</th>
+                    <td class="apply-ab__num"><span class="mono">0.4371</span></td>
+                    <td class="apply-ab__num"><span class="mono">0.807</span></td>
+                  </tr>
+                  <tr>
+                    <th scope="row"><span class="strat-ref">6</span> adaptive readout を学習　<span class="apply-ab__tail">論文の一押し</span></th>
+                    <td class="apply-ab__num"><span class="mono">0.4818</span></td>
+                    <td class="apply-ab__num"><span class="mono">0.758</span></td>
+                  </tr>
+                  <tr>
+                    <th scope="row"><span class="strat-ref">5</span> 凍結せず直接 fine-tune</th>
+                    <td class="apply-ab__num"><span class="mono">0.5071</span></td>
+                    <td class="apply-ab__num"><span class="mono">0.755</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="apply-twist__note"><strong class="em">凍結して下流を単純にするほど良くなった</strong>　枠組みは論文のまま、下流だけ差し替えた</p>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">論文の再現ではなく、今回のタスクにどう合わせたか</p>
+          <ul>
+            <li>log2fc を pEC50 の疑似ラベルとして雑に増やしたのではない　<strong>予測値か表現に変換して</strong>使った</li>
+            <li>④ は複数の backbone に横展開している　表はそのうち ChemProp 系だけを揃えた比較</li>
+            <li><strong>TabPFN は論文に一切出てこない</strong>　凍結 embedding を読む小標本回帰として持ち込んだのが今回の応用点</li>
+            <li>encoder に pEC50 を直接当てさせる fine-tune は弱かった　論文の「通常の fine-tune は苦戦する」と方向は一致</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>本番の重みは大半が tabular core に乗る — full <span class="n-num">0.337</span> / top500 <span class="n-num">0.270</span>。GNN・transformer 系は単体最強ではなく、同系統への集中を避ける diversity reserve として残した</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-strategy-pred">
+        <h2>Strategy — Predicted log2fc</h2>
+        <div class="body pred-body">
+          <p class="pred-lead"><span class="strat-ref">2</span> <span class="mono">log2_fc</span> を予測するモデルを作り、その<strong>予測値そのもの</strong>を特徴量にした　<span class="pred-lead__sub"><span class="mono">log2fc_8p25_pred</span> / <span class="mono">log2fc_33_pred</span> の 2 列</span></p>
+
+          <div class="pred-grid">
+            <div class="zoom zoom--panel"><div class="chart" data-chart="feature-scatter" data-src="strategy" data-panel="0"></div></div>
+            <div class="zoom zoom--panel"><div class="chart" data-chart="feature-scatter" data-src="strategy" data-panel="1"></div></div>
+            <div class="pred-say pred-say--obs">
+              <p class="pred-say__head">実測 <span class="mono">log2_fc</span></p>
+              <ul class="pred-say__list">
+                <li><span class="mono">train</span> の <strong>一部にしかない</strong><br><span class="mono">8.25</span>: <span class="mono">2,722</span> 件　<span class="mono">33</span>: <span class="mono">2,659</span> 件</li>
+                <li><span class="mono">test</span> には <strong>1 件もない</strong></li>
+                <li><span class="mono">33 µM</span> は相関も弱い　<span class="mono">r 0.50</span></li>
+              </ul>
+            </div>
+
+            <div class="pred-arrow"><span class="mono">↓</span></div>
+            <div class="zoom zoom--panel zoom--pred"><div class="chart" data-chart="feature-scatter" data-src="strategy" data-panel="2"></div></div>
+            <div class="zoom zoom--panel zoom--pred"><div class="chart" data-chart="feature-scatter" data-src="strategy" data-panel="3"></div></div>
+            <div class="pred-say pred-say--pred">
+              <p class="pred-say__head"><span class="mono">pred</span> にすると</p>
+              <ul class="pred-say__list">
+                <li>モデルができれば <strong><span class="mono">SMILES</span> から計算可能</strong></li>
+                <li>よって <span class="mono">train</span> も <span class="mono">test</span> も <strong>全件で利用可能</strong></li>
+                <li>相関も両方とも上がる<br><span class="mono nowrap">0.72 → 0.75</span>　<span class="mono nowrap">0.50 → 0.80</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">pEC50 と単独で最も相関するのは、実測ではなく <strong>予測した log2fc</strong></p>
+          <ul>
+            <li>並びは Pearson |r| の降順　Boltz-2 affinity が負なのは log10 IC50 で向きが逆だから</li>
+            <li>pred は 4,140 件<strong>全部</strong>にある　実測は 2,700 件前後にしかない</li>
+            <li>pred が使えるのは<strong>構造だけから計算できる</strong>から　実測は test に存在しないので特徴量にできない</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>濃度別に見ると pred が r ≈ <span class="n-num">0.75 / 0.80</span>、実測が <span class="n-num">0.72 / 0.50</span>。どちらの集計でも pred が上</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-strategy-pred-2">
+        <h2>Strategy — The Strongest Feature</h2>
+        <div class="body pred2-body">
+          <p class="band__claim">pEC50 との相関は <strong>pred が突出して強い</strong>　<span class="band__claim-sub">train での Pearson r</span><span class="corr-caveat">* <span class="mono">obs</span> は測った化合物のみ <span class="mono">2,722</span> / <span class="mono">2,659</span> 件　<span class="mono">Boltz</span> は <span class="mono">4,138</span> 件　他は <span class="mono">4,140</span> 件</span></p>
+          <div class="zoom zoom--corr"><div class="chart" data-chart="feature-corr" data-src="strategy"></div></div>
+
+          <p class="band__claim band__claim--gap"><span class="band__claim-term">Challenge 後検証</span><span class="mono">pred log2fc</span> + 線形回帰だけで <strong>RDKit 217 次元 + LightGBM と同等の精度</strong></p>
+          <table class="abl">
+            <thead>
+              <tr>
+                <th>特徴量</th>
+                <th>モデル</th>
+                <th class="abl__dim">次元</th>
+                <th class="abl__num">MAE</th>
+                <th class="abl__num">Spearman</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr class="abl-row--pred">
+                  <th scope="row">pred 8.25 µM</th>
+                  <td>Linear</td>
+                  <td class="abl__dim"><span class="mono">1</span></td>
+                  <td class="abl__num"><span class="mono">0.609</span></td>
+                  <td class="abl__num abl__num--hit"><span class="mono">0.782</span></td>
+                </tr>
+                <tr class="abl-row--pred">
+                  <th scope="row">pred 33 µM</th>
+                  <td>Linear</td>
+                  <td class="abl__dim"><span class="mono">1</span></td>
+                  <td class="abl__num abl__num--hit"><span class="mono">0.571</span></td>
+                  <td class="abl__num abl__num--hit"><span class="mono">0.746</span></td>
+                </tr>
+                <tr class="abl-row--pred abl-row--key">
+                  <th scope="row">pred 両方</th>
+                  <td>Linear</td>
+                  <td class="abl__dim"><span class="mono">2</span></td>
+                  <td class="abl__num abl__num--hit"><span class="mono">0.572</span></td>
+                  <td class="abl__num abl__num--hit"><span class="mono">0.725</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Boltz-2 affinity</th>
+                  <td>Linear</td>
+                  <td class="abl__dim"><span class="mono">1</span></td>
+                  <td class="abl__num"><span class="mono">0.747</span></td>
+                  <td class="abl__num"><span class="mono">0.602</span></td>
+                </tr>
+                <tr class="abl-row--key">
+                  <th scope="row">RDKit 記述子</th>
+                  <td>LightGBM (untuned)</td>
+                  <td class="abl__dim"><span class="mono">217</span></td>
+                  <td class="abl__num"><span class="mono">0.570</span></td>
+                  <td class="abl__num"><span class="mono">0.677</span></td>
+                </tr>
+                <tr class="abl-row--ref">
+                  <th scope="row">Phase 1 提出（参考）</th>
+                  <td>ensemble</td>
+                  <td class="abl__dim"><span class="mono">~2,100</span></td>
+                  <td class="abl__num"><span class="mono">0.406</span></td>
+                  <td class="abl__num"><span class="mono">0.834</span></td>
+                </tr>
+            </tbody>
+          </table>
+          <p class="abl-foot">* challenge 終了後に公開された <span class="mono">test</span> 全件（AS1 + AS2）に対する結果</p>
+          <p class="pred-close"><strong class="em">pred log2fc は非常に強力な特徴量</strong>　<strong>上位に行けたのはこれを見つけられたから</strong></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">予測 log2fc の 2 列を線形で当てるだけで、217 記述子の LightGBM に並ぶ</p>
+          <ul>
+            <li>順位で見るとむしろ上回り、Boltz-2 affinity ははっきり下</li>
+            <li><strong>1 つのアッセイ由来の信号が、汎用記述子モデル一式ぶんの仕事をしている</strong></li>
+            <li>Phase 1 提出の行は物差しとして置いてあるだけ</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">これは post-challenge の held-out fit であって production model ではない</span></p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>実測 log2fc は Pearson <span class="n-num">0.61</span> に対し Spearman <span class="n-num">0.33</span>。順位相関だと実測はさらに弱く、pred を推す材料になる</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-strategy-tabpfn">
+        <h2>Strategy — TabPFN</h2>
+        <div class="body paper-body">
+          <p class="paper-title">Accurate predictions on small data with a tabular foundation model</p>
+          <p class="paper-meta">Noah Hollmann et al.　Nature (2025)　<a href="https://doi.org/10.1038/s41586-024-08328-6" target="_blank" rel="noopener">DOI: 10.1038/s41586-024-08328-6</a>　<a href="https://github.com/PriorLabs/tabpfn" target="_blank" rel="noopener">GitHub</a>　使うのは実装 <span class="mono">TabPFN v2.6</span></p>
+
+          <div class="paper-row">
+            <p class="paper-row__label">何が違うか<span class="paper-row__label-sub">表データのための<br>基盤モデル</span></p>
+            <p class="paper-row__body">ふつうの機械学習は、データごとにモデルを学習させる　TabPFN は<strong class="em">学習させない</strong><span class="paper-row__then">GPT が文章を読んで続きを返すように、<br>合成表データで事前学習した Transformer が<strong>表を文脈として読んで予測を返す (In-Context Learning)</strong></span></p>
+          </div>
+
+          <div class="paper-row">
+            <p class="paper-row__label">長所と短所</p>
+            <div class="pros">
+              <div class="pros__col">
+                <p class="pros__head">効くところ</p>
+                <ul class="pros__list">
+                  <li><strong>チューニングが要らない</strong>　既定のまま強い</li>
+                  <li>深層学習が苦手な<strong>小さい表でも高精度</strong></li>
+                </ul>
+              </div>
+              <div class="pros__col pros__col--con">
+                <p class="pros__head">苦しいところ</p>
+                <ul class="pros__list">
+                  <li><strong>次元数に敏感</strong>　何列渡すのが最適かが読みにくい</li>
+                  <li>中身は深層学習　<strong>GPU が要る</strong></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="paper-row">
+            <p class="paper-row__label">今回の使い方</p>
+            <p class="paper-row__body">この後に出てくる <span class="mono">9</span> メンバー<strong>すべての readout</strong>　特徴量の作り方が違うだけで、最後に読むのは常にこれ<span class="paper-caveat">challenge 中に <span class="mono">v3</span> が出たが、手元では <span class="mono">v2.6</span> のほうが精度が良かったのでそのまま</span></p>
+          </div>
+
+          <div class="paper-row paper-row--last">
+            <p class="paper-row__label">ほかの候補</p>
+            <p class="paper-row__body">readout は LightGBM や KAN でも試し、TabPFN に近い tabular DL model (<a href="https://github.com/yandex-research/tabm" target="_blank" rel="noopener">TabM</a> / <a href="https://github.com/soda-inria/tabicl" target="_blank" rel="noopener">TabICL</a> / <a href="https://github.com/google-research/tabfm" target="_blank" rel="noopener">TabFM</a>) も見たうえで、<strong>最良の TabPFN を採用</strong></p>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">データごとの学習をしない　訓練データを<strong>文脈として渡して</strong>推論する</p>
+          <ul>
+            <li>prior からサンプルした合成データセットで事前学習した prior-data fitted network　推論は in-context learning</li>
+            <li>v2 で回帰に対応した　今回は pEC50 の回帰なので v2 系が要る（使ったのは v2.6）</li>
+            <li>1 万サンプルまでの表で強い　<strong>列数・行数に上限がある</strong>のが弱点で、大きな表には向かない</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members">
+        <h2>Members — The Nine</h2>
+        <div class="body member-body">
+          <p class="member-lead">特徴量の作り方で <strong>3 つの family</strong> に大別される　<strong>readout はすべて <span class="mono">TabPFN v2.6</span></strong></p>
+          <div class="family-cards">
+            <div class="family-card family-card--tabular">
+              <p class="family-card__name">tabular core<span class="family-card__n"><span class="mono" data-family-count="tabular"></span> 件</span></p>
+              <p class="family-card__what">記述子や <span class="mono">pred log2fc</span> など <span class="mono">2,103</span> の<strong>特徴量</strong>を使う素直な tabular model</p>
+            </div>
+            <div class="family-card family-card--embed">
+              <p class="family-card__name">frozen embed<span class="family-card__n"><span class="mono" data-family-count="embed"></span> 件</span></p>
+              <p class="family-card__what"><span class="mono">log2_fc</span> で pretrain した encoder を<strong>凍結</strong>し、その embedding を渡す</p>
+            </div>
+            <div class="family-card family-card--boltz">
+              <p class="family-card__name">Boltz trunk<span class="family-card__n"><span class="mono" data-family-count="boltz"></span> 件</span></p>
+              <p class="family-card__what">Boltz-2 trunk を使うモデル　<strong><span class="mono">log2_fc</span> のシグナルが入らない</strong>唯一の系統</p>
+            </div>
+          </div>
+          <table class="member-tbl">
+            <thead>
+              <tr>
+                <th>alias</th>
+                <th>encoder / features</th>
+                <th class="member-tbl__family">family</th>
+                <th class="member-tbl__flag">strategy</th>
+                <th class="member-tbl__num">OOF MAE</th>
+                <th class="member-tbl__num">重み</th>
+              </tr>
+            </thead>
+            <tbody data-member-rows></tbody>
+          </table>
+          <p class="member-alias-note">* alias はこの発表用の呼び名で、モデルそのものを指すわけではない　strategy 列の番号は <span class="mono">Strategy — The Paper</span> の 6 通りに対応</p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">並びは<strong>重み順</strong>　単体の強さ順とずれるのが見どころ</p>
+          <ul>
+            <li>Boltz-pocket は単体最下位 <span class="n-num">0.4860</span> なのに重み <span class="n-num">0.046</span>、GatedGCN は 0.4739 と上なのに 0.018</li>
+            <li>理由はメンバー間の相関　全ペアで 0.81〜0.98、平均 0.88　tabular の 2 つは <span class="n-num">0.98</span> でほぼ重複している</li>
+            <li>最も非相関なのが Boltz 構造系（化学系に対して 0.81〜0.88）　<strong>単体が弱くても重みを取る</strong></li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">言い方</span>アンサンブルは「独立な視点の混合」ではなく、<strong>強くて相関の高いメンバーが支配しないようにする緩衝材</strong></p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-model">
+        <h2>Model Overview</h2>
+        <div class="body model-body">
+          <figure class="model-figure">
+            <img src="assets/img/model-overview.svg" alt="Model overview">
+          </figure>
+        </div>
+        <aside class="notes">
+          <p class="n-say">3 つの系統が、最後は全部 TabPFN に集まる</p>
+          <ul>
+            <li>teal が tabular core、blue が frozen embed、coral が Boltz 構造　行の色は Members の表と同じ</li>
+            <li>特徴量の作り方は違っても <strong>readout は固定</strong>　だから表現どうしを同じ土俵で比べられる</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members-tabular">
+        <h2>Members — Tabular Core</h2>
+        <div class="body tabular-body">
+          <p class="feat-lead"><span class="mono">tabular-full</span> と <span class="mono">tabular-top500</span> が共有する <strong><span class="mono">2,103</span> 次元の特徴量プール</strong>　由来で 4 種類に大別される</p>
+          <div class="feat-cards">
+            <div class="feat-card feat-card--desc">
+              <p class="feat-card__head">2D descriptors<span class="feat-card__dim"><span class="mono">1,732</span> 次元</span></p>
+              <p class="feat-card__what">分子量や LogP、トポロジーなど<strong>分子の性質を表す特徴量</strong>　SMILES があれば計算で出せる　RDKit と Mordred はどちらも化合物の機械学習では定番のライブラリ</p>
+              <p class="feat-card__parts">Mordred <span class="mono">1,515</span>　RDKit <span class="mono">217</span></p>
+            </div>
+            <div class="feat-card feat-card--chemeleon">
+              <p class="feat-card__head">CheMeleon<span class="feat-card__dim"><span class="mono">300</span> 次元</span></p>
+              <p class="feat-card__what"><strong>分子をグラフとして読んだ潜在表現</strong>　化合物を Mordred 記述子で事前学習した ChemProp (D-MPNN) が出力する embedding</p>
+              <p class="feat-card__parts">単体では弱い　入れると tabular core が <span class="mono">0.443 → 0.421</span><br>本来 <span class="mono">2,048</span> 次元、ミスで不完全な形に</p>
+            </div>
+            <div class="feat-card feat-card--boltz">
+              <p class="feat-card__head">Boltz-2 features<span class="feat-card__dim"><span class="mono">69</span> 次元</span></p>
+              <p class="feat-card__what"><strong>Boltz-2 の予測構造と出力から得られる特徴量</strong></p>
+              <table class="feat-tbl">
+                <tbody>
+                  <tr><th>tier-0</th><td class="feat-tbl__dim mono">19</td><td>Boltz が出力する affinity や confidence のスカラー値</td></tr>
+                  <tr><th>tier-1</th><td class="feat-tbl__dim mono">44</td><td>pocket や ligand に注目した confidence の統計値</td></tr>
+                  <tr><th>pose-Jazzy</th><td class="feat-tbl__dim mono">6</td><td>リガンドの水素結合・水和自由エネルギー (Jazzy)</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="feat-card feat-card--pred">
+              <p class="feat-card__head">predicted log2fc<span class="feat-card__dim"><span class="mono">2</span> 次元</span></p>
+              <p class="feat-card__what">前に紹介した <span class="mono">log2fc_8p25_pred</span> / <span class="mono">log2fc_33_pred</span> の 2 つ</p>
+              <p class="feat-card__parts"><span class="mono">8.25 µM</span> と <span class="mono">33 µM</span> の 2 つを head にしたマルチタスクで <span class="mono">ChemProp</span> を事前学習 (<span class="mono">13,136</span> 化合物)</p>
+              <p class="feat-card__parts">ハイパーパラメータは下流の <span class="mono">pEC50 OOF MAE</span> を見て <span class="mono">Optuna</span> で調整　複数 seed の平均でばらつきを軽減</p>
+            </div>
+          </div>
+          <p class="feat-close"><strong>これらの特徴量を <span class="mono">TabPFN</span> に渡すのが</strong> <strong class="em">Tabular Core</strong></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">2,103 列を積んだが、効いているのはごく一部</p>
+          <ul>
+            <li>2D 記述子 / CheMeleon 指紋 / Boltz-2 / pred log2fc</li>
+            <li>CheMeleon を入れると tabular core が <span class="n-num">0.443 → 0.421</span></li>
+            <li>pred を鋭くした主因は <strong>seed 平均</strong>　5 → 10 seed で 0.399 → 0.397、15 seed で頭打ち</li>
+            <li>Optuna は log2fc 自体の loss ではなく、<strong>下流の pEC50 OOF MAE</strong> を目的に調整している</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>CheMeleon は ChemProp-MPNN の基盤モデル指紋。Mordred 記述子 1,613 個を PubChem 約 100 万分子で予測するタスクで事前学習したもの</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members-topk">
+        <h2>Members — Top-500 Selection</h2>
+        <div class="body topk-body">
+          <p class="topk-lead">同じ <span class="mono">2,103</span> 列から <strong>LightGBM gain (特徴量重要度) の上位 <span class="mono">500</span> 列だけ</strong>を選んで TabPFN に渡すのが <span class="mono">tabular-top500</span></p>
+          <div class="topk-grid">
+            <div class="topk-panel">
+              <p class="topk-panel__head">gain の 3/4 は <span class="mono">pred</span> の 2 列<span class="topk-panel__sub">全 <span class="mono">2,103</span> 列での gain シェア</span></p>
+              <div class="chart topk-chart" data-chart="topk-gain" data-src="topk"></div>
+            </div>
+            <div class="topk-panel">
+              <p class="topk-panel__head">全部入れるより上位 <span class="mono">500</span> 列<span class="topk-panel__sub">残す列数 <span class="mono">K</span> と OOF MAE</span></p>
+              <div class="chart topk-chart" data-chart="topk-sweep" data-src="topk"></div>
+            </div>
+          </div>
+          <p class="topk-close">それでも <strong class="em">2 メンバーとも残す</strong>　<span class="mono">top500</span> は弱い列を落として<strong>鋭く</strong>、<span class="mono">full</span> は <span class="mono">2,103</span> 列すべてを持って<strong>広く</strong></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">gain の約 <strong>4 分の 3</strong> は pred の 2 列</p>
+          <ul>
+            <li>K=600 が MAE 最小 (<span class="n-num">0.4176</span>)、500 は 0.4179　500〜600 でフラットなので Spearman が最良の <span class="n-num">500</span> に固定した</li>
+            <li>full 2,103 列は 0.4212　<strong>K=100 まで削っても 0.4192 で full より良い</strong></li>
+            <li>top-k が効くのは手作りの表形式特徴からノイズを落とすときだけ　frozen embedding では逆効果になる</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">「最終的にどの 500 列か」は存在しない</span>　fold ごとに、その fold の train だけで gain を計算して選び直している</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>初期版は full train で gain を 1 回だけ計算していて、選択に y が漏れていた。OOF 0.4169 と甘く出ていたものを per-fold に直した数字が 0.4179</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members-embed">
+        <h2>Members — Frozen Embeddings</h2>
+        <div class="body embed-body">
+          <p class="feat-lead"><span class="mono">log2fc</span> で encoder を事前学習して<strong>凍結</strong>し 出てくる固定長ベクトルだけを TabPFN に渡す<br><span class="mono">pEC50</span> では一切 fine-tune しない</p>
+          <div class="feat-cards">
+            <div class="feat-card feat-card--chemprop">
+              <p class="feat-card__head">ChemProp<span class="feat-card__dim"><span class="mono">256</span> 次元</span></p>
+              <p class="feat-card__what"><strong>化合物の深層学習の大定番</strong>　中身は D-MPNN (GNN)</p>
+              <p class="feat-card__parts">通常の GNN: 原子単位で情報を回す<br>D-MPNN: <strong>結合を有向で扱い</strong> 来た方向に戻さない　堂々巡りを回避</p>
+              <p class="feat-card__parts"><span class="mono">pred log2fc</span> と同じモデル　ここでは <strong>embedding だけ</strong>を使う</p>
+            </div>
+            <div class="feat-card feat-card--kermt">
+              <p class="feat-card__head">KERMT<span class="feat-card__dim"><span class="mono">3,200</span> 次元</span></p>
+              <p class="feat-card__what"><strong>事前学習済み graph transformer</strong></p>
+              <p class="feat-card__parts"><span class="mono">GROVER</span> を NVIDIA と Merck が再実装・改良　<span class="mono">ZINC + ChEMBL</span> 約 <span class="mono">1,100</span> 万分子で事前学習されたものを <span class="mono">log2fc</span> で継続事前学習</p>
+              <p class="feat-card__parts">次元が多いが <span class="mono">top500</span> や <span class="mono">PCA</span> で縮めると<strong>かえって悪くなる</strong></p>
+            </div>
+            <div class="feat-card feat-card--molformer">
+              <p class="feat-card__head">MoLFormer<span class="feat-card__dim"><span class="mono">768</span> 次元</span></p>
+              <p class="feat-card__what"><strong>事前学習済み <span class="mono">SMILES</span> Transformer (言語モデル)</strong></p>
+              <p class="feat-card__parts"><span class="mono">MoLFormer-c3</span>　<span class="mono">ZINC + PubChem</span> 約 <span class="mono">11</span> 億分子で事前学習</p>
+              <p class="feat-card__parts"><span class="mono">LoRA</span> と呼ばれる方法で <span class="mono">log2fc</span> を追加学習し <span class="mono">[CLS]</span> ベクトルを凍結</p>
+            </div>
+            <div class="feat-card feat-card--gnn">
+              <p class="feat-card__head">GatedGCN &amp; AttentiveFP<span class="feat-card__dim"><span class="mono">512</span> 次元</span></p>
+              <p class="feat-card__what">gated GNN と graph attention　試した GNN のうち<strong>たまたま良かった 2 つ</strong>で アーキテクチャ自体に深い意味はない</p>
+              <p class="feat-card__parts">単体では弱いが 強いモデルに重みが寄り切るのを防ぐ <strong>緩衝材</strong></p>
+            </div>
+          </div>
+          <p class="feat-close"><strong><span class="mono">pEC50</span> で学習させるより <span class="mono">log2fc</span> で学習させて凍結するほうが強い</strong>　<strong class="em">ChemProp で最初に分かったこと</strong><span class="corr-caveat">* 直接 fine-tune も test では悪くなかった　<span class="mono">OOF 0.53</span> と弱かったのに 答え合わせ後の test では <span class="mono">0.48</span> で 凍結の <span class="mono">0.44</span> に迫る　<span class="mono">OOF</span> が差を誇張していた</span></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">5 メンバー共通のレシピは 1 つ　log2fc で encoder を事前学習 → <strong>凍結</strong> → 1 化合物 1 ベクトルを TabPFN に渡す</p>
+          <ul>
+            <li>encoder は <strong>pEC50 で fine-tune しない</strong></li>
+            <li>凍結の根拠（ChemProp の OOF）— ゼロから学習 0.530 / full fine-tune 0.507 / head だけ 0.456 / <strong>凍結 0.437</strong></li>
+            <li>直接 pEC50 を当てにいった GNN は 0.53〜0.57</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">この OOF はマージンを過大に見せていた</span>　ゼロから学習した ChemProp は OOF 約 0.53 なのに unblinded test では約 0.48 で、凍結の 0.44 にかなり近い。OOF と blinded test が食い違う例</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members-boltz">
+        <h2>Members — Boltz Trunk</h2>
+        <div class="body step-body">
+          <p class="feat-lead">名前に反して この 2 つは Boltz-2 の<strong>予測構造を使っていない</strong>　<strong>Boltz trunk の embedding</strong> を TabPFN に読ませる</p>
+          <div class="steps">
+            <div class="step">
+              <p class="step__label">予測の条件</p>
+              <div class="step__body">
+                <p class="step__lead"><span class="spec-key">Input:</span> PXR-human 全長 <span class="mono">434</span> 残基 <span class="mono">(UniProt O75469)</span> + 各リガンド <span class="mono">(train + test 4,653)</span><span class="spec-ref">*</span></p>
+                <p class="step__note"><span class="spec-key">オプション:</span> MSA: AFDB　Template: なし　Pocket 指定: あり (<span class="mono">13</span> 残基)　sample: <span class="mono">1</span>　recycle: <span class="mono">3</span></p>
+                <p class="step__note step__note--caveat">* 前処理エラー <span class="mono">3</span> 件　<span class="mono">1</span> 件は修正して復旧　<span class="mono">2</span> 件は断念 (Au 錯体 / 3D 配座を作れず)</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">pooling 設計</p>
+              <div class="step__body">
+                <p class="step__lead"><strong>違いは pool する範囲だけ</strong>　pocket → <span class="mono">Boltz-pocket</span>　全体 → <span class="mono">Boltz-allpairs</span></p>
+              </div>
+            </div>
+          </div>
+          <figure class="boltz-figure">
+            <img src="assets/img/boltz-pooling.svg" alt="Boltz trunk pooling">
+          </figure>
+        </div>
+        <aside class="notes">
+          <p class="n-say">構造予測器を、構造ではなく<strong>表現</strong>として使った</p>
+          <ul>
+            <li>この 2 メンバーは<strong>予測されたポーズを一切使わない</strong>　構造予測器の上に建った表現モデル</li>
+            <li>trunk の内訳は 1,024 次元 — s (per-token) 384+384 と z (token-pair) 128+128</li>
+            <li>どの残基で pool するかはほとんど効かない　効くのは<strong>ペアテンソルの潰し方</strong>で、mean は良いが max だけだと 0.576 に崩壊する</li>
+            <li>z 単体で約 0.489 と single より強い　Boltz-2 自身の affinity module がペアを重視するのと整合する</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">経緯</span>trunk を使う構想は最初からあった。co-fold に 4 日以上かけた一方でポーズ由来の特徴が振るわず、その計算を無駄にしないために作り込んだ</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-members-boltz-2">
+        <h2>Members — Boltz as a Representation</h2>
+        <div class="body step-body">
+          <div class="steps">
+            <div class="step">
+              <p class="step__label">どこが効いたか</p>
+              <div class="step__body">
+                <p class="step__lead">効いているのは <strong><span class="mono">z</span> のペア表現</strong>　<span class="mono">128</span> 次元だけで <span class="mono">0.490</span> と 全部入りの <span class="mono">0.486</span> に肉薄する</p>
+                <p class="step__note"><span class="mono">s</span> は <span class="mono">768</span> 次元あっても <span class="mono">0.507</span>　リガンド単体の形より <strong>残基とリガンド原子の関係</strong>が効いている　Boltz-2 自身の affinity module がペアを重視する設計とも整合する</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">唯一の非 <span class="mono">log2fc</span></p>
+              <div class="step__body">
+                <p class="step__lead">9 メンバーで<strong>ここだけが <span class="mono">log2fc</span> を一切使わない</strong>　他メンバーとの相関も平均 <span class="mono">0.85</span> と最も低い　全体は <span class="mono">0.88</span></p>
+                <p class="step__note">構造だけを見て単体 <span class="mono">0.486</span>　他の全メンバーを駆動している <span class="mono">log2fc</span> の信号なしでこの水準に届く　削ると <span class="mono">OOF</span> は良く見えるのに public LB が悪化したので<strong>意図して残している</strong></p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">基盤モデルとして</p>
+              <div class="step__body">
+                <p class="step__lead">構造生成と長い diffusion を<strong>飛ばせる</strong>　trunk だけなら軽く 大規模な化合物集合にも回せる</p>
+                <p class="step__note">同じ考え方は PXR 以外の標的、binding / non-binding 分類、selectivity の補助表現にも広げられる　構造予測モデルを<strong>ポーズを出す道具</strong>ではなく <strong>protein-aware な表現抽出器</strong>として使う方向</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">おまけ: pose</p>
+              <div class="step__body">
+                <p class="step__lead">pose 由来は <strong>confidence までの利用にとどまった</strong></p>
+                <p class="step__note">affinity と confidence は tabular core の特徴量として入っている　pose そのものから作った特徴は gain が出ず不採用</p>
+              </div>
+            </div>
+          </div>
+          <p class="feat-close"><strong>この標的では Boltz-2 は 構造予測器 としてより <span class="em">学習表現</span> として価値があった</strong></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">重みは合計 <span class="n-num">0.081</span> と小さいが、外すと LB が悪化した</p>
+          <ul>
+            <li>他メンバーとの相関が平均 0.85 前後　パック全体の 0.88 より低い</li>
+            <li>drop や swap を試すと <strong>OOF では良く見えても public LB が悪化</strong>した　tabular 系への過集中を避ける diversity reserve</li>
+            <li>MoLFormer-XL を直接 fine-tune したものが 0.529　構造由来の 0.486 はそれより強い</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">正直に</span><span class="n-warn">構造が唯一の勝ち筋というわけではない</span>　答え合わせ後の test では、ゼロから学習した ChemProp も約 0.484 に届いている。PXR 1 例で一般化を主張するのは早い</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>不採用にしたポーズ由来は ProLIF の interaction fingerprint。Boltz-2 から取れる表形式シグナルは affinity/confidence スカラーとポケット集計にすでに吸収されていた</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-ensemble">
+        <h2>Ensemble</h2>
+        <div class="body corr-body">
+          <div class="band">
+            <p class="band__claim"><span class="band__claim-term">Caruana forward selection</span>重みは係数ではなく <strong class="em">選ばれた回数</strong></p>
+            <ol class="caruana-flow">
+              <li><span class="caruana-flow__what">空のアンサンブルに<br><strong>OOF が一番下がる 1 つ</strong>を足す</span><span class="caruana-flow__note">同じメンバーを何度でも足せる</span></li>
+              <li><span class="caruana-flow__what">メンバーを絞って<br><strong><span class="mono">20</span> 回</strong>やり直す</span><span class="caruana-flow__note">毎回ちがう顔ぶれで競わせる</span></li>
+              <li><span class="caruana-flow__what">採用された<br><strong>回数がそのまま重み</strong></span><span class="caruana-flow__note">連続値を当てないので一極集中しない</span></li>
+            </ol>
+          </div>
+
+          <div class="band band--last">
+            <p class="band__claim">単体の強さと重みは <strong>一致しない</strong>　<span class="band__claim-sub">左 単体の OOF MAE　右 アンサンブルでの重み</span></p>
+            <div class="slope-pair">
+              <div class="chart slope-chart" data-chart="ensemble-slope" data-src="ensemble"></div>
+              <div class="chart slope-bars" data-chart="ensemble-weight" data-src="ensemble"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">左が単体の強さ、右が重み　<strong>順位が入れ替わる</strong></p>
+          <ul>
+            <li>GatedGCN は OOF 5 位なのに重み 8 位、Boltz-pocket は OOF 8 位なのに重み <span class="n-num">5 位</span></li>
+            <li>左は上下反転して「良いほど上」、右は 0 起点の実値　だから上位 4 つへの集中がそのまま見える</li>
+            <li>Caruana bag20 の重みは<strong>選ばれた回数</strong>という離散値なので、連続最適化より一極集中しにくい</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">次に繋がる</span>Boltz 構造系は他メンバーとの相関が最も低いので、単体で弱くても選ばれる</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-ensemble-corr">
+        <h2>Ensemble — How Independent?</h2>
+        <div class="body corr-body">
+          <div class="band band--last">
+            <p class="band__claim">メンバーはどれくらい独立か　<strong>あまり独立ではない</strong>　<span class="band__claim-sub">事後検証　test 予測どうしの相関　AS1 + AS2</span></p>
+            <div class="chart corr-chart" data-chart="ensemble-corr" data-src="ensemble" data-corr-rows="tabular-top500,tabular-full"></div>
+            <div class="steps">
+              <div class="step">
+                <p class="step__label">全体</p>
+                <div class="step__body">
+                  <p class="step__lead"><strong>ほぼ全ペアが高相関</strong>　全 <span class="mono">36</span> ペア <span class="mono" data-corr-stat="min"></span>〜<span class="mono" data-corr-stat="max"></span>　平均 <span class="mono" data-corr-stat="mean"></span></p>
+                  <p class="step__note"><span class="mono">log2fc</span> より強い手がかりがない　<span class="mono">Boltz</span> は少し低いが <span class="mono">OOF</span> では他と変わらない　<strong>使える情報が限られている</strong></p>
+                </div>
+              </div>
+              <div class="step">
+                <p class="step__label">役割</p>
+                <div class="step__body">
+                  <p class="step__lead"><strong>重みの小さいメンバーを外すと悪化</strong>　family share <span class="mono">0.94</span>　public LB <span class="mono">+0.006</span></p>
+                  <p class="step__note">効いているのは精度ではなく <strong>寄りすぎを止める緩衝材</strong>としての働き</p>
+                </div>
+              </div>
+              <div class="step">
+                <p class="step__label">高相関の壁</p>
+                <div class="step__body">
+                  <p class="step__lead">新しいモデルを作っても<strong>高相関で弾かれるか 入れても悪化する</strong>ターンが続いた</p>
+                  <p class="step__note">→ モデルを増やす方向から <strong class="em">calibration や gate の工夫</strong>へ軸足を移した</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">9 メンバーは<strong>ほとんど同じことを言っている</strong>　全ペアで 0.81〜0.98、平均 0.88</p>
+          <ul>
+            <li>tabular の 2 つが 0.98、Boltz の 2 つが 0.97　どちらもほぼ重複</li>
+            <li>だから「新しいメンバーを足す」は途中から効かなくなった　これがアンサンブルの打ち止め</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">この相関は test 予測どうしのもので、重みを決めた OOF の相関ではない</span>　OOF で計算すると 0.90〜0.99・平均 0.93 まで上がり、Boltz と他の差はほぼ消える。だから「Boltz だけ低い」とは言わない</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>高相関で落としたものの例 — ChemProp 派生、KAN readout、再 pool した Boltz trunk (既存と r ≈ 0.98)、Uni-Mol v2 (最小 r 0.899)</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-calibration">
+        <h2>Calibration</h2>
+        <div class="body step-body calib-body">
+          <p class="feat-lead">順位は当たっているのに <strong>目盛りと中心がずれていた</strong></p>
+          <div class="steps">
+            <div class="step">
+              <p class="step__label">診断</p>
+              <div class="step__body">
+                <p class="step__lead">Spearman・Kendall・<span class="mono">R2</span> は上位なのに <span class="mono">MAE</span> と <span class="mono">RAE</span> だけ悪い</p>
+                <p class="step__note">どの化合物が強いかの<strong>並びは合っている</strong>が <span class="mono">pEC50</span> のスケールと中心がずれている状態</p>
+              </div>
+            </div>
+          </div>
+          <p class="feat-lead feat-lead--again">メンバー追加ではなく <strong class="em">test に寄せた重みで引いた一次式</strong>で アンサンブルの出力を後から補正</p>
+          <div class="steps steps--ruled">
+            <div class="step">
+              <p class="step__label">重みを作る</p>
+              <div class="step__body">
+                <p class="step__lead">Morgan fingerprint で <span class="mono">train / test</span> を判別する分類器を作り <strong>密度比を化合物ごとの重みにする</strong></p>
+                <p class="step__note"><span class="mono">P(test|x) / (1 − P(test|x))</span> を <span class="mono">[1/3, 3]</span> でクリップ　分類器が強すぎると少数の <span class="mono">test</span> 似の化合物に引っ張られるため<strong>クリップが必須</strong></p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">直線を引く</p>
+              <div class="step__body">
+                <p class="step__lead">その重みで <span class="mono">OOF</span> 予測 <span class="mono">4,140</span> 件と正解ラベルから<strong>一次式をフィット</strong>　<span class="mono">5-fold nested CV</span> で検証</p>
+                <p class="step__note">傾きが正なので<strong>並び順は壊れず</strong> スケールと中心だけ動く　<strong class="em">test に似た化合物ほど この直線の決定に効く</strong></p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">test に当てる</p>
+              <div class="step__body">
+                <p class="step__lead">同じ一次式を test 予測にそのまま適用</p>
+                <p class="step__note">使ったのは <span class="mono">test</span> 化合物の<strong>構造だけ</strong>　正解ラベルは一切見ていない</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">発端は「順位系の指標は上位なのに MAE だけ相対的に悪い」という診断</p>
+          <ul>
+            <li>候補は 4 つ　採ったのは <strong>傾きが正のアフィン</strong>　Spearman をほぼ保ったまま MAE を補正できるから</li>
+            <li>spline と isotonic は OOF で勝てない、または過学習気味だった</li>
+            <li>nested CV 上の改善は小さかったが、public LB では 0.4423 → 0.4358 と効いた　<strong>OOF 上の小さなスケール補正が Analog Set で増幅された</strong></li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>出荷版の係数は slope <span class="n-num">1.0936</span> / intercept <span class="n-num">-0.3853</span>。重みなし版の 1.0535 / -0.2457 とは別物なので混同しない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-calibration-gain">
+        <h2>Calibration — The Gain</h2>
+        <div class="body step-body calib-body">
+          <p class="feat-lead">アンサンブルの予測は正解より<strong>幅が狭い</strong>　強い化合物を低めに 弱い化合物を高めに出す</p>
+          <div class="calib-pair">
+            <div class="calib-left">
+              <p class="calib-sub">最終アンサンブル重みで再現　unblinded test <span class="mono">513</span> 件</p>
+              <table class="calib-tbl" data-calib-table></table>
+              <p class="calib-spread">予測の散らばりも戻る　正解 <span class="mono">0.996</span> に対し <span class="mono">0.703 → 0.767</span></p>
+            </div>
+            <div class="calib-right">
+              <p class="calib-sub">帯域ごとの <span class="mono">MAE</span> 変化</p>
+              <div class="chart calib-band-chart" data-chart="calibration-bands" data-src="calibFit"></div>
+            </div>
+          </div>
+          <p class="feat-close"><strong class="em">Spearman は 1 つも動かない</strong>　順位を保ったまま スケールと中心だけが直る<span class="feat-close__more">ただし効くのは<strong>主に高活性側</strong>　中域 <span class="mono">(pEC50 3〜5)</span> では<strong>微悪化</strong>する</span></p>
+        </div>
+        <aside class="notes">
+          <p class="n-say">補正は<strong>予測の縮こまりを広げている</strong>　散らばりが正解 0.996 に対し raw 0.703 → calibrated 0.767</p>
+          <ul>
+            <li>全体は MAE 0.4209 → <span class="n-num">0.4077</span>　AS1 も AS2 もほぼ同じだけ良くなる</li>
+            <li><strong>Spearman は 0.8370 のまま完全に同一</strong>　単調変換なので順位は 1 つも動かない</li>
+            <li>右の図は帯域別　棒が負なら改善</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">正直に</span><span class="n-warn">全域で良くなるわけではない</span>　高活性側 (5-6 と 6 以上) で稼いで、中間帯 (3-5) では返している。チャレンジの目的とは向きが合っているが、そこは隠さない</p>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>6 以上の -0.126 は一番大きい改善だが <strong>n=31</strong> しかない</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-phase1-run">
+        <h2>Phase 1 — Tuning Against the Board</h2>
+        <div class="body step-body">
+          <p class="feat-lead">ここから先は研究ではなく<strong>競技の手さばき</strong>　メンバーを差し替え ゲートを足し 提出して 下がったら残す</p>
+          <div class="chart phase1-chart" data-chart="phase1-run" data-src="phase1Run"></div>
+          <div class="steps">
+            <div class="step">
+              <p class="step__label">最終提出</p>
+              <div class="step__body">
+                <p class="step__lead"><span class="mono">id55</span> = 補正済みアンサンブル <span class="mono">(id51)</span> に <strong>potent-46 に似た化合物だけ <span class="mono">top500</span> の方向へ寄せる</strong></p>
+                <p class="step__note">Tanimoto <span class="mono">0.40</span> から <span class="mono">0.15</span> 幅で緩やかに立ち上げ　寄せる量は <span class="mono">0.35</span>　寄せる先は <span class="mono">top500</span> メンバーと素のアンサンブルの差</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">Phase 1 の LB は 0.4071〜0.4135 の間を動くだけだった</p>
+          <ul>
+            <li>公開リーダーボードのスナップショットから作っていて、転記ではない</li>
+            <li>id60 は id55 を<strong>無変更で出し直した</strong>もの　破線の枠がそれ</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">注意</span><span class="n-warn">id60 の 0.4059 は中間発表 (513 件) のスコアで、他の行の live LB (253 件) とは別の採点</span>　Spearman も 0.845 前後から 0.8343 へ外れている。だから report の「0.4071 と 0.4059 の差は LB のばらつき」という説明は採らない</p>
+          <p class="n-ask"><span class="n-ask-label">残った課題</span>最も強い化合物 (pEC50 ≥ 6) が系統的に低く出る。この帯の bias は約 -0.8 で平均へ 1 log 近く縮む。ゲートをいくつも試したが public LB ではノイズと区別がつかなかった</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-phase2">
+        <h2>Phase 1 → Phase 2</h2>
+        <div class="body step-body phase2-body">
+          <p class="feat-lead">Phase 2 は <strong>leaderboard なし</strong>　答え合わせ後に見ると <strong class="em">動かした分だけ悪くなっていた</strong></p>
+          <div class="steps steps--airy">
+            <div class="step">
+              <p class="step__label">Phase 1</p>
+              <div class="step__body">
+                <p class="step__lead"><strong>LB に合わせに行くのをやめた</strong>　最後は <span class="mono">id55</span> をそのまま出し直して終了</p>
+                <p class="step__note"><span class="mono">AS1</span> だけの最終順位は <span class="mono">8</span> 位　答えが半分公開された中間集計 (<span class="mono">AS1 + AS2</span>) では <span class="mono">4</span> 位まで上がった</p>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">Phase 2</p>
+              <div class="step__body phase2-row">
+                <div class="phase2-row__text">
+                  <p class="step__lead">公開された <span class="mono">AS1</span> を追加した学習 + <strong>高活性ゲート</strong>の実装</p>
+                  <p class="step__note"><span class="mono">AS1</span> を追加しても改善されず　ゲートは精度 (<span class="mono">AUC 0.88</span>) は良いものの <strong>操作する幅</strong>がイマイチ　低活性はリスクがあったので回避</p>
+                  <p class="step__note">土台が <span class="mono">id55</span> だったので傷は浅く <span class="mono">AS2</span> は <span class="mono">4</span> 位</p>
+                </div>
+                <div class="chart phase2-chart" data-chart="phase2-as2" data-src="phase2"></div>
+              </div>
+            </div>
+            <div class="step">
+              <p class="step__label">blind の難しさ</p>
+              <div class="step__body">
+                <p class="step__lead">手元の候補で最良だったのは <span class="mono">0.4056</span>　<strong class="em">優勝の 0.4061 を上回っていた</strong></p>
+                <p class="step__note">動かす値が多く 自前の事前チェックで reject</p>
+                <p class="step__note"><span class="mono">LB</span> がない Phase 2 は自分で足切りするしかなく 中間で良好だった <span class="mono">id55</span> を anchor に置き そこから離れない候補だけを通した</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">Phase 2 は<strong>動かしたぶんだけ悪くなった</strong>　最良は id60、つまり何もしなかった提出</p>
+          <ul>
+            <li>AS2 の実測 — id60 <span class="n-num">0.4075</span> → id61 0.4121 → id62 0.4115 → id63 <span class="n-num">0.4123</span> (提出)　優勝は 0.4061</li>
+            <li>id61 は公開された AS1 ラベルで再学習して混ぜたもの　<strong>AS1 再学習は AS2 をほとんど改善せず、混ぜた分だけ誤差を持ち込んだ</strong></li>
+            <li>ゲートの高活性識別は AUC 0.88 前後と良かった　<strong>識別は難しい部分ではなかった</strong></li>
+            <li>低い側は触らなかった　外したときの損が大きいため。答え合わせでこの自制は正しかった</li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>出さなかった id55shape は <span class="n-num">0.4056</span> で優勝を上回っていた。動かす値が多く、自前の preflight チェックを通らなかったので見送った</p>
+        </aside>
+      </section>
+
+      <section class="slide" id="s-results-again">
+        <h2>Final Results</h2>
+        <div class="body results-body">
+          <div class="round-tabs" role="tablist" aria-label="採点ラウンド">
+            <button class="round-tab" type="button" role="tab" aria-selected="false" tabindex="-1" data-round="interim">中間発表<span class="round-tab__sub">2026-05-26　AS1 + AS2 の 513 件　338 チーム</span></button>
+            <button class="round-tab is-active" type="button" role="tab" aria-selected="true" data-round="phase2">Phase 2<span class="round-tab__sub">2026-07-01　AS2 の 260 件　103 チーム</span></button>
+          </div>
+          <div class="round-panel" data-round="interim" role="tabpanel">
+            <div class="results-split">
+              <table class="results-table">
+                <thead>
+                  <tr><th class="results-rank"></th><th class="results-team"></th><th class="results-metric">MAE</th><th class="results-metric">RAE</th><th class="results-metric">R²</th><th class="results-metric">ρ</th><th class="results-prev">Phase 1 LB</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="results-rank">1</td><td class="results-team">AIDD-LiLab</td><td class="results-metric">0.4000</td><td class="results-metric">0.5280</td><td class="results-metric">0.6363</td><td class="results-metric">0.8428</td><td class="results-prev">3</td></tr>
+                  <tr><td class="results-rank">2</td><td class="results-team">toxicity</td><td class="results-metric">0.4005</td><td class="results-metric">0.5288</td><td class="results-metric">0.6628</td><td class="results-metric">0.8309</td><td class="results-prev">1</td></tr>
+                  <tr><td class="results-rank">3</td><td class="results-team">nova</td><td class="results-metric">0.4057</td><td class="results-metric">0.5357</td><td class="results-metric">0.6427</td><td class="results-metric">0.8293</td><td class="results-prev">4</td></tr>
+                  <tr class="results-row--me"><td class="results-rank">4</td><td class="results-team">N283T</td><td class="results-metric">0.4059</td><td class="results-metric">0.5359</td><td class="results-metric">0.6496</td><td class="results-metric">0.8343</td><td class="results-prev">8</td></tr>
+                  <tr><td class="results-rank">5</td><td class="results-team">sia</td><td class="results-metric">0.4078</td><td class="results-metric">0.5384</td><td class="results-metric">0.6353</td><td class="results-metric">0.8361</td><td class="results-prev">5</td></tr>
+                  <tr><td class="results-rank">6</td><td class="results-team">oxidane</td><td class="results-metric">0.4093</td><td class="results-metric">0.5404</td><td class="results-metric">0.6386</td><td class="results-metric">0.8312</td><td class="results-prev">7</td></tr>
+                  <tr><td class="results-rank">7</td><td class="results-team">PXRegressor</td><td class="results-metric">0.4134</td><td class="results-metric">0.5458</td><td class="results-metric">0.6401</td><td class="results-metric">0.8308</td><td class="results-prev">11</td></tr>
+                  <tr><td class="results-rank">8</td><td class="results-team">matcha-croissant</td><td class="results-metric">0.4157</td><td class="results-metric">0.5486</td><td class="results-metric">0.6246</td><td class="results-metric">0.8291</td><td class="results-prev">10</td></tr>
+                  <tr><td class="results-rank">9</td><td class="results-team">jaybirdy</td><td class="results-metric">0.4257</td><td class="results-metric">0.5619</td><td class="results-metric">0.6126</td><td class="results-metric">0.8212</td><td class="results-prev">6</td></tr>
+                  <tr><td class="results-rank">10</td><td class="results-team">Maisy</td><td class="results-metric">0.4261</td><td class="results-metric">0.5624</td><td class="results-metric">0.6071</td><td class="results-metric">0.8242</td><td class="results-prev">9</td></tr>
+                </tbody>
+              </table>
+              <div class="results-side">
+                <div class="metric-picks"><button class="metric-pick is-active" type="button" aria-pressed="true" data-pick="mae">MAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rae">RAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="r2">R²</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rho">ρ</button><span class="results-standing" data-standing></span></div>
+                <div class="chart results-chart" data-chart="results" data-src="results" data-round="interim" data-metric="mae"></div>
+              </div>
+            </div>
+            <p class="results-note">採点が AS1 の <span class="mono">253</span> 件から <span class="mono">513</span> 件に広がり　Phase 1 LB の <span class="mono">8</span> 位から <strong class="em">4位</strong> へ　同じ提出を採点し直しただけ</p>
+          </div>
+          <div class="round-panel is-active" data-round="phase2" role="tabpanel">
+            <div class="results-split">
+              <table class="results-table">
+                <thead>
+                  <tr><th class="results-rank"></th><th class="results-team"></th><th class="results-metric">MAE</th><th class="results-metric">RAE</th><th class="results-metric">R²</th><th class="results-metric">ρ</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="results-rank">1</td><td class="results-team">matcha-croissant</td><td class="results-metric">0.4061</td><td class="results-metric">0.5631</td><td class="results-metric">0.5982</td><td class="results-metric">0.8269</td></tr>
+                  <tr><td class="results-rank">2</td><td class="results-team">AIDD-LiLab</td><td class="results-metric">0.4092</td><td class="results-metric">0.5676</td><td class="results-metric">0.5907</td><td class="results-metric">0.8245</td></tr>
+                  <tr><td class="results-rank">3</td><td class="results-team">AIDD-LiLab-Aggressive</td><td class="results-metric">0.4104</td><td class="results-metric">0.5692</td><td class="results-metric">0.5886</td><td class="results-metric">0.8216</td></tr>
+                  <tr class="results-row--me"><td class="results-rank">4</td><td class="results-team">N283T</td><td class="results-metric">0.4113</td><td class="results-metric">0.5703</td><td class="results-metric">0.6008</td><td class="results-metric">0.8161</td></tr>
+                  <tr><td class="results-rank">5</td><td class="results-team">toxicity</td><td class="results-metric">0.4121</td><td class="results-metric">0.5713</td><td class="results-metric">0.5790</td><td class="results-metric">0.8107</td></tr>
+                  <tr><td class="results-rank">6</td><td class="results-team">tguttenb1</td><td class="results-metric">0.4139</td><td class="results-metric">0.5741</td><td class="results-metric">0.6075</td><td class="results-metric">0.8201</td></tr>
+                  <tr><td class="results-rank">7</td><td class="results-team">rdkbio</td><td class="results-metric">0.4149</td><td class="results-metric">0.5751</td><td class="results-metric">0.5701</td><td class="results-metric">0.8095</td></tr>
+                  <tr><td class="results-rank">8</td><td class="results-team">Multi</td><td class="results-metric">0.4152</td><td class="results-metric">0.5755</td><td class="results-metric">0.5802</td><td class="results-metric">0.8172</td></tr>
+                  <tr><td class="results-rank">9</td><td class="results-team">rasayan-labs</td><td class="results-metric">0.4170</td><td class="results-metric">0.5780</td><td class="results-metric">0.5600</td><td class="results-metric">0.8092</td></tr>
+                  <tr><td class="results-rank">10</td><td class="results-team">Rasayan-ai</td><td class="results-metric">0.4192</td><td class="results-metric">0.5811</td><td class="results-metric">0.5573</td><td class="results-metric">0.8080</td></tr>
+                </tbody>
+              </table>
+              <div class="results-side">
+                <div class="metric-picks"><button class="metric-pick is-active" type="button" aria-pressed="true" data-pick="mae">MAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rae">RAE</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="r2">R²</button><button class="metric-pick" type="button" aria-pressed="false" data-pick="rho">ρ</button><span class="results-standing" data-standing></span></div>
+                <div class="chart results-chart" data-chart="results" data-src="results" data-round="phase2" data-metric="mae"></div>
+              </div>
+            </div>
+            <p class="results-note">優勝との差は <span class="mono">0.005</span>　MAE の標準偏差 <span class="mono">±0.028</span> の <strong class="em">5分の1</strong> しかない</p>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">Phase 2 で <strong>103 チーム中 4 位</strong>　優勝との差は 0.0052</p>
+          <ul>
+            <li>matcha-croissant は Phase 1 LB 10 位 → 中間 8 位 → Phase 2 優勝</li>
+            <li>指標を切り替えると割れる — MAE 4 位 / RAE 4 位 / R² 2 位 だが <strong>ρ は 11 位</strong></li>
+          </ul>
+          <p class="n-ask"><span class="n-ask-label">聞かれたら</span>出さなかった id55shape の 0.4056 は、この表の 1 位を上回っている</p>
+        </aside>
+      </section>
+
+      <!-- The talk proper ends at the results slide. This is the door into
+           the bonus block: no heading, like the hero, because a divider that
+           carries an h2 reads as one more slide in the run. -->
+      <section class="slide divider" id="s-bonus-open">
+        <div class="body open-body">
+          <div class="open-stage">
+            <p class="open-kicker">Behind the Scenes</p>
+            <p class="open-big">ここからは <em>裏話</em></p>
+            <div class="open-list">
+              <div class="open-item"><b>小規模な環境で</b><i>自宅の <span class="mono">GPU</span> 1 枚　チームも組まず 1 人で どこまで</i></div>
+              <div class="open-item"><b>どう運用したか</b><i>実験を回していたのは <span class="mono">AI agents</span>　効いた場面と 転んだ場面</i></div>
+              <div class="open-item"><b>他のチーム</b><i>上位の手法と 読んで面白かったレポート</i></div>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p class="n-say">本編はここまで　<strong>ここからは裏話</strong>　時間がなければ飛ばして質疑へ</p>
+          <ul>
+            <li>裏話は 3 つ — <strong>小規模な環境で / どう運用したか / 他のチーム</strong></li>
+          </ul>
+        </aside>
+      </section>
+
+      <!-- Three candidates for the one slide that opens the AI-agents section.
+           Same argument in three shapes; two of these get deleted once the
+           author has flipped through them. -->
+
+      <!-- The environment, then what came out of it, stacked in that order:
+           the slide is a claim about cause, so it reads down, not across. -->
+      <section class="slide" id="s-ai-intro-b">
+        <h2>One PC, One Person</h2>
+        <div class="body rig-body">
+          <p class="rig-lead">順位は僅差でたまたま　<strong>一番の収穫は 小規模の環境で上位に残れたこと</strong></p>
+          <div class="rig-block">
+            <p class="rig-label">作業環境</p>
+            <div class="rig-strip">
+              <div class="rig-spec"><p class="rig-spec__key">マシン</p><p class="rig-spec__val">自宅のゲーミング PC</p></div>
+              <div class="rig-spec"><p class="rig-spec__key">GPU</p><p class="rig-spec__val"><span class="mono">RTX 5080 (16 GB)</span></p></div>
+              <div class="rig-spec"><p class="rig-spec__key">人数</p><p class="rig-spec__val">1</p></div>
+              <div class="rig-spec"><p class="rig-spec__key">期間</p><p class="rig-spec__val">3 か月　稼働 45 日</p></div>
+              <div class="rig-spec"><p class="rig-spec__key">データ</p><p class="rig-spec__val">公開データのみ</p></div>
+            </div>
+            <p class="rig-foot">上位には製薬企業のチームも 自社データを持つチームもいた</p>
+          </div>
+          <div class="rig-block">
+            <p class="rig-label">そこから出たもの</p>
+            <div class="rig-stats">
+              <div class="rig-stat">
+                <p class="rig-stat__fig">4<span class="rig-stat__unit">th / 103</span></p>
+                <p class="rig-stat__cap">Tier 1　優勝との差は <span class="mono">0.0052</span></p>
+              </div>
+              <div class="rig-stat">
+                <p class="rig-stat__fig">9<span class="rig-stat__unit">メンバー</span></p>
+                <p class="rig-stat__cap">アンサンブル ＋ post-hoc 補正</p>
+              </div>
+              <div class="rig-stat">
+                <p class="rig-stat__fig">260<span class="rig-stat__unit">commits</span></p>
+                <p class="rig-stat__cap"><span class="mono">161</span> PR　<span class="mono">59</span> issue</p>
+              </div>
+              <div class="rig-stat">
+                <p class="rig-stat__fig">1,396~<span class="rig-stat__unit">files</span></p>
+                <p class="rig-stat__cap">git 管理下のみ　うち <span class="mono">383</span> が Python</p>
+              </div>
+            </div>
+          </div>
+          <p class="rig-close">これを 1 人で回せたのは <strong class="em">AI agents をうまく活用した点</strong></p>
+        </div>
+      </section>
+
+
+      <!-- Who wrote it, and what was built for them to work in. Three cards
+           for the tools (siblings, not a procedure) and one plate for the six
+           environment decisions (settings, read in any order). -->
+      <section class="slide" id="s-ai-tools">
+        <h2>The Tools</h2>
+        <div class="body setup-body">
+          <p class="tools-lead">このプロジェクトで <strong class="em">私が書いたコードと文章はゼロ</strong>　このスライドも Claude Code が書いています</p>
+          <div class="tools-row">
+            <div class="tool-card tool-card--cc">
+              <p class="tool-card__name">Claude Code <span class="tool-card__ver">Opus 4.8</span></p>
+              <p class="tool-card__line">初期のコーディング役</p>
+              <p class="tool-card__line">Codex 移行後も文章系で利用</p>
+            </div>
+            <div class="tool-card tool-card--cx">
+              <p class="tool-card__name">Codex <span class="tool-card__ver">5.5</span></p>
+              <p class="tool-card__line">途中から <span class="mono">CC</span> と交代</p>
+              <p class="tool-card__line">Coding 最強　文章・グラフはカス</p>
+            </div>
+            <div class="tool-card tool-card--gpt">
+              <p class="tool-card__name">ChatGPT</p>
+              <p class="tool-card__line">Deep Research で文献調査</p>
+              <p class="tool-card__line">調べるだけでなく問題解決にも</p>
+            </div>
+          </div>
+          <p class="env-label"><span class="env-label__key">AI 向けの環境</span>特別なことはせず AI を迷わせない側を整える</p>
+          <div class="env-plate">
+            <div class="env-cell"><p class="env-cell__key">pixi</p><p class="env-cell__val">環境を 1 ファイルに固定</p></div>
+            <div class="env-cell"><p class="env-cell__key">PostgreSQL</p><p class="env-cell__val">データも実験結果も DB に</p></div>
+            <div class="env-cell"><p class="env-cell__key">GitHub issue</p><p class="env-cell__val">実験ログは issue に集約</p></div>
+            <div class="env-cell"><p class="env-cell__key">PR</p><p class="env-cell__val">個人開発でも <span class="mono">PR</span> を必須に</p></div>
+            <div class="env-cell"><p class="env-cell__key">tmux</p><p class="env-cell__val">長時間の実行を任せる</p></div>
+            <div class="env-cell"><p class="env-cell__key">MCP / skill</p><p class="env-cell__val">導入は <strong>TogoMCP</strong> だけ</p></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Two sections on one slide: how Deep Research was used, and the one
+           MCP. The route keeps its dead branch — the claim is that one of the
+           two routes dies, so it is drawn rather than described. The tags that
+           used to name the lanes are gone; the boxes say which is which. -->
+      <section class="slide" id="s-dr">
+        <h2>Where Agents Paid Off</h2>
+        <div class="body dr-body">
+          <p class="dr-sec">Deep Research の活用</p>
+          <div class="dr-branch">
+            <div class="dr-seed"><b>課題</b><i>手詰まり</i></div>
+            <div class="dr-lanes">
+              <div class="dr-lane dr-lane--bad">
+                <span class="dr-cross">✕</span>
+                <div class="dr-flat">そのまま聞く</div>
+                <span class="dr-arrow">→</span>
+                <div class="dr-flat dr-flat--dead">凡庸な答えしか返らない</div>
+              </div>
+              <div class="dr-lane">
+                <div class="dr-box">
+                  <p class="dr-box__title"><span class="dr-box__no">01</span>Context</p>
+                  <p class="dr-box__sub">これまでの会話をそのまま渡す</p>
+                </div>
+                <span class="dr-arrow">→</span>
+                <div class="dr-box">
+                  <p class="dr-box__title"><span class="dr-box__no">02</span>Prompt</p>
+                  <p class="dr-box__sub">質問文は <span class="mono">CC</span> / Codex に書かせる</p>
+                </div>
+                <span class="dr-arrow">→</span>
+                <div class="dr-box">
+                  <p class="dr-box__title"><span class="dr-box__no">03</span>Deep Research</p>
+                  <p class="dr-box__sub">文献と知見を横断して整理させる</p>
+                </div>
+                <span class="dr-arrow">→</span>
+                <div class="dr-box dr-box--out">
+                  <p class="dr-box__title"><span class="dr-box__no">04</span>Adapt</p>
+                  <p class="dr-box__sub">論文のままではなく課題に合わせる</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="dr-got"><span class="dr-got__key">出会えたもの</span><strong>Buterez et al. 2024</strong> multi-fidelity transfer　<strong>calibration / uncertainty</strong> 系　初期の文献調査も同じやり方</p>
+          <div class="dr-part">
+            <p class="dr-sec">TogoMCP も便利！</p>
+            <p class="dr-mcp__body"><span class="mono">UniProt</span>・<span class="mono">PDB</span>・<span class="mono">ChEMBL</span> をまたいだ調べものが <strong>聞くだけで済む</strong>　手で集めると抜けるし取り違える</p>
+            <div class="dr-chat">
+              <p class="dr-chat__row dr-chat__row--me">
+                <span class="dr-chat__bubble">PXR に関する <span class="mono">DB</span> の情報を教えて</span>
+                <span class="dr-chat__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20.5c0-4 3.2-6.4 7.2-6.4s7.2 2.4 7.2 6.4"/></svg>
+                </span>
+              </p>
+              <p class="dr-chat__row dr-chat__row--ai">
+                <span class="dr-chat__icon dr-chat__icon--ai">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8.5" width="16" height="11.5" rx="4"/><path d="M12 4.2v4.3"/><circle cx="12" cy="3.4" r="1.1"/><circle cx="9.4" cy="14.2" r="1.15" class="dr-chat__eye"/><circle cx="14.6" cy="14.2" r="1.15" class="dr-chat__eye"/></svg>
+                </span>
+                <span class="dr-chat__bubble dr-chat__bubble--ai">UniProt は <span class="mono">O75469</span>　ChEMBL は <span class="mono">CHEMBL3401</span>　PDB は <span class="mono">72</span> 件で…</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- The other half of the agent story. Four things that actually went
+           wrong, then the one cause under all four, then the part that stayed
+           human. -->
+      <section class="slide" id="s-ai-weak">
+        <h2>Where Agents Fall Down</h2>
+        <div class="body wk-body">
+          <p class="wk-lead">なんでもかんでも <span class="mono">AI</span> というわけにはいかない　<strong class="em">大小様々なミスが多発</strong></p>
+          <div class="wk-plate">
+            <div class="wk-cell">
+              <p class="wk-cell__title">気づかれない実装ミス</p>
+              <p class="wk-cell__note">CheMeleon の <span class="mono">2048</span> 次元を 未学習の射影で <span class="mono">300</span> に潰したまま完走</p>
+            </div>
+            <div class="wk-cell">
+              <p class="wk-cell__title">option のつけ忘れ</p>
+              <p class="wk-cell__note">Boltz-2 を 4 日回した結果が 意図した設定ではなかった</p>
+            </div>
+            <div class="wk-cell">
+              <p class="wk-cell__title">結果の上書き</p>
+              <p class="wk-cell__note">前の実験の出力を消してしまい 再現できなくなった</p>
+            </div>
+            <div class="wk-cell">
+              <p class="wk-cell__title">ファイルの散乱</p>
+              <p class="wk-cell__note">同じ話の <span class="mono">md</span> が増え 古いほうを読みに行く</p>
+            </div>
+          </div>
+          <p class="wk-obs">実行<strong>前</strong>は再現性にうるさいのに 実行<strong>後</strong>の再現性は確保されていない　細かい設定に注意を取られて 肝心の中身が<strong>筋違い</strong>になる</p>
+          <div class="wk-why">
+            <div class="wk-causes">
+              <div class="wk-cause">長期タスクでの <strong>context 汚染</strong></div>
+              <div class="wk-cause">新規セッションでの <strong>context 読み違え</strong></div>
+            </div>
+            <span class="wk-arrow">→</span>
+            <div class="wk-fix"><b>枠組みを先に作る</b><i>置き場所・命名・記録先を決めてから走らせる</i></div>
+          </div>
+          <p class="wk-close">アイデア自体は <strong class="em">自分で出したほうが当たる</strong>　agent は良くも悪くも堅実で定番寄り　指示する側が要る</p>
+        </div>
+      </section>
+      <!-- The other teams, following the shape of the challenge's own wrap-up
+           table: what each of them built and which of the auxiliary sets they
+           used. Team names sit under the affiliation because two of the rows
+           are the same lab, and MAE is left to the results slide. -->
+      <section class="slide" id="s-peers">
+        <h2>The Other Teams</h2>
+        <div class="body peers-body">
+          <p class="peers-lead">全チームのモデルレポートが公開されている　<strong class="em">上位はほぼ企業</strong>　その中に 1 人で入った</p>
+          <table class="peers-table">
+            <thead>
+              <tr>
+                <th class="peers-rank">#</th>
+                <th class="peers-org">所属</th>
+                <th class="peers-how">主なモデル</th>
+                <th class="peers-flag">Ens.</th>
+                <th class="peers-flag">3D</th>
+                <th class="peers-flag">conc.</th>
+                <th class="peers-flag">counter</th>
+                <th class="peers-flag">内部</th>
+                <th class="peers-mae">MAE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">1</td>
+                <td class="peers-org"><a href="https://www.inductive.bio/" target="_blank" rel="noopener">Inductive Bio</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">Multitask GNN ＋ proxy-SVR　Chemprop / CheMeleon / Uni-Mol2 / TabICL</td>
+                <td class="peers-flag">2</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-flag peers-own">あり</td><td class="peers-mae">0.4061</td>
+              </tr>
+              <tr>
+                <td class="peers-rank">2</td>
+                <td class="peers-org"><a href="https://www.ufl.edu/" target="_blank" rel="noopener">Univ. of Florida</a></td>
+                <td class="peers-how">Uni-Mol v2　RBF SVR　gated MLP　LGBM　PharmHGT-v2</td>
+                <td class="peers-flag">15+</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-mae">0.4092</td>
+              </tr>
+              <tr>
+                <td class="peers-rank">3</td>
+                <td class="peers-org"><a href="https://www.ufl.edu/" target="_blank" rel="noopener">Univ. of Florida</a></td>
+                <td class="peers-how">2 位と同じ ＋ ChemFM-3B / CLAMP</td>
+                <td class="peers-flag">15+</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-mae">0.4104</td>
+              </tr>
+              <tr class="peers-row--me">
+                <td class="peers-rank">4</td>
+                <td class="peers-org">私</td>
+                <td class="peers-how">tabular core / frozen embed / Boltz trunk</td>
+                <td class="peers-flag">9</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-mae">0.4113</td>
+              </tr>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">5</td>
+                <td class="peers-org"><a href="https://antaresrx.com/" target="_blank" rel="noopener">ANTARES Therapeutics</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">Chemprop　TabPFN v3 (multi-task)</td>
+                <td class="peers-flag">2+</td><td class="peers-flag">—</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-own">あり</td><td class="peers-mae">0.4121</td>
+              </tr>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">6</td>
+                <td class="peers-org"><a href="https://www.metacoderai.com/" target="_blank" rel="noopener">MetaCoder</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">Chemprop / AttentionFP / Uni-Mol / TorchMD / TabPFN → XGBoost stack</td>
+                <td class="peers-flag">7+</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-flag">—</td><td class="peers-mae">0.4139</td>
+              </tr>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">7</td>
+                <td class="peers-org"><a href="https://www.deepmedchem.com/" target="_blank" rel="noopener">Deep MedChem</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">Uni-Mol2 (84M)　LightGBM　TabICL　TabM　ChemBERTa</td>
+                <td class="peers-flag">6+</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-mae">0.4149</td>
+              </tr>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">8</td>
+                <td class="peers-org"><a href="https://www.beyangtx.com/?lang=en" target="_blank" rel="noopener">BEYANG Therapeutics</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">2D graph 系のモデル ＋ Uni-Mol</td>
+                <td class="peers-flag">2+</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag">—</td><td class="peers-mae">0.4152</td>
+              </tr>
+              <tr class="peers-row--corp">
+                <td class="peers-rank">9</td>
+                <td class="peers-org"><a href="https://rasayan.ai/" target="_blank" rel="noopener">Rasayan Lab</a><span class="peers-tag">企業</span></td>
+                <td class="peers-how">CheMeleon (<span class="mono">HTS</span> 事前学習)　MolE　UniMol　ADMET GBM</td>
+                <td class="peers-flag">12</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-y">✓</td><td class="peers-flag peers-own">あり</td><td class="peers-mae">0.4170</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="peers-close">上位の多くは <strong>3D encoder (Uni-Mol2)</strong> を主軸に　<strong><span class="mono">single-conc</span> からの転移</strong>と <strong>予測の圧縮を戻す補正</strong>は 各チームが別々に同じ結論へ</p>
+        </div>
+      </section>
+
+      <!-- Three reports out of the hundred-odd, picked for the idea in them
+           rather than for where they placed. Two are well down the activity
+           board and one is off it entirely — the structure track's winner. -->
+      <section class="slide" id="s-peer-reads">
+        <h2>Reports Worth Reading</h2>
+        <div class="body reads-body">
+          <p class="reads-lead">順位ではなく <strong class="em">中身が面白かった</strong> 4 本</p>
+          <div class="reads-row">
+            <div class="read-card">
+              <p class="read-card__who"><span class="read-card__rank">1 位</span><a class="read-card__name" href="https://docs.google.com/document/d/1OY1OPicY4OD6uFvbqvXGfeLcRJbxTRY6Ds8uXZusBR4/edit" target="_blank" rel="noopener">matcha-croissant</a></p>
+              <p class="read-card__hook">弱いラベルを <span class="mono">pEC50</span> に化かす</p>
+              <p class="read-card__body">用量反応のない化合物に <strong><span class="mono">SVR</span> で <span class="mono">pEC50</span> を補完</strong>　<span class="mono">1</span> 万件超に増やして <span class="mono">GNN</span> を学習</p>
+              <p class="read-card__note">使うのは低活性側だけ　予測が <span class="mono">pEC50 &lt; 4.5</span> の化合物でこのモデルへ寄せる</p>
+            </div>
+            <div class="read-card">
+              <p class="read-card__who"><span class="read-card__rank">15 位</span><a class="read-card__name" href="https://github.com/discoverybytes/openadmet-pxr-blind-challenge/blob/main/activity-prediction/README.md" target="_blank" rel="noopener">discoverybytes</a></p>
+              <p class="read-card__hook">アッセイを疑うところから始める</p>
+              <p class="read-card__body">反応性求電子剤 <span class="mono">754</span> 件を除外　測定の怪しい <span class="mono">474</span> 件は重みを <span class="mono">0.3</span>–<span class="mono">0.5</span> に　互変異性の誤りも訂正</p>
+              <p class="read-card__note">counter assay・単濃度・<span class="mono">FXR</span> を同時に学習して正則化に使う</p>
+            </div>
+            <div class="read-card">
+              <p class="read-card__who"><span class="read-card__rank">43 位</span><a class="read-card__name" href="https://github.com/reillyosadchey/pxr-challenge" target="_blank" rel="noopener">reillyosadchey</a></p>
+              <p class="read-card__hook">同じ着想に<br>別の結論</p>
+              <p class="read-card__body"><span class="mono">pEC50</span> ではなく <strong><span class="mono">log2FC</span> を予測するモデル</strong>を作っていた　こちらの <span class="mono">pred log2fc</span> と同じ発想</p>
+              <p class="read-card__note">ただし採用せず　重み <span class="mono">0%</span>　「encoder が同じ情報を持っていて冗長」と判断している</p>
+            </div>
+            <div class="read-card read-card--t2">
+              <p class="read-card__who"><span class="read-card__rank">Track 2　1 位</span><a class="read-card__name" href="https://github.com/wiwnopgm/pxr_structure_challenge/blob/main/README.md" target="_blank" rel="noopener">wiwnopgm</a></p>
+              <p class="read-card__hook"><span class="mono">ML</span> ポテンシャルで pose を採点</p>
+              <p class="read-card__body">co-folding <span class="mono">4</span> モデルで <span class="mono">50</span> pose　<strong>Egret-1 / OrbMol-v2 で結合エネルギー</strong>を出して順位付け</p>
+              <p class="read-card__note">PoseBusters スコアと掛け合わせ <span class="mono">ipTM</span> と <span class="mono">RRF</span> で融合　<strong>そういう使い方があるのか</strong>と思った</p>
+            </div>
+          </div>
+          <p class="reads-close">これだけの手法が一度に見られるのが面白い　<strong class="em">論文とは違う 実務寄りの技術</strong>が出てくる</p>
+        </div>
+      </section>
+
+    </div>
+    <script src="assets/vendor/echarts.min.js"></script>
+    <script src="assets/vendor/katex/katex.min.js"></script>
+    <script src="assets/vendor/3Dmol-min.js"></script>
+    <script src="assets/js/echarts-theme.js"></script>
+    <script src="assets/js/math.js"></script>
+    <script src="assets/js/charts/results.js"></script>
+    <script src="assets/js/charts/eda.js"></script>
+    <script src="assets/js/charts/molecule.js"></script>
+    <script src="assets/js/charts/drc.js"></script>
+    <script src="assets/js/charts/metric-demo.js"></script>
+    <script src="assets/data/results.js"></script>
+    <script src="assets/data/eda.js"></script>
+    <script src="assets/data/compounds.js"></script>
+    <script src="assets/data/pxr-mol.js"></script>
+    <script src="assets/data/drc.js"></script>
+    <script src="assets/data/metric-demo.js"></script>
+    <script src="assets/js/charts/feature-scatter.js"></script>
+    <script src="assets/js/charts/feature-corr.js"></script>
+    <script src="assets/js/charts/topk.js"></script>
+    <script src="assets/js/charts/ensemble-slope.js"></script>
+    <script src="assets/js/charts/ensemble-corr.js"></script>
+    <script src="assets/js/charts/calibration.js"></script>
+    <script src="assets/js/charts/phase1-run.js"></script>
+    <script src="assets/js/charts/phase2.js"></script>
+    <script src="assets/data/strategy.js"></script>
+    <script src="assets/data/ensemble.js"></script>
+    <script src="assets/data/topk.js"></script>
+    <script src="assets/data/calib-fit.js"></script>
+    <script src="assets/data/phase1-run.js"></script>
+    <script src="assets/data/phase2.js"></script>
+    <script src="assets/js/deck.js"></script>
+    <script src="assets/js/notes.js"></script>
+    <script src="assets/js/fullscreen.js"></script>
+    <script src="assets/js/fit.js"></script>
+    <script src="assets/js/lightbox.js"></script>
+    <script src="assets/js/metric-tabs.js"></script>
+    <script src="assets/js/results-tabs.js"></script>
+    <script src="assets/js/eda-picks.js"></script>
+    <script src="assets/js/ensemble.js"></script>
+    <script src="assets/js/calibration-table.js"></script>
+    <script src="assets/js/compounds.js"></script>
+    <script src="assets/js/authoring.js"></script>
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>

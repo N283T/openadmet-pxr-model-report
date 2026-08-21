@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>Presenter — PXR Deck</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="assets/fonts.css">
+    <link rel="stylesheet" href="assets/css/deck.css">
+    <style>
+      /* A speaker console for the second screen, not a mirror of the deck: no
+         preview of the slide at any size — the projector already shows it.
+         The room goes to what the projected slide cannot tell the speaker,
+         which is how long the talk has been running, the notes at a readable
+         size, and the name of whatever comes next. */
+      body {
+        margin: 0;
+        padding: 16px;
+        height: 100vh;
+        box-sizing: border-box;
+        background: var(--bg);
+      }
+      #presenter-root {
+        height: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) clamp(240px, 22vw, 440px);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 16px;
+      }
+      .panel {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px 20px;
+        background: var(--surface);
+      }
+      .panel__head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: baseline;
+        gap: 1em;
+        margin: 0 0 12px;
+        font-family: var(--font-display);
+        font-size: 1rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .panel__head .spacer { flex: 1; }
+
+      /* Status bar */
+      .bar {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 32px;
+      }
+      .deckstate {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .position {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4em;
+        font-family: var(--font-mono);
+        line-height: 1;
+      }
+      #presenter-position { font-size: 3rem; }
+      #presenter-total { font-size: 1.3rem; color: var(--muted); }
+      .progress {
+        height: 8px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      .progress__fill {
+        width: 0;
+        height: 100%;
+        background: var(--color-blue);
+        transition: width 0.18s ease;
+      }
+      .upnext {
+        margin: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 0.7em;
+        min-width: 0;
+        font-family: var(--font-display);
+        font-size: 1.2rem;
+      }
+      .upnext__label {
+        flex: 0 0 auto;
+        font-size: 0.7em;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+      #presenter-next-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .clockstate {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      #presenter-elapsed {
+        font-family: var(--font-mono);
+        font-size: 3rem;
+        line-height: 1;
+      }
+      .clockrow {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      button {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-display);
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { border-color: var(--color-blue); }
+      button:disabled { opacity: 0.35; cursor: default; }
+      .timer-buttons { display: flex; gap: 8px; }
+      .timer-buttons button { padding: 6px 16px; font-size: 0.95rem; }
+
+      /* Notes */
+      #presenter-title {
+        flex: 0 0 auto;
+        margin: 0 0 12px;
+        font-family: var(--font-display);
+        font-size: 1.7rem;
+        line-height: 1.2;
+      }
+      #presenter-step {
+        font-family: var(--font-mono);
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .fontsize { display: flex; gap: 6px; }
+      .fontsize button {
+        padding: 2px 10px;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+      }
+      #presenter-notes {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        font-family: var(--font-body);
+        /* Overwritten from localStorage on load; this is the first-run size. */
+        font-size: 1.4rem;
+        line-height: 1.7;
+      }
+      /* Notes arrive as markup so the parts can be told apart at a glance:
+         the line to take, the numbers to get right, and the answers held in
+         reserve for a question. Sized in em so the notes font-size control
+         scales the whole structure and not just the prose. */
+      #presenter-notes > :first-child { margin-top: 0; }
+      #presenter-notes > :last-child { margin-bottom: 0; }
+      #presenter-notes .n-say {
+        margin: 0 0 0.7em;
+        font-weight: 700;
+      }
+      #presenter-notes ul {
+        margin: 0 0 0.7em;
+        padding-left: 1.1em;
+        list-style: none;
+      }
+      #presenter-notes li {
+        margin: 0 0 0.35em;
+        position: relative;
+      }
+      #presenter-notes li::before {
+        content: "·";
+        position: absolute;
+        left: -0.9em;
+        color: var(--muted);
+      }
+      #presenter-notes .n-ask {
+        margin: 0.9em 0 0;
+        padding-top: 0.7em;
+        border-top: 1px solid var(--line);
+      }
+      #presenter-notes .n-ask-label {
+        display: block;
+        margin-bottom: 0.35em;
+        font-family: var(--font-mono);
+        font-size: 0.72em;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      #presenter-notes .n-num {
+        font-family: var(--font-mono);
+        font-weight: 700;
+      }
+      #presenter-notes .n-warn { color: var(--color-coral); font-weight: 700; }
+
+      /* Slide list */
+      .outline {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .outline button {
+        display: flex;
+        align-items: baseline;
+        gap: 0.7em;
+        width: 100%;
+        padding: 6px 10px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      .outline button:hover:not(.is-current) { background: var(--bg); }
+      .outline button.is-current { background: var(--color-blue); color: var(--surface); }
+      .outline__num {
+        flex: 0 0 2.2em;
+        text-align: right;
+        font-family: var(--font-mono);
+        font-size: 0.85em;
+        color: var(--muted);
+      }
+      .outline button.is-current .outline__num { color: var(--surface); }
+      .outline__label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Controls */
+      .controls {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 20px;
+      }
+      /* One row of equal buttons: at a lectern the target is found by position,
+         and a row of differently sized ones is harder to hit without looking. */
+      .controls > button {
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+        padding: 14px 20px;
+        font-size: 1.1rem;
+      }
+      /* Only Next is filled, so the eye lands on the one button pressed most.
+         Prev is the same hue outlined, which reads as its pair without
+         competing with it, and Overview takes the other accent. */
+      .controls > button.is-next {
+        background: var(--color-blue);
+        border-color: var(--color-blue);
+        color: var(--surface);
+      }
+      .controls > button.is-prev {
+        border-color: var(--color-blue);
+        color: var(--color-blue);
+      }
+      /* Teal only on the border and the icon: as label colour it measures 1.9:1
+         against this background, which is not text in a dimmed room. */
+      .controls > button.is-overview { border-color: var(--color-teal); }
+      .controls > button.is-overview .btn-icon { fill: var(--color-teal); }
+      /* Blanking paints the projector black; the button says so while it is on. */
+      .controls > button[aria-pressed="true"] {
+        background: var(--color-ink);
+        border-color: var(--color-ink);
+        color: var(--surface);
+      }
+      /* The generic button:hover ties with the rules above on specificity and
+         loses on order, so the coloured buttons state their own hover. */
+      .controls > button.is-next:hover:not(:disabled) { filter: brightness(0.92); }
+      .controls > button.is-prev:hover:not(:disabled),
+      .controls > button.is-overview:hover:not(:disabled) { background: var(--surface); }
+      .btn-icon {
+        flex: 0 0 auto;
+        width: 1em;
+        height: 1em;
+        fill: currentColor;
+      }
+
+      /* Thumbnail grid */
+      .grid {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 24px 24px;
+        background: var(--bg);
+      }
+      .grid[hidden] { display: none; }
+      .grid__head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: baseline;
+        gap: 1em;
+        padding-bottom: 12px;
+        font-family: var(--font-display);
+      }
+      .grid__title {
+        font-size: 1rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .grid__note {
+        flex: 1;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .grid__head button { padding: 6px 18px; font-size: 0.95rem; }
+      .grid__items {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 14px;
+        align-content: start;
+      }
+      .thumb {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        text-align: left;
+      }
+      .thumb:hover { border-color: var(--color-blue); }
+      .thumb.is-current { border-color: var(--color-blue); box-shadow: 0 0 0 2px var(--color-blue); }
+      .thumb img {
+        display: block;
+        width: 100%;
+        /* The canvas is a fixed 1920x1080, so the box can be reserved before
+           the file arrives and the grid does not reflow as they load. */
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        border-radius: 4px;
+        background: var(--bg);
+      }
+      .thumb.is-missing img { display: none; }
+      .thumb__missing {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 16 / 9;
+        border-radius: 4px;
+        background: var(--bg);
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+      }
+      .thumb.is-missing .thumb__missing { display: flex; }
+      .thumb__label {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6em;
+        min-width: 0;
+        font-size: 0.85rem;
+      }
+      .thumb__num {
+        flex: 0 0 auto;
+        font-family: var(--font-mono);
+        font-size: 0.85em;
+        color: var(--muted);
+      }
+      .thumb__text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="presenter-root">
+      <header class="panel bar">
+        <div class="deckstate">
+          <div class="position">
+            <span id="presenter-position">—</span>
+            <span id="presenter-total"></span>
+          </div>
+          <div class="progress"><div id="presenter-progress" class="progress__fill"></div></div>
+          <p class="upnext">
+            <span class="upnext__label">NEXT</span>
+            <span id="presenter-next-title">—</span>
+          </p>
+        </div>
+        <div class="clockstate">
+          <div id="presenter-elapsed">0:00</div>
+          <div class="clockrow">
+            <span id="presenter-clock">--:--</span>
+          </div>
+          <div class="timer-buttons">
+            <button id="presenter-timer-toggle" type="button">Start</button>
+            <button id="presenter-timer-reset" type="button">Reset</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel__head">
+          <span>Notes</span>
+          <span id="presenter-step"></span>
+          <span class="spacer"></span>
+          <div class="fontsize">
+            <button id="presenter-font-smaller" type="button" title="文字を小さく">A-</button>
+            <button id="presenter-font-larger" type="button" title="文字を大きく">A+</button>
+          </div>
+        </div>
+        <h1 id="presenter-title">—</h1>
+        <div id="presenter-notes">—</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head"><span>Slides</span></div>
+        <div id="presenter-outline" class="outline"></div>
+      </section>
+
+      <footer class="panel controls">
+        <button id="presenter-first" type="button">First</button>
+        <button id="presenter-last" type="button">Last</button>
+        <button id="presenter-blank" type="button" aria-pressed="false">Blank</button>
+        <button id="presenter-grid-open" class="is-overview" type="button">
+          <svg class="btn-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+            <rect x="0.5" y="0.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="4.5" y="0.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="8.5" y="0.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="0.5" y="4.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="4.5" y="4.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="8.5" y="4.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="0.5" y="8.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="4.5" y="8.5" width="3" height="3" rx="0.5"></rect>
+            <rect x="8.5" y="8.5" width="3" height="3" rx="0.5"></rect>
+          </svg>
+          Overview
+        </button>
+        <button id="presenter-prev" class="is-prev" type="button">← Prev</button>
+        <button id="presenter-next" class="is-next" type="button">Next →</button>
+      </footer>
+    </div>
+
+    <!-- Thumbnails for finding a slide during questions. The deck's own
+         overview mode would put the same grid on the projector, which is the
+         one screen the audience is looking at. -->
+    <div id="presenter-grid" class="grid" hidden>
+      <div class="grid__head">
+        <span class="grid__title">Thumbnails</span>
+        <span id="presenter-grid-note" class="grid__note"></span>
+        <button id="presenter-grid-close" type="button">Close</button>
+      </div>
+      <div id="presenter-grid-items" class="grid__items"></div>
+    </div>
+    <script src="assets/js/notes.js"></script>
+  </body>
+</html>
