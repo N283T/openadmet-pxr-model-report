@@ -87,12 +87,16 @@
       highlightThumb(msg.index);
     }
 
-    // Captures written by scripts/capture_slides.mjs, one per 1-based page
-    // number. They are a separate artefact from the deck, so they can be
-    // absent or out of date; a tile says so rather than showing a blank box.
+    // One capture per 1-based page number, shipped with the deck rather than
+    // written beside it: the script that takes them stays in the authoring
+    // repo, so these are checked in. 640px JPEGs against tiles that are about
+    // 260px wide — sharp on a retina screen at a fifth of the weight of the
+    // 1920x1080 originals. They are still a separate artefact from the deck
+    // and can fall out of date, so a tile says so rather than showing a blank
+    // box.
     const captureUrl = function (index) {
-      return '../output/slide-captures/slide-' +
-        String(index + 1).padStart(2, '0') + '.png';
+      return 'assets/captures/slide-' +
+        String(index + 1).padStart(2, '0') + '.jpg';
     };
     let missingCaptures = 0;
 
@@ -138,10 +142,12 @@
       if (last) highlightThumb(last.index);
     }
 
+    // The command that refreshes these lives in the authoring repo, so naming
+    // it here would send a reader after something this repo does not have.
     function updateGridNote() {
       gridNoteEl.textContent = missingCaptures
-        ? missingCaptures + ' missing — node scripts/capture_slides.mjs --all'
-        : 'node scripts/capture_slides.mjs --all to refresh';
+        ? missingCaptures + ' 枚のサムネイルがありません'
+        : 'クリックでそのスライドへ';
     }
 
     function highlightThumb(index) {
