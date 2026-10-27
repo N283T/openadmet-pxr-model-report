@@ -1,0 +1,26 @@
+# License
+
+## Original report and presentation materials
+
+Except for third-party materials noted below, the original written and visual content authored for this repository—including the English and Japanese technical reports, the Markdown model report, and the Japanese presentation slides—is licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
+
+License text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+You are free to share and adapt these materials, including for internal study sessions, teaching, research, and commercial purposes, provided you comply with CC BY 4.0. In particular, give appropriate credit, provide a link to the license, and indicate if changes were made. You may not imply endorsement by the author.
+
+Suggested attribution:
+
+> N283T, “OpenADMET PXR Challenge — Track 1 Activity Model Report,” https://github.com/N283T/openadmet-pxr-model-report, licensed under CC BY 4.0.
+
+## Third-party materials and software
+
+This CC BY 4.0 grant **does not override any third-party rights or licenses**. Bundled fonts, JavaScript libraries, and other third-party assets retain their respective licenses. See:
+
+- [Report vendor licenses](docs/assets/vendor/LICENSES/)
+- [Slides vendor licenses](docs/slides/assets/vendor/LICENSES/)
+
+Any third-party material that is separately credited or identified as third-party content remains subject to its own terms.
+
+Software code in this repository is **not covered by the CC BY 4.0 grant above** unless explicitly identified as part of the licensed report or presentation material. Its use is governed by any applicable separate license.
+
+The OpenADMET name and any third-party trademarks are not licensed by this notice.
